@@ -18,7 +18,7 @@ The table below offers a comparison between the tools and technologies used by D
 |Text Editor|jEdit|n/a|There are many open source alternatives|
 |Build|Maven|Maven|.|
 |Repository|Artifactory|Nexus|.|
-|Continuous Integration|Jenkins|Jenkins|.|
+|Continuous Integration|Jenkins|Jenkins|Same|
 
 
 
