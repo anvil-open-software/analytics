@@ -2,7 +2,7 @@
 The table below offers a comparison between the tools and technologies used by DCD and Dematic Lab
 
 |Tool|DCD|DLAB|Comment|
------|--------|-------|
+|-----|--------|-------|
 |Cloud|none|AWS|Dematic is looking into CenturyLink|
 |OS|Windows|Unix|DCD will also migrate to Unix|
 |Terminal Script|cURL|bash|Standard Unix tool|
