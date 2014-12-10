@@ -41,8 +41,8 @@ The table below offers a comparison between the tools and technologies used by D
    <tr>
       <td>WEB Server</td>
       <td>Apache</td>
-      <td>Apache</td>
-      <td> </td>
+      <td>NGINX</td>
+      <td>Based on MP suggestio that it is easier than Apache</td>
    <tr>
    <tr>
       <td>Application Server</td>
