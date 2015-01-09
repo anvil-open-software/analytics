@@ -11,6 +11,7 @@
         <module>business</module>
         <module>persistence</module>
         <module>admin</module>
+        <module>integration</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -19,6 +20,8 @@
         <querydsl.version>3.6.0</querydsl.version>
         <version.shrinkwrap.resolvers>2.1.1</version.shrinkwrap.resolvers>
         <version.picketlink.javaee.bom>2.7.0.CR2</version.picketlink.javaee.bom>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <dependencyManagement>
@@ -37,13 +40,13 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
-            <!--<dependency>-->
-                <!--<groupId>org.picketlink</groupId>-->
-                <!--<artifactId>picketlink-javaee-6.0</artifactId>-->
-                <!--<version>${version.picketlink.javaee.bom}</version>-->
-                <!--<scope>import</scope>-->
-                <!--<type>pom</type>-->
-            <!--</dependency>-->
+            <dependency>
+                <groupId>org.picketlink</groupId>
+                <artifactId>picketlink-javaee-6.0</artifactId>
+                <version>${version.picketlink.javaee.bom}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -54,10 +57,10 @@
             <version>7.0</version>
         </dependency>
 
-        <!--<dependency>-->
-            <!--<groupId>org.picketlink</groupId>-->
-            <!--<artifactId>picketlink</artifactId>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>org.picketlink</groupId>
+            <artifactId>picketlink</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.mysema.querydsl</groupId>
@@ -129,8 +132,8 @@
                     <configuration>
                         <container>
                             <containerId>wildfly8x</containerId>
-                            <type>installed</type>
-                            <home>${user.home}/Applications/wildfly-8.2.0.Final</home>
+                            <!--suppress MavenModelInspection -->
+                            <home>${cargo.container.home}</home>
                         </container>
                     </configuration>
                     <executions>

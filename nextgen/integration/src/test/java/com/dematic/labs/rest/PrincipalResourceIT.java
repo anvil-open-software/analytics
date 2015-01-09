@@ -1,20 +1,9 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.business.PrincipalManager;
 import com.dematic.labs.business.dto.PrincipalDto;
-import com.dematic.labs.persistence.CrudService;
-import com.dematic.labs.persistence.entities.Principal;
-import com.dematic.labs.persistence.entities.QPrincipal;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.arquillian.test.api.ArquillianResource;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
 import javax.ws.rs.client.Client;
@@ -24,7 +13,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -32,33 +20,16 @@ import java.net.URL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(Arquillian.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PrincipalResourceIT {
 
     private WebTarget target;
 
-    @Deployment(testable = false)
-    public static WebArchive createDeployment() {
-
-        File[] queryDslDependency = Maven.resolver().loadPomFromFile("pom.xml")
-                .resolve("com.mysema.querydsl:querydsl-jpa")
-                .withTransitivity().asFile();
-
-        return ShrinkWrap.create(WebArchive.class)
-                .addClasses(
-                        NextGenApplication.class, PrincipalResource.class,
-                        PrincipalDto.class,
-                        QPrincipal.class,
-                        Principal.class,
-                        PrincipalManager.class,
-                        CrudService.class)
-                .addAsLibraries(queryDslDependency)
-                .addAsResource("META-INF/persistence.xml");
-    }
-
-    @ArquillianResource
     private URL base;
+
+    public PrincipalResourceIT() throws MalformedURLException {
+        base = new URL("http://localhost:8080/admin/");
+    }
 
     @Before
     public void setUp() throws MalformedURLException {

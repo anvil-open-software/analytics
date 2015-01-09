@@ -12,7 +12,7 @@
     <artifactId>persistence</artifactId>
 
     <properties>
-        <hibernate.version>3.6.7.Final</hibernate.version>
+        <hibernate.version>4.3.7.Final</hibernate.version>
     </properties>
 
     <dependencies>
@@ -30,7 +30,8 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-validator</artifactId>
-            <version>5.1.3.Final</version>
+            <!-- must be Bean Validation 1.0 compatible version since picketlink uses that-->
+            <version>4.3.2.Final</version>
         </dependency>
 
         <dependency>

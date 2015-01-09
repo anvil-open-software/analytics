@@ -35,7 +35,7 @@ public class PrincipalResource {
     }
 
     @POST
-    @Consumes(MediaType.APPLICATION_XML)
+    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Produces({"application/json", "application/xml"})
     public Response create(PrincipalDto principalDto) {
         PrincipalDto returnedPrincipalDto = principalManager.create(principalDto);
@@ -44,7 +44,7 @@ public class PrincipalResource {
     }
 
     @GET
-    @Produces({"application/json", "application/xml"})
+    @Produces({"application/xml"})
     @Path("{id}")
     public PrincipalDto getPerson(@PathParam("id") String id) {
         if (id == null) {
