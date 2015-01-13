@@ -219,6 +219,7 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- executes unit test -->
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.18.1</version>
@@ -239,10 +240,20 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <!-- executes integration test -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>2.18</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <aws.accessKeyId>${aws.accessKeyId}</aws.accessKeyId>
+                        <aws.secretKey>${aws.secretKey}</aws.secretKey>
+                        <kinesisEndpoint>${kinesisEndpoint}</kinesisEndpoint>
+                        <regionName>${regionName}</regionName>
+                        <kinesisInputStream>${kinesisInputStream}</kinesisInputStream>
+                    </systemPropertyVariables>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
