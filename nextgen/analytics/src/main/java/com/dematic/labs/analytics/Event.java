@@ -1,5 +1,8 @@
 package com.dematic.labs.analytics;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import org.joda.time.ReadableInstant;
 
 import javax.annotation.Nonnull;
@@ -8,6 +11,7 @@ import java.util.UUID;
 /**
  * Event needs to be defined,
  */
+@SuppressWarnings("UnusedDeclaration")
 public final class Event {
     // todo: temporary
     private final UUID jobId;
@@ -45,5 +49,10 @@ public final class Event {
 
     public String getEndJobTime() {
         return endJobTime.toString();
+    }
+
+    public String toJson() throws JsonProcessingException {
+        final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
+        return ow.writeValueAsString(this);
     }
 }
