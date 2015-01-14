@@ -24,6 +24,12 @@
             <version>1.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.dematic.labs</groupId>
+            <artifactId>analytics</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
@@ -42,6 +48,7 @@
                                 <context>admin</context>
                             </properties>
                             <pingURL>http://localhost:8080/admin</pingURL>
+                            <pingTimeout>60000</pingTimeout>
                         </deployable>
                     </deployables>
                 </configuration>
