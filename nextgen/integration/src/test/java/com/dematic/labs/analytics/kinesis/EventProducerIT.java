@@ -1,6 +1,7 @@
 package com.dematic.labs.analytics.kinesis;
 
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
+import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
 import com.amazonaws.services.kinesis.model.PutRecordRequest;
 import com.dematic.labs.analytics.Event;
 import com.fasterxml.jackson.core.JsonProcessingException;

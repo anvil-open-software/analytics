@@ -5,13 +5,14 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
+import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
 
 import javax.annotation.Nonnull;
 import javax.enterprise.inject.Produces;
 import java.util.Properties;
 
+import static com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration.*;
 import static com.amazonaws.util.StringUtils.trim;
-import static com.dematic.labs.analytics.kinesis.KinesisConnectorConfiguration.*;
 
 public final class ClientProducer {
     @Produces

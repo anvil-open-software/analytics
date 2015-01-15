@@ -25,4 +25,68 @@
 
     </dependencies>
 
+    <build>
+        <plugins>
+            <!-- pulls in the aws amazon-kinesis-connectors files from github - this is needed because the pom does not
+                 exit at the moment, once it does this can be removed -->
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <id>install-kinesis</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://github.com/awslabs/amazon-kinesis-connectors/archive/master.zip</url>
+                            <unpack>true</unpack>
+                            <outputDirectory>${project.build.directory}/kinesisconnector</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- copies the amazon-kinesis-connectors files to the generated source directory -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>truezip-maven-plugin</artifactId>
+                <version>1.2</version>
+                <executions>
+                    <execution>
+                        <id>copy-kinesis-connector</id>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>
+                                        ${project.build.directory}/kinesisconnector/amazon-kinesis-connectors-master/src/main/java
+                                    </directory>
+                                    <includes>
+                                        <include>*/**/interfaces/**.java</include>
+                                        <include>*/**/connectors/**.java</include>
+                                    </includes>
+                                    <outputDirectory>${project.build.directory}/generated-sources/java</outputDirectory>
+                                </fileset>
+                                <fileset>
+                                    <directory>
+                                        ${project.build.directory}/kinesisconnector/amazon-kinesis-connectors-master/src/main
+                                    </directory>
+                                    <includes>
+                                        <include>samples/**/KinesisUtils.java</include>
+                                    </includes>
+                                    <outputDirectory>${project.build.directory}/generated-sources/java</outputDirectory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

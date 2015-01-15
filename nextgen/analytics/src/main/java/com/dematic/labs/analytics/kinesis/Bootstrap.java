@@ -1,6 +1,8 @@
 package com.dematic.labs.analytics.kinesis;
 
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
+import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
+import samples.utils.KinesisUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
