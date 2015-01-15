@@ -1,4 +1,4 @@
 dlab
 ====
 
-Dematic Labs on demand nextgen solution.
+Dematic Labs on demand nextgen solution
