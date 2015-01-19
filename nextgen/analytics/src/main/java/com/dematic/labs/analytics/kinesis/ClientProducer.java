@@ -28,6 +28,8 @@ public final class ClientProducer {
         properties.setProperty(PROP_REGION_NAME, trim(System.getProperty(PROP_REGION_NAME)));
         properties.setProperty(PROP_KINESIS_INPUT_STREAM, trim(System.getProperty(PROP_KINESIS_INPUT_STREAM)));
         properties.setProperty(PROP_APP_NAME, getAppName());
+        // change for production, set to 10 for testing
+        properties.setProperty(PROP_BUFFER_RECORD_COUNT_LIMIT, "10");
         return new KinesisConnectorConfiguration(properties, credentialsProvider);
     }
 
