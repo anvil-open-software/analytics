@@ -27,6 +27,7 @@ public final class ClientProducer {
         properties.setProperty(PROP_KINESIS_ENDPOINT, trim(System.getProperty(PROP_KINESIS_ENDPOINT)));
         properties.setProperty(PROP_REGION_NAME, trim(System.getProperty(PROP_REGION_NAME)));
         properties.setProperty(PROP_KINESIS_INPUT_STREAM, trim(System.getProperty(PROP_KINESIS_INPUT_STREAM)));
+        properties.setProperty(PROP_APP_NAME, getAppName());
         return new KinesisConnectorConfiguration(properties, credentialsProvider);
     }
 
@@ -38,5 +39,12 @@ public final class ClientProducer {
         client.setEndpoint(kinesisConnectorConfiguration.KINESIS_ENDPOINT);
         client.setRegion(Region.getRegion(Regions.fromName(kinesisConnectorConfiguration.REGION_NAME)));
         return client;
+    }
+
+    private static String getAppName() {
+        // default is the stream name plus timestamp
+        return trim(System.getProperty(PROP_APP_NAME,
+                String.format("%s_APP_%s", trim(System.getProperty(PROP_KINESIS_INPUT_STREAM)),
+                        System.currentTimeMillis())));
     }
 }
