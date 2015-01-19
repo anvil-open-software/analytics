@@ -3,7 +3,6 @@ package com.dematic.labs.analytics.kinesis.consumer;
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
 import com.amazonaws.services.kinesis.connectors.impl.AllPassFilter;
 import com.amazonaws.services.kinesis.connectors.impl.BasicMemoryBuffer;
-import com.amazonaws.services.kinesis.connectors.impl.JsonToByteArrayTransformer;
 import com.amazonaws.services.kinesis.connectors.interfaces.*;
 import com.dematic.labs.analytics.Event;
 
@@ -22,7 +21,7 @@ public final class EventPipeline implements IKinesisConnectorPipeline<Event, byt
 
     @Override
     public ITransformerBase<Event, byte[]> getTransformer(@Nonnull final KinesisConnectorConfiguration configuration) {
-        return new JsonToByteArrayTransformer<>(Event.class);
+        return new EventToByteArrayTransformer();
     }
 
     @Override
