@@ -69,6 +69,7 @@
                                     <includes>
                                         <include>*/**/interfaces/**.java</include>
                                         <include>*/**/connectors/**.java</include>
+                                        <include>*/**/impl/**.java</include>
                                     </includes>
                                     <outputDirectory>${project.build.directory}/generated-sources/java</outputDirectory>
                                 </fileset>
