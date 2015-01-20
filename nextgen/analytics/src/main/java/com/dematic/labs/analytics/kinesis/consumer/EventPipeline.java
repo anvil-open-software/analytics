@@ -9,9 +9,15 @@ import com.dematic.labs.analytics.Event;
 import javax.annotation.Nonnull;
 
 public final class EventPipeline implements IKinesisConnectorPipeline<Event, byte[]> {
+    private final IEmitter<byte[]> emitter;
+
+    public EventPipeline(@Nonnull final IEmitter<byte[]> emitter) {
+        this.emitter = emitter;
+    }
+
     @Override
     public IEmitter<byte[]> getEmitter(@Nonnull final KinesisConnectorConfiguration configuration) {
-        return new EventEmitter(configuration);
+        return emitter;
     }
 
     @Override

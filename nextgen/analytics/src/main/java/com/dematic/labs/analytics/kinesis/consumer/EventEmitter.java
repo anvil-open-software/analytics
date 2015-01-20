@@ -1,7 +1,5 @@
 package com.dematic.labs.analytics.kinesis.consumer;
 
-
-import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
 import com.amazonaws.services.kinesis.connectors.UnmodifiableBuffer;
 import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter;
 import org.slf4j.Logger;
@@ -9,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -17,18 +17,18 @@ import java.util.List;
  */
 public final class EventEmitter implements IEmitter<byte[]> {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventEmitter.class);
+    // for now just keep consumed events for testing, this will go away once events are stored and processed
+    private Collection<byte[]> consumedEvents = new ArrayList<>();
 
-    public EventEmitter(@SuppressWarnings("UnusedParameters") @Nonnull final KinesisConnectorConfiguration kinesisConnectorConfiguration) {
-        // kinesisConnectorConfiguration contains data store information
-    }
 
     @Override
     public List<byte[]> emit(@Nonnull final UnmodifiableBuffer<byte[]> buffer) throws IOException {
         // write to a data store
         final List<byte[]> eventRecords = buffer.getRecords();
         for (final byte[] eventRecord : eventRecords) {
-            // just log for now
+            // just log for now and add to event consumed list
             LOGGER.info("KINESIS: Event : {}", new String(eventRecord));
+            consumedEvents.add(eventRecord);
         }
         return Collections.emptyList();
     }
@@ -43,5 +43,10 @@ public final class EventEmitter implements IEmitter<byte[]> {
     @Override
     public void shutdown() {
         LOGGER.info("KINESIS: shutting down consumer");
+    }
+
+    // just for testing
+    public int getConsumedEventCount() {
+        return consumedEvents.size();
     }
 }
