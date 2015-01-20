@@ -1,8 +1,6 @@
 package com.dematic.labs.analytics;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import org.joda.time.DateTime;
 import org.joda.time.ReadableInstant;
 
 import javax.annotation.Nonnull;
@@ -14,11 +12,14 @@ import java.util.UUID;
 @SuppressWarnings("UnusedDeclaration")
 public final class Event {
     // todo: temporary
-    private final UUID jobId;
-    private final String facilityId;
-    private final String nodeId;
-    private final ReadableInstant startJobTime;
-    private final ReadableInstant endJobTime;
+    private  UUID jobId;
+    private  String facilityId;
+    private  String nodeId;
+    private  ReadableInstant startJobTime;
+    private  ReadableInstant endJobTime;
+
+    public Event() {
+    }
 
     public Event(@Nonnull final UUID jobId, @Nonnull final String facilityId, @Nonnull final String nodeId,
                  @Nonnull final ReadableInstant startJobTime, @Nonnull final ReadableInstant endJobTime) {
@@ -51,8 +52,34 @@ public final class Event {
         return endJobTime.toString();
     }
 
-    public String toJson() throws JsonProcessingException {
-        final ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        return ow.writeValueAsString(this);
+    public void setJobId(UUID jobId) {
+        this.jobId = jobId;
+    }
+
+    public void setFacilityId(String facilityId) {
+        this.facilityId = facilityId;
+    }
+
+    public void setNodeId(String nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public void setStartJobTime(String startJobTime) {
+        this.startJobTime = new DateTime(startJobTime);
+    }
+
+    public void setEndJobTime(String endJobTime) {
+        this.endJobTime = new DateTime(endJobTime);
+    }
+
+    @Override
+    public String toString() {
+        return "Event{" +
+                "jobId=" + jobId +
+                ", facilityId='" + facilityId + '\'' +
+                ", nodeId='" + nodeId + '\'' +
+                ", startJobTime=" + startJobTime +
+                ", endJobTime=" + endJobTime +
+                '}';
     }
 }
