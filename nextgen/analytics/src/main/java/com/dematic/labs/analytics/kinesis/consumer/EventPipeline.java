@@ -3,7 +3,11 @@ package com.dematic.labs.analytics.kinesis.consumer;
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
 import com.amazonaws.services.kinesis.connectors.impl.AllPassFilter;
 import com.amazonaws.services.kinesis.connectors.impl.BasicMemoryBuffer;
-import com.amazonaws.services.kinesis.connectors.interfaces.*;
+import com.amazonaws.services.kinesis.connectors.interfaces.IBuffer;
+import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter;
+import com.amazonaws.services.kinesis.connectors.interfaces.IFilter;
+import com.amazonaws.services.kinesis.connectors.interfaces.IKinesisConnectorPipeline;
+import com.amazonaws.services.kinesis.connectors.interfaces.ITransformerBase;
 import com.dematic.labs.analytics.Event;
 
 import javax.annotation.Nonnull;
