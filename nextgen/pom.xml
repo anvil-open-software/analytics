@@ -113,11 +113,16 @@
             <artifactId>postgresql</artifactId>
             <version>9.3-1102-jdbc41</version>
         </dependency>
-
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.0.13</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.jayway.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>1.6.3</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

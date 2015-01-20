@@ -17,8 +17,11 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.dematic.labs.analytics.kinesis.ClientProducer.*;
+import static com.jayway.awaitility.Awaitility.await;
+import static org.junit.Assert.assertEquals;
 
 public final class EventProducerConsumerIT {
     @Test
@@ -61,14 +64,13 @@ public final class EventProducerConsumerIT {
             }
         }
 
-        final ExecutorService executorService = Executors.newFixedThreadPool(1);
+        final ExecutorService executorService = Executors.newSingleThreadExecutor();
         final EventExecutor eventConsumer = new EventExecutor();
-        executorService.submit(eventConsumer);
+        executorService.execute(eventConsumer);
 
-        while (eventConsumer.getEventEmitterCount() != 10) {
-            System.out.println(" ------- " + eventConsumer.getEventEmitterCount() + " " + eventConsumer);
-            Thread.sleep(2000);
-        }
+        // assert that we read 10 events
+        await().atMost(10, TimeUnit.MINUTES).until(() ->
+                assertEquals(eventConsumer.getEventEmitterCount(), 10));
         eventConsumer.shutdown();
     }
 }
