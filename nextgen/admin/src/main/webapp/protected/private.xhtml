@@ -15,10 +15,28 @@
     limitations under the License.
 -->
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://java.sun.com/jsf/html"
       xmlns:ui="http://java.sun.com/jsf/facelets">
 <body>
     <p>Hi <b>#{identity.account.loginName}</b>, this resource is protected. If you reach this page is because you're authenticated.</p>
+
+
+    <ui:fragment rendered="#{authorizationChecker.hasApplicationRole('superuser')}">
+        <div>You have been granted the 'superuser' application role.</div>
+    </ui:fragment>
+
+    <ui:fragment rendered="#{authorizationChecker.hasApplicationRole('tenantAdmin')}">
+        <div>You have been granted the 'tenantAdmin' application role.</div>
+    </ui:fragment>
+
+    <ui:fragment rendered="#{authorizationChecker.hasApplicationRole('user')}">
+        <div>You have been granted the 'user' application role.</div>
+    </ui:fragment>
+
     <p>Click here to <a href="#{request.contextPath}/logout">Logout</a></p>
+
+
+
+
+
 </body>
 </html>

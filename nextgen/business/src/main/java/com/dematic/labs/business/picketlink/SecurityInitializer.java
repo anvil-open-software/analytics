@@ -16,32 +16,59 @@
  **/
 package com.dematic.labs.business.picketlink;
 
+import org.picketlink.event.PartitionManagerCreateEvent;
 import org.picketlink.idm.IdentityManager;
+import org.picketlink.idm.PartitionManager;
+import org.picketlink.idm.RelationshipManager;
 import org.picketlink.idm.credential.Password;
+import org.picketlink.idm.model.basic.Realm;
+import org.picketlink.idm.model.basic.Role;
 import org.picketlink.idm.model.basic.User;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
-import javax.inject.Inject;
+import javax.enterprise.event.Observes;
+
+import static org.picketlink.idm.model.basic.BasicModel.grantRole;
 
 @SuppressWarnings("UnusedDeclaration")
 @Singleton
 @Startup
 public class SecurityInitializer {
 
-    @Inject
-    private IdentityManager identityManager;
+    /**
+     * <p>Creates some default users for each realm/company.</p>
+     */
+    public void createDefaultUsers(@Observes PartitionManagerCreateEvent event) {
+        PartitionManager partitionManager = event.getPartitionManager();
 
-    @PostConstruct
-    public void create() {
-        User user = new User("jane");
+        User superUser = createUserForRealm(partitionManager, "Dematic", "superuser", "abcd1234", "superuser");
+        createUserForRealm(partitionManager, "Safeway", "janeAdmin", "abcd1234", "tenantAdmin");
+        createUserForRealm(partitionManager, "Safeway", "joeUser", "abcd1234", "user");
+    }
 
-        user.setEmail("jane@doe.com");
-        user.setFirstName("Jane");
-        user.setLastName("Doe");
+    private User createUserForRealm(PartitionManager partitionManager,
+                                    String realmName, String loginName, String password, String roleName) {
+        Realm partition = partitionManager.getPartition(Realm.class, realmName);
 
-        this.identityManager.add(user);
-        this.identityManager.updateCredential(user, new Password("abcd1234"));
+        if (partition == null) {
+            partition = new Realm(realmName);
+            partitionManager.add(partition);
+        }
+
+        IdentityManager identityManager = partitionManager.createIdentityManager(partition);
+
+        User user = new User(loginName);
+
+        identityManager.add(user);
+        identityManager.updateCredential(user, new Password(password));
+
+        Role role = new Role(roleName);
+        identityManager.add(role);
+
+        RelationshipManager relationshipManager = partitionManager.createRelationshipManager();
+
+        grantRole(relationshipManager, user, role);
+        return user;
     }
 }

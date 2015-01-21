@@ -42,17 +42,29 @@ public class HttpSecurityConfiguration {
     public void onInit(@Observes SecurityConfigurationEvent event) {
         SecurityConfigurationBuilder builder = event.getBuilder();
 
+//        builder
+//            .http()
+//                .forPath("/protected/*")
+//                    .authenticateWith()
+//                        .form()
+//                            .loginPage("/login.jsf")
+//                            .errorPage("/error.jsf")
+//                            .restoreOriginalRequest()
+//                .forPath("/logout")
+//                    .logout()
+//                    .redirectTo("/index.html");
+
         builder
-            .http()
+                .http()
                 .forPath("/protected/*")
-                    .authenticateWith()
-                        .form()
-                            .loginPage("/login.xhtml")
-                            .errorPage("/error.jsf")
-                            .restoreOriginalRequest()
+                    .authorizeWith()
+                        .expression("#{identity.account.partition.name}")
+                .redirectTo("/error.jsf").whenForbidden()
                 .forPath("/logout")
                     .logout()
                     .redirectTo("/index.html");
+
+
     }
 
 }
