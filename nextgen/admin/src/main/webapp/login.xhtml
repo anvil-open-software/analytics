@@ -15,17 +15,43 @@
     limitations under the License.
 -->
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://java.sun.com/jsf/html"
-      xmlns:ui="http://java.sun.com/jsf/facelets">
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:h="http://java.sun.com/jsf/html">
 <body>
-<form method="post" action="j_security_check">
- <input type="text" name="j_username"/>
- <input type="password" name="j_password"/>
- <input type="submit" name="login" value="Login"/>
-</form>
-<p>
-Tip: you can login with a username/password of jane/abcd1234.
-</p>
+<!--<h:form method="post" action="j_security_check">-->
+<h:form>
+    <p>
+        <h:messages globalOnly="true"/>
+    </p>
+
+    <div class="loginRow">
+        <h:outputLabel for="name" value="Username:" styleClass="loginLabel"/>
+        <h:inputText id="name" value="#{loginCredentials.userId}"/>
+    </div>
+
+    <div class="loginRow">
+        <h:outputLabel for="password" value="Password: " styleClass="loginLabel"/>
+        <h:inputSecret id="password" value="#{loginCredentials.password}" redisplay="true"/>
+    </div>
+<!--
+ <h:inputText type="text" name="j_username"/>
+ <h:inputText type="password" name="j_password"/>
+-->
+
+    <p>Please, choose where you want to sign in:</p>
+
+    <div class="loginRow">
+        <h:selectOneMenu value="#{realmSelector.realm}" >
+            <f:selectItems value="#{supportedRealms}" />
+        </h:selectOneMenu>
+    </div>
+
+<!--    <h:commandButton type="submit" name="login" value="Login"/>-->
+    <p>
+        <h:commandButton id="login" value="Login" action="#{loginController.login}" styleClass="loginButton"/>
+    </p>
+
+</h:form>
 
 </body>
 </html>

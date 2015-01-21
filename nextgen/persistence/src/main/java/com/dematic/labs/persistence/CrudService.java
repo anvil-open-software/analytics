@@ -1,6 +1,9 @@
 package com.dematic.labs.persistence;
 
+import org.picketlink.annotations.PicketLink;
+
 import javax.ejb.Stateless;
+import javax.enterprise.inject.Produces;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.validation.constraints.NotNull;
@@ -41,4 +44,16 @@ public class CrudService {
     public EntityManager getEntityManager() {
         return entityManager;
     }
+
+
+    /*
+     * Since we are using JPAIdentityStore to store identity-related data, we must provide it with an EntityManager via a
+     * producer method or field annotated with the @PicketLink qualifier.
+     */
+    @Produces
+    @PicketLink
+    public EntityManager getPicketLinkEntityManager() {
+        return entityManager;
+    }
+
 }
