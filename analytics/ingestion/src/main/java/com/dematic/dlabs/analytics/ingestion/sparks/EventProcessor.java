@@ -1,4 +1,4 @@
-package com.dematic.dlabs.analytics.ingestion;
+package com.dematic.dlabs.analytics.ingestion.sparks;
 
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
