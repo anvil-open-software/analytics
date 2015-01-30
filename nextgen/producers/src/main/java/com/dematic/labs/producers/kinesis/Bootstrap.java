@@ -4,7 +4,6 @@ import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
 import samples.utils.KinesisUtils;
 
-import javax.annotation.Nonnull;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.ejb.ConcurrencyManagement;
@@ -27,8 +26,8 @@ public class Bootstrap {
     }
 
     @Inject
-    public Bootstrap(@Nonnull @KinesisClient final AmazonKinesisClient kinesisClient,
-                     @Nonnull final KinesisConnectorConfiguration kinesisConnectorConfiguration) {
+    public Bootstrap(@KinesisClient final AmazonKinesisClient kinesisClient,
+                     final KinesisConnectorConfiguration kinesisConnectorConfiguration) {
         this.kinesisClient = kinesisClient;
         this.kinesisConnectorConfiguration = kinesisConnectorConfiguration;
     }

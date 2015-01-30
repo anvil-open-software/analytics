@@ -3,7 +3,6 @@ package com.dematic.labs.producers;
 import org.joda.time.DateTime;
 import org.joda.time.ReadableInstant;
 
-import javax.annotation.Nonnull;
 import java.util.UUID;
 
 /**
@@ -21,8 +20,8 @@ public final class Event {
     public Event() {
     }
 
-    public Event(@Nonnull final UUID jobId, @Nonnull final String facilityId, @Nonnull final String nodeId,
-                 @Nonnull final ReadableInstant startJobTime, @Nonnull final ReadableInstant endJobTime) {
+    public Event(final UUID jobId, final String facilityId, final String nodeId,
+                 final ReadableInstant startJobTime, final ReadableInstant endJobTime) {
         this.jobId = jobId;
         this.facilityId = facilityId;
         this.nodeId = nodeId;

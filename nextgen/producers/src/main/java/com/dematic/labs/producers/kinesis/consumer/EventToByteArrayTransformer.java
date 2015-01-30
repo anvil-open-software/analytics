@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 
 public final class EventToByteArrayTransformer implements ITransformer<Event, byte[]> {
@@ -20,12 +19,12 @@ public final class EventToByteArrayTransformer implements ITransformer<Event, by
     }
 
     @Override
-    public Event toClass(@Nonnull final Record record) throws IOException {
+    public Event toClass(final Record record) throws IOException {
         return objectMapper.readValue(record.getData().array(), Event.class);
     }
 
     @Override
-    public byte[] fromClass(@Nonnull final Event record) throws IOException {
+    public byte[] fromClass(final Event record) throws IOException {
         return objectMapper.writer().withDefaultPrettyPrinter().writeValueAsBytes(record);
     }
 }

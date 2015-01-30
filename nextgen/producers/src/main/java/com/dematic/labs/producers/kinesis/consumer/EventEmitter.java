@@ -5,7 +5,6 @@ import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,7 +21,7 @@ public final class EventEmitter implements IEmitter<byte[]> {
 
 
     @Override
-    public List<byte[]> emit(@Nonnull final UnmodifiableBuffer<byte[]> buffer) throws IOException {
+    public List<byte[]> emit(final UnmodifiableBuffer<byte[]> buffer) throws IOException {
         // write to a data store
         final List<byte[]> eventRecords = buffer.getRecords();
         for (final byte[] eventRecord : eventRecords) {
@@ -34,7 +33,7 @@ public final class EventEmitter implements IEmitter<byte[]> {
     }
 
     @Override
-    public void fail(@Nonnull final List<byte[]> records) {
+    public void fail(final List<byte[]> records) {
         for (final byte[] record : records) {
             LOGGER.error("KINESIS: failed to store event >{}<", new String(record));
         }

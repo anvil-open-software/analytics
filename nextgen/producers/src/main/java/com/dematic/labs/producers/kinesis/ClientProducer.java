@@ -7,7 +7,6 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
 
-import javax.annotation.Nonnull;
 import javax.enterprise.inject.Produces;
 import java.util.Properties;
 
@@ -22,7 +21,7 @@ public final class ClientProducer {
     }
 
     @Produces
-    public static KinesisConnectorConfiguration getKinesisConnectorConfiguration(@SuppressWarnings("CdiInjectionPointsInspection") @Nonnull final AWSCredentialsProvider credentialsProvider) {
+    public static KinesisConnectorConfiguration getKinesisConnectorConfiguration(@SuppressWarnings("CdiInjectionPointsInspection") final AWSCredentialsProvider credentialsProvider) {
         final Properties properties = new Properties();
         properties.setProperty(PROP_KINESIS_ENDPOINT, trim(System.getProperty(PROP_KINESIS_ENDPOINT)));
         properties.setProperty(PROP_REGION_NAME, trim(System.getProperty(PROP_REGION_NAME)));
@@ -35,7 +34,7 @@ public final class ClientProducer {
 
     @Produces
     @KinesisClient
-    public static AmazonKinesisClient getClient(@Nonnull final KinesisConnectorConfiguration kinesisConnectorConfiguration) {
+    public static AmazonKinesisClient getClient(final KinesisConnectorConfiguration kinesisConnectorConfiguration) {
         final AmazonKinesisClient client =
                 new AmazonKinesisClient(new DefaultAWSCredentialsProviderChain());
         client.setEndpoint(kinesisConnectorConfiguration.KINESIS_ENDPOINT);
