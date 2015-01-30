@@ -13,7 +13,7 @@ import java.util.stream.IntStream;
  *
  */
 @SuppressWarnings("UnusedDeclaration")
-public final class EventProducer implements Serializable {
+public final class EventProcessor implements Serializable {
     public void process(final JavaReceiverInputDStream<byte[]> inputStream) {
         // transform the byte[] to a string
         final JavaDStream<String> eventMap =
