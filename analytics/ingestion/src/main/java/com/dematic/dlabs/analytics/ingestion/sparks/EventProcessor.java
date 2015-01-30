@@ -1,7 +1,6 @@
 package com.dematic.dlabs.analytics.ingestion.sparks;
 
 import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;
@@ -14,7 +13,7 @@ import java.util.stream.IntStream;
  */
 @SuppressWarnings("UnusedDeclaration")
 public final class EventProcessor implements Serializable {
-    public void process(final JavaReceiverInputDStream<byte[]> inputStream) {
+    public void process(final JavaDStream<byte[]> inputStream) {
         // transform the byte[] (byte arrays are json) to a string
         final JavaDStream<String> eventMap =
                 inputStream.map(
