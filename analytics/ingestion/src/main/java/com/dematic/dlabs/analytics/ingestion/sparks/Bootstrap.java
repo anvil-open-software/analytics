@@ -21,9 +21,11 @@ import java.util.List;
 
 @SuppressWarnings("UnusedDeclaration")
 public final class Bootstrap {
+    // used in testing
+    public static final String KINESIS_STREAM = "kinesisInputStream";
+
     private static final String KINESIS_ENDPOINT = "kinesisEndpoint";
     private static final String KINESIS_REGION = "regionName";
-    private static final String KINESIS_STREAM = "kinesisInputStream";
     private static final String SPARKS_APP_NAME = "EventProcessor";
 
     private Bootstrap() {

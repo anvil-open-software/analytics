@@ -5,10 +5,10 @@ import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorExecutorBase;
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorRecordProcessorFactory;
 import com.amazonaws.services.kinesis.model.PutRecordRequest;
-import com.dematic.labs.producers.Event;
-import com.dematic.labs.producers.kinesis.consumer.EventEmitter;
-import com.dematic.labs.producers.kinesis.consumer.EventPipeline;
-import com.dematic.labs.producers.kinesis.consumer.EventToByteArrayTransformer;
+import com.dematic.dlabs.analytics.common.Event;
+import com.dematic.dlabs.analytics.common.kinesis.consumer.EventEmitter;
+import com.dematic.dlabs.analytics.common.kinesis.consumer.EventPipeline;
+import com.dematic.dlabs.analytics.common.kinesis.consumer.EventToByteArrayTransformer;
 import org.joda.time.DateTime;
 import org.junit.Test;
 

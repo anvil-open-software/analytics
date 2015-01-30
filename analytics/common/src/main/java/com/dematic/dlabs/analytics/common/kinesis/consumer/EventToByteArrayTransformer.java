@@ -1,8 +1,8 @@
-package com.dematic.labs.producers.kinesis.consumer;
+package com.dematic.dlabs.analytics.common.kinesis.consumer;
 
 import com.amazonaws.services.kinesis.connectors.interfaces.ITransformer;
 import com.amazonaws.services.kinesis.model.Record;
-import com.dematic.labs.producers.Event;
+import com.dematic.dlabs.analytics.common.Event;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

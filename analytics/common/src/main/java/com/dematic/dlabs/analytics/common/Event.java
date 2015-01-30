@@ -1,4 +1,4 @@
-package com.dematic.labs.producers;
+package com.dematic.dlabs.analytics.common;
 
 import org.joda.time.DateTime;
 import org.joda.time.ReadableInstant;

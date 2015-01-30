@@ -1,10 +1,10 @@
-package com.dematic.labs.producers.kinesis.consumer;
+package com.dematic.dlabs.analytics.common.kinesis.consumer;
 
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
 import com.amazonaws.services.kinesis.connectors.impl.AllPassFilter;
 import com.amazonaws.services.kinesis.connectors.impl.BasicMemoryBuffer;
 import com.amazonaws.services.kinesis.connectors.interfaces.*;
-import com.dematic.labs.producers.Event;
+import com.dematic.dlabs.analytics.common.Event;
 
 public final class EventPipeline implements IKinesisConnectorPipeline<Event, byte[]> {
     private final IEmitter<byte[]> emitter;
