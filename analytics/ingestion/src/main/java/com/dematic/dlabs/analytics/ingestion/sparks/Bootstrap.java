@@ -38,7 +38,7 @@ public final class Bootstrap {
         // properties come from system properties in junit.properties
         final AmazonKinesisClient client = new AmazonKinesisClient(getAWSCredentialsProvider());
         client.setEndpoint(assetPropertyExist(KINESIS_ENDPOINT));
-        client.setRegion(Region.getRegion(Regions.fromName(KINESIS_REGION)));
+        client.setRegion(Region.getRegion(Regions.fromName(assetPropertyExist(KINESIS_REGION))));
         return client;
     }
 
@@ -52,14 +52,14 @@ public final class Bootstrap {
     }
 
     public static JavaDStream<byte[]> getEventStreamReceiver(final JavaStreamingContext streamingContext,
-                                                                          final AmazonKinesisClient amazonKinesisClient) {
+                                                             final AmazonKinesisClient amazonKinesisClient) {
         // todo: have to configure a different stream for spark's processing, that is, kinesis would have once stream to
         // todo: to save to S3 for longer term analytics and another stream for near real-time processing with spark's
         final DescribeStreamResult describeStreamResult =
                 amazonKinesisClient.describeStream(assetPropertyExist(KINESIS_STREAM));
         if (describeStreamResult == null ||
                 Strings.isNullOrEmpty(describeStreamResult.getStreamDescription().getStreamName())) {
-            throw new IllegalArgumentException("'{}' Kinesis stream does not exist");
+            throw new IllegalArgumentException(String.format("'%s' Kinesis stream does not exist", KINESIS_STREAM));
         }
         final StreamDescription streamDescription = describeStreamResult.getStreamDescription();
         // determine the number of shards from the stream
@@ -83,7 +83,7 @@ public final class Bootstrap {
 
     private static String assetPropertyExist(final String propertyName) {
         if (Strings.isNullOrEmpty(propertyName) || Strings.isNullOrEmpty(System.getProperty(propertyName))) {
-            throw new IllegalArgumentException("'{}' property does not exist");
+            throw new IllegalArgumentException(String.format("'%s' property does not exist", propertyName));
         }
         return System.getProperty(propertyName);
     }
