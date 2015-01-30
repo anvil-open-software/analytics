@@ -78,6 +78,7 @@
                                     </directory>
                                     <includes>
                                         <include>samples/**/KinesisUtils.java</include>
+                                        <include>samples/**/DynamoDBUtils.java</include>
                                     </includes>
                                     <outputDirectory>${project.build.directory}/generated-sources/java</outputDirectory>
                                 </fileset>
