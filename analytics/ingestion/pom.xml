@@ -33,8 +33,6 @@
             <artifactId>spark-streaming-kinesis-asl_2.10</artifactId>
             <version>1.2.0</version>
         </dependency>
-
-
     </dependencies>
 
 </project>

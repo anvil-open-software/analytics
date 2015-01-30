@@ -9,6 +9,7 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>ingestion</module>
+        <module>integration</module>
     </modules>
     <packaging>pom</packaging>
 
