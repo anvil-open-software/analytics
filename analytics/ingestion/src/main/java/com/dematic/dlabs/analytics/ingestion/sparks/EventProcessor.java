@@ -5,11 +5,9 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.stream.IntStream;
 
 /**
  * Class will pull events from a Kinesis stream and process the events.
- *
  */
 @SuppressWarnings("UnusedDeclaration")
 public final class EventProcessor implements Serializable {
@@ -25,7 +23,7 @@ public final class EventProcessor implements Serializable {
                 rdd -> {
                     if (rdd.count() > 0) {
                         final List<String> events = rdd.collect();
-                        IntStream.range(0, events.size()).forEach(System.out::print);
+                        events.stream().forEach(System.out::print);
                     }
                     return null;
                 }
