@@ -1,4 +1,4 @@
-package com.dematic.dlabs.analytics.ingestion.sparks;
+package com.dematic.labs.analytics.ingestion.sparks;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;

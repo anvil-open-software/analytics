@@ -1,4 +1,4 @@
-package com.dematic.dlabs.analytics.common.kinesis.consumer;
+package com.dematic.labs.analytics.common.kinesis.consumer;
 
 import com.amazonaws.services.kinesis.connectors.UnmodifiableBuffer;
 import com.amazonaws.services.kinesis.connectors.interfaces.IEmitter;
