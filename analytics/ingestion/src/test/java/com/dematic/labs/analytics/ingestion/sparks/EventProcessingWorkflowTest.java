@@ -46,7 +46,7 @@ public final class EventProcessingWorkflowTest {
             final Event event = new Event(UUID.randomUUID(), String.format("facility_%s", i),
                     String.format("node_%s", i), DateTime.now(), DateTime.now().plusHours(1));
             putRecordRequest.setData(ByteBuffer.wrap(new EventToByteArrayTransformer().fromClass(event)));
-            // partition key = which shard to send the request
+            // partition key = which shard to send the request,
             putRecordRequest.setPartitionKey(String.valueOf(nextShard()));
             amazonKinesisClient.putRecord(putRecordRequest);
         }
