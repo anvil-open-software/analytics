@@ -23,11 +23,11 @@ import java.util.List;
 public final class Bootstrap {
     // for now, these properties need to be set via system properties
     // used in testing
-    public static final String KINESIS_STREAM = "kinesisInputStream";
+    public static final String SPARKS_APP_NAME = "EventProcessor";
+    public static final String KINESIS_STREAM_KEY = "kinesisInputStream";
 
-    private static final String KINESIS_ENDPOINT = "kinesisEndpoint";
-    private static final String KINESIS_REGION = "regionName";
-    private static final String SPARKS_APP_NAME = "EventProcessor";
+    private static final String KINESIS_ENDPOINT_KEY = "kinesisEndpoint";
+    private static final String KINESIS_REGION_KEY = "regionName";
 
     private Bootstrap() {
     }
@@ -40,8 +40,8 @@ public final class Bootstrap {
     public static AmazonKinesisClient getAmazonKinesisClient() {
         // properties come from system properties in junit.properties
         final AmazonKinesisClient client = new AmazonKinesisClient(getAWSCredentialsProvider());
-        client.setEndpoint(assetPropertyExist(KINESIS_ENDPOINT));
-        client.setRegion(Region.getRegion(Regions.fromName(assetPropertyExist(KINESIS_REGION))));
+        client.setEndpoint(assetPropertyExist(KINESIS_ENDPOINT_KEY));
+        client.setRegion(Region.getRegion(Regions.fromName(assetPropertyExist(KINESIS_REGION_KEY))));
         return client;
     }
 
@@ -58,13 +58,13 @@ public final class Bootstrap {
                                                              final AmazonKinesisClient amazonKinesisClient) {
         // todo: have to configure a different stream for spark's processing, that is, kinesis would have once stream to
         // todo: to save to S3 for longer term analytics and another stream for near real-time processing with spark's
-        final String streamName = assetPropertyExist(KINESIS_STREAM);
-        final String kinesisEndpoint = assetPropertyExist(KINESIS_ENDPOINT);
+        final String streamName = assetPropertyExist(KINESIS_STREAM_KEY);
+        final String kinesisEndpoint = assetPropertyExist(KINESIS_ENDPOINT_KEY);
         final DescribeStreamResult describeStreamResult =
                 amazonKinesisClient.describeStream(streamName);
         if (describeStreamResult == null ||
                 Strings.isNullOrEmpty(describeStreamResult.getStreamDescription().getStreamName())) {
-            throw new IllegalArgumentException(String.format("'%s' Kinesis stream does not exist", KINESIS_STREAM));
+            throw new IllegalArgumentException(String.format("'%s' Kinesis stream does not exist", KINESIS_STREAM_KEY));
         }
         final StreamDescription streamDescription = describeStreamResult.getStreamDescription();
         // determine the number of shards from the stream

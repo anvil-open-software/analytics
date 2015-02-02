@@ -11,6 +11,8 @@ import java.util.List;
  */
 @SuppressWarnings("UnusedDeclaration")
 public final class EventProcessor implements Serializable {
+    private transient int eventsProcessed = 0;
+
     public void process(final JavaDStream<byte[]> inputStream) {
         // transform the byte[] (byte arrays are json) to a string
         final JavaDStream<String> eventMap =
@@ -24,9 +26,15 @@ public final class EventProcessor implements Serializable {
                     if (rdd.count() > 0) {
                         final List<String> events = rdd.collect();
                         events.stream().forEach(System.out::print);
+                        eventsProcessed = events.size();
                     }
                     return null;
                 }
         );
+    }
+
+    // temporary method used for testing, this will be removed
+    public int getEventsProcessed() {
+        return eventsProcessed;
     }
 }
