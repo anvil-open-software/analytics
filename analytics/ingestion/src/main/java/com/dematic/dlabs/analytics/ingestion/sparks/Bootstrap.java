@@ -21,6 +21,7 @@ import java.util.List;
 
 @SuppressWarnings("UnusedDeclaration")
 public final class Bootstrap {
+    // for now, these properties need to be set via system properties
     // used in testing
     public static final String KINESIS_STREAM = "kinesisInputStream";
 
@@ -57,8 +58,10 @@ public final class Bootstrap {
                                                              final AmazonKinesisClient amazonKinesisClient) {
         // todo: have to configure a different stream for spark's processing, that is, kinesis would have once stream to
         // todo: to save to S3 for longer term analytics and another stream for near real-time processing with spark's
+        final String streamName = assetPropertyExist(KINESIS_STREAM);
+        final String kinesisEndpoint = assetPropertyExist(KINESIS_ENDPOINT);
         final DescribeStreamResult describeStreamResult =
-                amazonKinesisClient.describeStream(assetPropertyExist(KINESIS_STREAM));
+                amazonKinesisClient.describeStream(streamName);
         if (describeStreamResult == null ||
                 Strings.isNullOrEmpty(describeStreamResult.getStreamDescription().getStreamName())) {
             throw new IllegalArgumentException(String.format("'%s' Kinesis stream does not exist", KINESIS_STREAM));
@@ -69,7 +72,7 @@ public final class Bootstrap {
         // number of spark's streams to handle all the kinesis shards
         final List<JavaDStream<byte[]>> streamsList = new ArrayList<>(numShards);
         for (int i = 0; i < numShards; i++) {
-            streamsList.add(KinesisUtils.createStream(streamingContext, KINESIS_STREAM, KINESIS_ENDPOINT,
+            streamsList.add(KinesisUtils.createStream(streamingContext, streamName, kinesisEndpoint,
                     Durations.seconds(2), InitialPositionInStream.TRIM_HORIZON, StorageLevel.MEMORY_ONLY()));
         }
         // union all the streams if there is more than 1 stream
@@ -77,13 +80,13 @@ public final class Bootstrap {
         if (streamsList.size() > 1) {
             unionStreams = streamingContext.union(streamsList.get(0), streamsList.subList(1, streamsList.size()));
         } else {
-                        /* Otherwise, just use the 1 stream */
+            // Otherwise, just use the 1 stream
             unionStreams = streamsList.get(0);
         }
         return unionStreams;
     }
 
-    private static String assetPropertyExist(final String propertyName) {
+    public static String assetPropertyExist(final String propertyName) {
         if (Strings.isNullOrEmpty(propertyName) || Strings.isNullOrEmpty(System.getProperty(propertyName))) {
             throw new IllegalArgumentException(String.format("'%s' property does not exist", propertyName));
         }
