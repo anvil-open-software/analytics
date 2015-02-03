@@ -10,8 +10,8 @@
     <modules>
         <module>business</module>
         <module>persistence</module>
+        <module>producers</module>
         <module>admin</module>
-        <module>analytics</module>
         <module>integration</module>
     </modules>
     <packaging>pom</packaging>
