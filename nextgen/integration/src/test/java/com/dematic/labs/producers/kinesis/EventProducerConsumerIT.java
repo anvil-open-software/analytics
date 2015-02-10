@@ -73,7 +73,7 @@ public final class EventProducerConsumerIT {
         executorService.execute(eventConsumer);
 
         // assert that we read 10 events
-        await().atMost(10, TimeUnit.MINUTES).until(() ->
+        await().atMost(5, TimeUnit.MINUTES).until(() ->
                 assertEquals(eventConsumer.getEventEmitterCount(), 10));
         eventConsumer.shutdown();
     }
