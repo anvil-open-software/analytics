@@ -47,7 +47,7 @@ public class PrincipalResourceIT {
 
         return ShrinkWrap.create(WebArchive.class)
                 .addClasses(
-                        NextGenApplication.class, PrincipalResource.class,
+                        PrincipalResourceApplication.class, PrincipalResource.class,
                         PrincipalDto.class,
                         QPrincipal.class,
                         Principal.class,
