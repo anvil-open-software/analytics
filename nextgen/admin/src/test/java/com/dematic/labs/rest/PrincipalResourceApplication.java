@@ -5,14 +5,12 @@ import javax.ws.rs.core.Application;
 import java.util.Set;
 
 @ApplicationPath("resources")
-public class NextGenApplication extends Application {
+public class PrincipalResourceApplication extends Application {
 
     @Override
     public Set<Class<?>> getClasses() {
         Set<Class<?>> resources = new java.util.HashSet<>();
         resources.add(PrincipalResource.class);
-        resources.add(RealmResource.class);
-        resources.add(TokenResource.class);
         return resources;
     }
 }

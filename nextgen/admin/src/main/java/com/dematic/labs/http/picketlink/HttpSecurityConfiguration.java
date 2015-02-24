@@ -21,6 +21,9 @@
  */
 package com.dematic.labs.http.picketlink;
 
+import com.dematic.labs.business.picketlink.idm.credential.TokenConsumer;
+import com.dematic.labs.business.picketlink.idm.credential.handler.SignatureTokenCredentialHandler;
+import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import org.picketlink.config.SecurityConfigurationBuilder;
 import org.picketlink.event.SecurityConfigurationEvent;
 
@@ -55,16 +58,32 @@ public class HttpSecurityConfiguration {
 //                    .redirectTo("/index.html");
 
         builder
-                .http()
+            .http()
                 .forPath("/protected/*")
                     .authorizeWith()
                         .expression("#{identity.account.partition.name}")
-                .redirectTo("/error.jsf").whenForbidden()
+                    .redirectTo("/error.jsf").whenForbidden()
                 .forPath("/logout")
                     .logout()
-                    .redirectTo("/index.html");
+                    .redirectTo("/index.html")
+                .forPath("/resources/*")
+                    .authenticateWith().scheme(DLabsAuthenticationScheme.class)
+            .idmConfig()
+                .named("token.config")
+                    .stores()
+                .token()
+                .addCredentialHandler(SignatureTokenCredentialHandler.class)
+                        //                        .add(SignatureTokenStoreConfiguration.class, SignatureTokenStoreConfigurationBuilder.class)
+                .tokenConsumer(new TokenConsumer())
+                .supportAllFeatures()
 
-
+                .named("jpa.config")
+                .stores()
+                    .jpa()
+                        // Specify that this identity store configuration supports all features
+                        .supportAllFeatures()
+                        .addCredentialHandler(SignatureTokenCredentialHandler.class)
+            ;
     }
 
 }

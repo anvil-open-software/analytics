@@ -1,11 +1,12 @@
 package com.dematic.labs.rest;
 
 import com.dematic.labs.business.dto.PrincipalDto;
-import org.junit.Before;
+import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -16,49 +17,53 @@ import javax.ws.rs.core.Response;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.time.Instant;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class PrincipalResourceIT {
-
-    private WebTarget target;
-
-    private URL base;
+public class PrincipalResourceIT extends SecuredEndpointFixture {
 
     public PrincipalResourceIT() throws MalformedURLException {
-        base = new URL("http://localhost:8080/admin/");
-    }
-
-    @Before
-    public void setUp() throws MalformedURLException {
-        Client client = ClientBuilder.newClient();
-        target = client.target(URI.create(new URL(base, "resources/principal").toExternalForm()));
-        target.register(PrincipalDto.class);
     }
 
     @Test
     public void test1PostViaForm() throws MalformedURLException {
-        MultivaluedHashMap<String, String> map = new MultivaluedHashMap<>();
-        map.add("userName", "Penny");
-        Response response = target.request().post(Entity.form(map));
 
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        String uuid;
 
-        String location = response.getLocation().toString();
-        String[] locationElements = location.split("/");
-        String uuid = locationElements[locationElements.length-1];
-
-        Client client = ClientBuilder.newClient();
         {
-            target = client.target(URI.create(new URL(base, "resources/principal").toExternalForm()));
+            Client client = ClientBuilder.newClient();
+            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/principal").toExternalForm()));
+
+            MultivaluedHashMap<String, String> map = new MultivaluedHashMap<>();
+            map.add("userName", "Penny");
+
+            Response response = signRequest(token, target.request()
+                            .accept(MediaType.APPLICATION_JSON_TYPE)
+                            .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                    HttpMethod.POST, MediaType.APPLICATION_FORM_URLENCODED
+                    ).post(Entity.form(map));
+
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+
+            String location = response.getLocation().toString();
+            String[] locationElements = location.split("/");
+            uuid = locationElements[locationElements.length-1];
+        }
+
+        {
+            Client client = ClientBuilder.newClient();
+            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/principal").toExternalForm()));
             target.register(PrincipalDto.class);
 
-            PrincipalDto p = target
-                    .path("{id}")
-                    .resolveTemplate("id", uuid)
-                    .request(MediaType.APPLICATION_XML)
+            PrincipalDto p = signRequest(token, target
+                            .path("{id}")
+                            .resolveTemplate("id", uuid)
+                            .request(MediaType.APPLICATION_XML)
+                            .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                    HttpMethod.GET, null)
                     .get(PrincipalDto.class);
 
             assertNotNull(p);
@@ -68,26 +73,41 @@ public class PrincipalResourceIT {
 
     @Test
     public void test2PostViaDto() throws MalformedURLException {
-        PrincipalDto principalDto = new PrincipalDto();
-        principalDto.setUsername("Fred");
-        Response response = target.request().post(Entity.entity(principalDto, MediaType.APPLICATION_XML_TYPE));
 
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        String uuid;
 
-        String location = response.getLocation().toString();
-        String[] locationElements = location.split("/");
-        String uuid = locationElements[locationElements.length-1];
-
-        Client client = ClientBuilder.newClient();
         {
-            target = client.target(URI.create(new URL(base, "resources/principal").toExternalForm()));
+            Client client = ClientBuilder.newClient();
+            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/principal").toExternalForm()));
+
+            PrincipalDto principalDto = new PrincipalDto();
+            principalDto.setUsername("Fred");
+
+            Response response = signRequest(token, target.request()
+                            .accept(MediaType.APPLICATION_JSON_TYPE)
+                            .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                    HttpMethod.POST, MediaType.APPLICATION_XML
+                    ).post(Entity.entity(principalDto, MediaType.APPLICATION_XML_TYPE));
+
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+
+            String location = response.getLocation().toString();
+            String[] locationElements = location.split("/");
+            uuid = locationElements[locationElements.length-1];
+        }
+
+        {
+            Client client = ClientBuilder.newClient();
+            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/principal").toExternalForm()));
             target.register(PrincipalDto.class);
 
-            PrincipalDto p = target
-                    .path("{id}")
-                    .resolveTemplate("id", uuid)
-                    .request(MediaType.APPLICATION_XML)
-                    .get(PrincipalDto.class);
+            PrincipalDto p = signRequest(token, target
+                            .path("{id}")
+                            .resolveTemplate("id", uuid)
+                            .request(MediaType.APPLICATION_XML)
+                            .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                    HttpMethod.GET,
+                    null).get(PrincipalDto.class);
 
             assertNotNull(p);
         }
@@ -96,7 +116,15 @@ public class PrincipalResourceIT {
 
     @Test
     public void test3GetList() throws Exception {
-        PrincipalDto[] list = target.request().get(PrincipalDto[].class);
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/principal").toExternalForm()));
+
+        PrincipalDto[] list = signRequest(token, target
+                        .request(MediaType.APPLICATION_XML)
+                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                HttpMethod.GET, null
+                ).get(PrincipalDto[].class);
+
         assertEquals(2, list.length);
     }
 }

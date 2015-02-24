@@ -44,7 +44,7 @@ public class PrincipalResource {
     }
 
     @GET
-    @Produces({"application/xml"})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Path("{id}")
     public PrincipalDto getPerson(@PathParam("id") String id) {
         if (id == null) {
@@ -54,7 +54,7 @@ public class PrincipalResource {
     }
 
     @GET
-    @Produces({"application/xml", "application/json"})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public PrincipalDto[] getList() {
         //noinspection ToArrayCallWithZeroLengthArrayArgument
         return principalManager.getPrincipals().toArray(new PrincipalDto[0]);
