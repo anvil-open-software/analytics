@@ -5,7 +5,7 @@ import com.amazonaws.auth.SigningAlgorithm;
 import com.amazonaws.util.Base64;
 import com.dematic.labs.business.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.business.picketlink.idm.credential.SignatureTokenCredential;
-import com.dematic.labs.http.picketlink.RealmSelector;
+import com.dematic.labs.picketlink.RealmSelector;
 import com.dematic.labs.picketlink.idm.credential.SignatureTokenProvider;
 import org.picketlink.Identity;
 import org.picketlink.authentication.AuthenticationException;

@@ -77,7 +77,7 @@ public class HttpSecurityConfiguration {
                 .tokenConsumer(new TokenConsumer())
                 .supportAllFeatures()
 
-                .named("jpa.config")
+                .named("default")
                 .stores()
                     .jpa()
                         // Specify that this identity store configuration supports all features

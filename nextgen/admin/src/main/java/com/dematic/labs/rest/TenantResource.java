@@ -1,6 +1,7 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.business.picketlink.SecurityManager;
+import com.dematic.labs.business.SecurityManager;
+import com.dematic.labs.business.dto.TenantDto;
 
 import javax.ejb.EJB;
 import javax.enterprise.context.RequestScoped;
@@ -10,10 +11,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
+import java.util.List;
 
 @RequestScoped
-@Path("realm")
-public class RealmResource {
+@Path("tenant")
+public class TenantResource {
 
     @EJB
     SecurityManager securityManager;
@@ -23,9 +25,8 @@ public class RealmResource {
 
     @GET
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    public String[] getList() {
-        //noinspection ToArrayCallWithZeroLengthArrayArgument
-        return securityManager.supportedRealms().toArray(new String[0]);
+    public List<TenantDto> getList() {
+        return securityManager.getTenants();
     }
 
 }

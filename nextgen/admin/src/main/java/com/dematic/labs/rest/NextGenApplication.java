@@ -11,7 +11,7 @@ public class NextGenApplication extends Application {
     public Set<Class<?>> getClasses() {
         Set<Class<?>> resources = new java.util.HashSet<>();
         resources.add(PrincipalResource.class);
-        resources.add(RealmResource.class);
+        resources.add(TenantResource.class);
         resources.add(TokenResource.class);
         return resources;
     }

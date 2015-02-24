@@ -14,13 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.dematic.labs.http.picketlink;
+package com.dematic.labs.picketlink;
 
 import org.picketlink.annotations.PicketLink;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.model.basic.Realm;
 
-import javax.enterprise.context.SessionScoped;
+import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -29,7 +29,7 @@ import java.io.Serializable;
 /**
  * <p>We use this class to hold the current realm for a specific user.</p>
  */
-@SessionScoped
+@RequestScoped
 @Named
 public class RealmSelector implements Serializable {
 
