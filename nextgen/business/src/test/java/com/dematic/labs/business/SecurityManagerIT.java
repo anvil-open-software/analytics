@@ -2,7 +2,7 @@ package com.dematic.labs.business;
 
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
-import com.dematic.labs.business.picketlink.SecurityInitializer;
+import com.dematic.labs.picketlink.SecurityInitializer;
 import com.dematic.labs.persistence.CrudService;
 import com.dematic.labs.picketlink.RealmSelector;
 import org.apache.deltaspike.security.api.authorization.AccessDeniedException;

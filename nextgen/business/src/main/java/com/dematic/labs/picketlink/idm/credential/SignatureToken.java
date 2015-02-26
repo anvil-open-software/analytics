@@ -1,4 +1,4 @@
-package com.dematic.labs.business.picketlink.idm.credential;
+package com.dematic.labs.picketlink.idm.credential;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

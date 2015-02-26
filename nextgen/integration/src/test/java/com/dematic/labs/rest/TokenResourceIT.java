@@ -1,6 +1,6 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.business.picketlink.idm.credential.SignatureToken;
+import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.google.common.base.Strings;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;

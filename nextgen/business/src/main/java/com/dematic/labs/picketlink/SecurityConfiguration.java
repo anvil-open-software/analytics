@@ -1,4 +1,4 @@
-package com.dematic.labs.business.picketlink;
+package com.dematic.labs.picketlink;
 
 import org.picketlink.config.SecurityConfigurationBuilder;
 import org.picketlink.event.SecurityConfigurationEvent;

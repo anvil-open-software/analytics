@@ -1,6 +1,5 @@
 package com.dematic.labs.picketlink.idm.credential;
 
-import com.dematic.labs.business.picketlink.idm.credential.SignatureToken;
 import org.picketlink.idm.credential.Token;
 import org.picketlink.idm.model.Account;
 import org.picketlink.idm.model.basic.Agent;

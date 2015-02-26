@@ -14,7 +14,7 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  **/
-package com.dematic.labs.business.picketlink;
+package com.dematic.labs.picketlink;
 
 import org.picketlink.event.PartitionManagerCreateEvent;
 import org.picketlink.idm.IdentityManager;

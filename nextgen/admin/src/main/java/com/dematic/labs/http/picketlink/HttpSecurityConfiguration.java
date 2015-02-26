@@ -21,8 +21,8 @@
  */
 package com.dematic.labs.http.picketlink;
 
-import com.dematic.labs.business.picketlink.idm.credential.TokenConsumer;
-import com.dematic.labs.business.picketlink.idm.credential.handler.SignatureTokenCredentialHandler;
+import com.dematic.labs.picketlink.idm.credential.TokenConsumer;
+import com.dematic.labs.picketlink.idm.credential.handler.SignatureTokenCredentialHandler;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import org.picketlink.config.SecurityConfigurationBuilder;
 import org.picketlink.event.SecurityConfigurationEvent;
@@ -69,13 +69,13 @@ public class HttpSecurityConfiguration {
                 .forPath("/resources/*")
                     .authenticateWith().scheme(DLabsAuthenticationScheme.class)
             .idmConfig()
-                .named("token.config")
-                    .stores()
-                .token()
-                .addCredentialHandler(SignatureTokenCredentialHandler.class)
-                        //                        .add(SignatureTokenStoreConfiguration.class, SignatureTokenStoreConfigurationBuilder.class)
-                .tokenConsumer(new TokenConsumer())
-                .supportAllFeatures()
+//                .named("token.config")
+//                    .stores()
+//                .token()
+//                .addCredentialHandler(SignatureTokenCredentialHandler.class)
+//                        //                        .add(SignatureTokenStoreConfiguration.class, SignatureTokenStoreConfigurationBuilder.class)
+//                .tokenConsumer(new TokenConsumer())
+//                .supportAllFeatures()
 
                 .named("default")
                 .stores()
@@ -83,6 +83,7 @@ public class HttpSecurityConfiguration {
                         // Specify that this identity store configuration supports all features
                         .supportAllFeatures()
                         .addCredentialHandler(SignatureTokenCredentialHandler.class)
+                            .setCredentialHandlerProperty(SignatureTokenCredentialHandler.TOKEN_CONSUMER, new TokenConsumer())
             ;
     }
 
