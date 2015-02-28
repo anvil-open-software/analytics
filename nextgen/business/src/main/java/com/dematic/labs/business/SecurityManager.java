@@ -8,16 +8,15 @@ import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.RelationshipManager;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.model.Partition;
-import org.picketlink.idm.model.basic.BasicModel;
-import org.picketlink.idm.model.basic.Realm;
-import org.picketlink.idm.model.basic.Role;
-import org.picketlink.idm.model.basic.User;
+import org.picketlink.idm.model.basic.*;
+import org.picketlink.idm.query.RelationshipQuery;
 
 import javax.ejb.Stateless;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -30,6 +29,9 @@ public class SecurityManager {
 
     @Inject
     private PartitionManager partitionManager;
+
+    @Inject
+    private RelationshipManager relationshipManager;
 
     @Inject
     private IdentityManager identityManager;
@@ -66,6 +68,15 @@ public class SecurityManager {
     }
 
     @RolesAllowed("administerTenants")
+    public void deleteTenant(String id) {
+        Realm partition = partitionManager.lookupById(Realm.class, id);
+
+        if (partition != null) {
+            partitionManager.remove(partition);
+        }
+    }
+
+    @RolesAllowed("administerTenants")
     public UserDto createTenantAdmin(@NotNull UserDto userDto) {
         Realm partition = partitionManager.getPartition(Realm.class, userDto.getTenantDto().getName());
         if (partition == null) {
@@ -85,6 +96,30 @@ public class SecurityManager {
         grantRole(relationshipManager, user, role);
 
         return new UserConverter().apply(user);
+    }
+
+    @RolesAllowed("administerTenants")
+    public List<UserDto> getTenantsAdminUsers() {
+        List<User> tenantsAdminUsers = new ArrayList<>();
+
+        for (Partition partition : partitionManager.getPartitions(Realm.class)) {
+            IdentityManager identityManager = partitionManager.createIdentityManager(partition);
+            Role tenantAdminRole = BasicModel.getRole(identityManager, "administerUsers");
+            if (tenantAdminRole != null) {
+                RelationshipQuery<Grant> query = relationshipManager.createRelationshipQuery(Grant.class);
+                query.setParameter(GroupRole.ROLE, tenantAdminRole);
+                for (Grant grant : query.getResultList()) {
+                    try {
+                        User user = (User) grant.getAssignee();
+                        tenantsAdminUsers.add(user);
+                    } catch (ClassCastException cce) {
+                        //ignore
+                    }
+                }
+            }
+
+        }
+        return tenantsAdminUsers.stream().map(new UserConverter()).collect(Collectors.toList());
     }
 
     @RolesAllowed("administerUsers")

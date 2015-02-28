@@ -2,12 +2,12 @@ package com.dematic.labs.rest;
 
 import com.dematic.labs.business.SecurityManagerIT;
 import com.dematic.labs.business.dto.TenantDto;
+import com.dematic.labs.business.dto.UserDto;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.dto.RestError;
-import org.junit.AfterClass;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
+import org.hamcrest.core.StringStartsWith;
+import org.junit.*;
 import org.junit.runners.MethodSorters;
 
 import javax.ws.rs.HttpMethod;
@@ -25,78 +25,67 @@ import java.time.Instant;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class TenantResourceIT extends SecuredEndpointFixture {
+public class TenantAdminUserResourceIT extends SecuredEndpointFixture {
 
     private static String uuid;
 
-    public TenantResourceIT() throws MalformedURLException {
+    public TenantAdminUserResourceIT() throws MalformedURLException {
     }
 
-    @Test
-    public void test01GetList() throws Exception {
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
+    @BeforeClass
+    public static void before() throws MalformedURLException {
 
-        TenantDto[] list = signRequest(token, target
-                        .request(MediaType.APPLICATION_JSON)
-                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                HttpMethod.GET, null
-        ).get(TenantDto[].class);
-
-        assertNotNull(list);
-        assertTrue(list.length > 0);
-    }
-
-    /*
-     Need one test of failing authorization to cover 1) Picketlink SecurityInterceptor is wired correctly and
-     2) that ExceptionMapping is wired correctly
-     */
-    @Test
-    public void test02GetListWithoutAuthorization() throws Exception {
-
-        SignatureToken userToken = getToken("Safeway", "joeUser", "abcd1234");
+        SignatureToken token = getToken(tenant, username, password);
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
 
-        Response response = signRequest(userToken, target
-                        .request(MediaType.APPLICATION_JSON)
+        TenantDto tenantDto = new TenantDto();
+        tenantDto.setName(SecurityManagerIT.NEW_TENANT);
+
+        Response response = signRequest(token, target.request()
+                        .accept(MediaType.APPLICATION_JSON_TYPE)
                         .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                HttpMethod.GET, null
-        ).get();
+                HttpMethod.POST, MediaType.APPLICATION_JSON
+        ).post(Entity.entity(tenantDto, MediaType.APPLICATION_JSON_TYPE));
 
         assertNotNull(response);
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
-        RestError error = response.readEntity(RestError.class);
-        assertNotNull(error);
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), error.getHttpStatusCode());
+        String location = response.getLocation().toString();
+        String[] locationElements = location.split("/");
+        uuid = locationElements[locationElements.length-1];
     }
 
     @Test
-    public void test03Create() throws MalformedURLException {
+    public void test01Create() throws MalformedURLException {
 
         {
             Client client = ClientBuilder.newClient();
-            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
+            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenantAdminUser").toExternalForm()));
 
+            UserDto userDto = new UserDto();
             TenantDto tenantDto = new TenantDto();
             tenantDto.setName(SecurityManagerIT.NEW_TENANT);
+            userDto.setTenantDto(tenantDto);
+            userDto.setLoginName(SecurityManagerIT.TENANT_ADMIN_USERNAME);
+            userDto.setPassword(SecurityManagerIT.TENANT_ADMIN_PASSWORD);
+            assertNull(userDto.getId());
 
             Response response = signRequest(token, target.request()
                             .accept(MediaType.APPLICATION_JSON_TYPE)
                             .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
                     HttpMethod.POST, MediaType.APPLICATION_JSON
-            ).post(Entity.entity(tenantDto, MediaType.APPLICATION_JSON_TYPE));
+            ).post(Entity.entity(userDto, MediaType.APPLICATION_JSON_TYPE));
 
             assertNotNull(response);
             assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
             String location = response.getLocation().toString();
             String[] locationElements = location.split("/");
-            uuid = locationElements[locationElements.length-1];
+            String uuid = locationElements[locationElements.length-1];
 
-            TenantDto fromServer = response.readEntity(TenantDto.class);
+            UserDto fromServer = response.readEntity(UserDto.class);
 
             assertNotNull(fromServer);
             assertNotNull(fromServer.getId());
@@ -107,20 +96,25 @@ public class TenantResourceIT extends SecuredEndpointFixture {
     }
 
     @Test
-    public void test04CreateDuplicate() throws MalformedURLException {
+    public void test02CreateDuplicate() throws MalformedURLException {
 
         {
             Client client = ClientBuilder.newClient();
-            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
+            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenantAdminUser").toExternalForm()));
 
+            UserDto userDto = new UserDto();
             TenantDto tenantDto = new TenantDto();
             tenantDto.setName(SecurityManagerIT.NEW_TENANT);
+            userDto.setTenantDto(tenantDto);
+            userDto.setLoginName(SecurityManagerIT.TENANT_ADMIN_USERNAME);
+            userDto.setPassword(SecurityManagerIT.TENANT_ADMIN_PASSWORD);
+            assertNull(userDto.getId());
 
             Response response = signRequest(token, target.request()
                             .accept(MediaType.APPLICATION_JSON_TYPE)
                             .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
                     HttpMethod.POST, MediaType.APPLICATION_JSON
-            ).post(Entity.entity(tenantDto, MediaType.APPLICATION_JSON_TYPE));
+            ).post(Entity.entity(userDto, MediaType.APPLICATION_JSON_TYPE));
 
             assertNotNull(response);
             assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
@@ -128,9 +122,24 @@ public class TenantResourceIT extends SecuredEndpointFixture {
             RestError error = response.readEntity(RestError.class);
             assertNotNull(error);
             assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), error.getHttpStatusCode());
-            assertEquals("Duplicate Tenant Name", error.getMessage());
+            assertThat(error.getMessage(), new StringStartsWith("IdentityType [class org.picketlink.idm.model.basic.User] already exists with the given identifier"));
         }
 
+    }
+
+    @Test
+    public void test03GetList() throws Exception {
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenantAdminUser").toExternalForm()));
+
+        UserDto[] list = signRequest(token, target
+                        .request(MediaType.APPLICATION_JSON)
+                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                HttpMethod.GET, null
+        ).get(UserDto[].class);
+
+        assertNotNull(list);
+        assertTrue(list.length > 0);
     }
 
     @AfterClass
