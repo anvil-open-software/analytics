@@ -1,6 +1,6 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.business.picketlink.idm.credential.SignatureToken;
+import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import org.picketlink.credential.DefaultLoginCredentials;
 
 import javax.enterprise.context.RequestScoped;

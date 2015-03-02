@@ -1,7 +1,7 @@
-package com.dematic.labs.business.picketlink.idm.credential.handler;
+package com.dematic.labs.picketlink.idm.credential.handler;
 
-import com.dematic.labs.business.picketlink.idm.credential.SignatureToken;
-import com.dematic.labs.business.picketlink.idm.credential.SignatureTokenCredential;
+import com.dematic.labs.picketlink.idm.credential.SignatureToken;
+import com.dematic.labs.picketlink.idm.credential.SignatureTokenCredential;
 import org.picketlink.common.reflection.Reflections;
 import org.picketlink.idm.IdentityManagementException;
 import org.picketlink.idm.config.SecurityConfigurationException;

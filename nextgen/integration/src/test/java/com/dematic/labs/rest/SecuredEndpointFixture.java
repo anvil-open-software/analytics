@@ -1,6 +1,6 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.business.picketlink.idm.credential.SignatureToken;
+import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import org.jboss.resteasy.client.jaxrs.internal.ClientInvocation;
 import org.jboss.resteasy.client.jaxrs.internal.ClientRequestHeaders;

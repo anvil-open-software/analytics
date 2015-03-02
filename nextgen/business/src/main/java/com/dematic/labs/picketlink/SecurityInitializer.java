@@ -14,7 +14,7 @@
  ** See the License for the specific language governing permissions and
  ** limitations under the License.
  **/
-package com.dematic.labs.business.picketlink;
+package com.dematic.labs.picketlink;
 
 import org.picketlink.event.PartitionManagerCreateEvent;
 import org.picketlink.idm.IdentityManager;
@@ -42,9 +42,9 @@ public class SecurityInitializer {
     public void createDefaultUsers(@Observes PartitionManagerCreateEvent event) {
         PartitionManager partitionManager = event.getPartitionManager();
 
-        partitionManager.add(new Realm(Realm.DEFAULT_REALM), "jpa.config");
+        partitionManager.add(new Realm(Realm.DEFAULT_REALM));
 
-        User superUser = createUserForRealm(partitionManager, "Dematic", "superuser", "abcd1234", "superuser");
+        User superUser = createUserForRealm(partitionManager, "Dematic", "superuser", "abcd1234", "administerTenants");
         createUserForRealm(partitionManager, "Safeway", "janeAdmin", "abcd1234", "tenantAdmin");
         createUserForRealm(partitionManager, "Safeway", "joeUser", "abcd1234", "user");
     }
@@ -55,7 +55,7 @@ public class SecurityInitializer {
 
         if (partition == null) {
             partition = new Realm(realmName);
-            partitionManager.add(partition, "jpa.config");
+            partitionManager.add(partition);
         }
 
         IdentityManager identityManager = partitionManager.createIdentityManager(partition);
