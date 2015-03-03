@@ -2,6 +2,7 @@ package com.dematic.labs.rest;
 
 import com.dematic.labs.rest.dto.RestError;
 import org.apache.deltaspike.security.api.authorization.AccessDeniedException;
+import org.picketlink.idm.IdentityManagementException;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.Response;
@@ -20,6 +21,7 @@ public class RestExceptionMapper implements ExceptionMapper<Throwable> {
 
         exceptionMapping.put(AccessDeniedException.class, Response.Status.FORBIDDEN);
         exceptionMapping.put(IllegalArgumentException.class, Response.Status.BAD_REQUEST);
+        exceptionMapping.put(IdentityManagementException.class, Response.Status.BAD_REQUEST);
    }
 
     @Override

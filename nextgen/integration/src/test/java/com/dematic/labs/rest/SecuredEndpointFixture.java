@@ -1,11 +1,9 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
+import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import org.jboss.resteasy.client.jaxrs.internal.ClientInvocation;
 import org.jboss.resteasy.client.jaxrs.internal.ClientRequestHeaders;
-import org.junit.Rule;
-import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
 import javax.ws.rs.HttpMethod;
@@ -28,13 +26,6 @@ import static org.junit.Assert.assertEquals;
 
 public abstract class SecuredEndpointFixture {
 
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-
-    private final URL base;
-
-    protected final SignatureToken token;
-
     public static final String SCHEME = "http";
     public static final String HOSTNAME = "localhost:8080";
     public static final String CONTEXT_ROOT = "/admin/";
@@ -43,18 +34,24 @@ public abstract class SecuredEndpointFixture {
     protected static final String username = "superuser";
     protected static final String password = "abcd1234";
 
+    protected final SignatureToken token;
+
     public SecuredEndpointFixture() throws MalformedURLException {
-        base = new URL(SCHEME + "://" + HOSTNAME + CONTEXT_ROOT);
         token = getToken(tenant, username, password);
     }
 
-    public URL getBase() {
-        return base;
+    public static URL getBase() {
+        try {
+            return new URL(SCHEME + "://" + HOSTNAME + CONTEXT_ROOT);
+
+        } catch (MalformedURLException e) {
+            return null;
+        }
     }
 
-    protected SignatureToken getToken(String tenant, String username, String password) throws MalformedURLException {
+    protected static SignatureToken getToken(String tenant, String username, String password) throws MalformedURLException {
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(base, "resources/token").toExternalForm()));
+        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/token").toExternalForm()));
         return target.request()
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
@@ -62,16 +59,16 @@ public abstract class SecuredEndpointFixture {
                 .get(SignatureToken.class);
     }
 
-    private String generateBasicAuthHeaderValue(String tenant, String username, String password) {
+    private static String generateBasicAuthHeaderValue(String tenant, String username, String password) {
         //TODO - add base64 encoding
         return "DLabsU " + tenant + ":" + username + ":" + password;
     }
 
-    protected String generateSignatureAuthHeaderValue(String tenant, String username, String signature) {
+    protected static String generateSignatureAuthHeaderValue(String tenant, String username, String signature) {
         return "DLabsT " + tenant + ":" + username + ":" + signature;
     }
 
-    protected Invocation.Builder signRequest(@Nonnull SignatureToken token, @Nonnull Invocation.Builder request, @Nonnull String httpMethod, String postPutContentType) {
+    protected static Invocation.Builder signRequest(@Nonnull SignatureToken token, @Nonnull Invocation.Builder request, @Nonnull String httpMethod, String postPutContentType) {
 
         String stringToSign = extractStringToSignFromRequest(httpMethod, postPutContentType, request);
 
@@ -83,7 +80,7 @@ public abstract class SecuredEndpointFixture {
         return request;
     }
 
-    protected String extractStringToSignFromRequest(String httpMethod, String postPutContentType, Invocation.Builder request) {
+    protected static String extractStringToSignFromRequest(String httpMethod, String postPutContentType, Invocation.Builder request) {
         SortedMap<String, String> queryParameters = new TreeMap<>();
         SortedMap<String, String> canonicalHeaders = new TreeMap<>();
         SortedMap<String, String> dLabsHeaders = new TreeMap<>();
