@@ -1,7 +1,7 @@
 package com.dematic.labs.rest;
 
 import com.dematic.labs.business.SecurityManager;
-import com.dematic.labs.business.dto.TenantDto;
+import com.dematic.labs.business.dto.UserDto;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
 import javax.ejb.EJB;
@@ -14,8 +14,8 @@ import javax.ws.rs.core.UriInfo;
 import java.util.List;
 
 @RequestScoped
-@Path("tenant")
-public class TenantResource {
+@Path("tenantAdminUser")
+public class TenantAdminUserResource {
 
     @EJB
     SecurityManager securityManager;
@@ -26,8 +26,8 @@ public class TenantResource {
     @GET
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerTenants")
-    public List<TenantDto> getList() {
-        return securityManager.getTenants();
+    public List<UserDto> getList() {
+        return securityManager.getTenantsAdminUsers();
     }
 
 
@@ -35,18 +35,12 @@ public class TenantResource {
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerTenants")
-    public Response create(TenantDto tenantDto) {
-        TenantDto returnedTenantDto = securityManager.createTenant(tenantDto);
+    public Response create(UserDto userDto) {
+        UserDto returnedTenantDto = securityManager.createTenantAdmin(userDto);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(returnedTenantDto.getId()).build())
                 .entity(returnedTenantDto).build();
     }
 
-    @DELETE
-    @Path("{id}")
-    @RolesAllowed("administerTenants")
-    public Response delete(@PathParam("id") String id) {
-        securityManager.deleteTenant(id);
-        return Response.noContent().build();
-    }
+
 
 }

@@ -6,6 +6,8 @@ import com.dematic.labs.picketlink.SecurityInitializer;
 import com.dematic.labs.persistence.CrudService;
 import com.dematic.labs.picketlink.RealmSelector;
 import org.apache.deltaspike.security.api.authorization.AccessDeniedException;
+import org.hamcrest.collection.IsEmptyIterable;
+import org.hamcrest.core.IsNot;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -22,6 +24,7 @@ import org.picketlink.credential.DefaultLoginCredentials;
 
 import javax.inject.Inject;
 import java.io.File;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -226,14 +229,40 @@ public class SecurityManagerIT {
     }
 
     @Test
-    public void test14CreateTenantUserWithoutAuthentication() throws Exception {
+    public void test14GetTenantAdminsWithoutAuthentication() throws Exception {
+
+        exception.expectMessage(AccessDeniedException.class.getName());
+        securityManager.getTenantsAdminUsers();
+    }
+
+    @Test
+    public void test15GetTenantAdminsWithAuthenticationAndAuthorization() throws Exception {
+
+        login(null, null, null);
+        List<UserDto> tenantAdminUsers = securityManager.getTenantsAdminUsers();
+
+        assertNotNull(tenantAdminUsers);
+        assertThat(tenantAdminUsers, new IsNot<>(new IsEmptyIterable<>()));
+    }
+
+    @Test
+    public void test16GetTenantsAdminsWithoutAuthorization() throws Exception {
+
+        login("Safeway", "joeUser", "abcd1234");
+
+        exception.expectMessage(AccessDeniedException.class.getName());
+        securityManager.getTenantsAdminUsers();
+    }
+
+    @Test
+    public void test17CreateTenantUserWithoutAuthentication() throws Exception {
 
         exception.expectMessage(AccessDeniedException.class.getName());
         securityManager.createTenantUser(new UserDto());
     }
 
     @Test
-    public void test15CreateTenantUserWithAuthenticationAndAuthorization() throws Exception {
+    public void test18CreateTenantUserWithAuthenticationAndAuthorization() throws Exception {
 
         login(NEW_TENANT, TENANT_ADMIN_USERNAME, TENANT_ADMIN_PASSWORD);
 
@@ -249,7 +278,7 @@ public class SecurityManagerIT {
     }
 
     @Test
-    public void test16CreateDuplicateTenantUser() throws Exception {
+    public void test19CreateDuplicateTenantUser() throws Exception {
 
         login(NEW_TENANT, TENANT_ADMIN_USERNAME, TENANT_ADMIN_PASSWORD);
 
@@ -263,7 +292,7 @@ public class SecurityManagerIT {
     }
 
     @Test
-    public void test17CreateTenantUserWithoutAuthorization() throws Exception {
+    public void test20CreateTenantUserWithoutAuthorization() throws Exception {
 
         login(null, null, null);
 
@@ -272,7 +301,7 @@ public class SecurityManagerIT {
     }
 
     @Test
-    public void test18LoginAsTenantUser() throws Exception {
+    public void test21LoginAsTenantUser() throws Exception {
 
         login(NEW_TENANT, TENANT_USER_USERNAME, TENANT_USER_PASSWORD);
     }
