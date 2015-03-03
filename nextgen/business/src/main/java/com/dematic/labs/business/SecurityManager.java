@@ -9,6 +9,7 @@ import org.picketlink.idm.RelationshipManager;
 import org.picketlink.idm.credential.Password;
 import org.picketlink.idm.model.Partition;
 import org.picketlink.idm.model.basic.*;
+import org.picketlink.idm.query.IdentityQueryBuilder;
 import org.picketlink.idm.query.RelationshipQuery;
 
 import javax.ejb.Stateless;
@@ -17,6 +18,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -120,6 +122,14 @@ public class SecurityManager {
 
         }
         return tenantsAdminUsers.stream().map(new UserConverter()).collect(Collectors.toList());
+    }
+
+    @RolesAllowed("administerUsers")
+    public List<UserDto> getUsers() {
+        IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
+        //noinspection unchecked
+        Collection<User> users = queryBuilder.createIdentityQuery(User.class).getResultList();
+        return users.stream().map(new UserConverter()).collect(Collectors.toList());
     }
 
     @RolesAllowed("administerUsers")
