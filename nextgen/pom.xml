@@ -12,6 +12,7 @@
         <module>persistence</module>
         <module>producers</module>
         <module>admin</module>
+        <module>ngclient</module>
         <module>integration</module>
     </modules>
     <packaging>pom</packaging>
