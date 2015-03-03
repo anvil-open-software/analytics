@@ -17,7 +17,7 @@
             <groupId>com.dematic.labs</groupId>
             <artifactId>admin</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <!-- Note the WAR type dependency, do not leave the type blank.  -->
+            <!-- Note the WAR type dependency, do not leave the type blank. -->
             <type>war</type>
         </dependency>
     </dependencies>
