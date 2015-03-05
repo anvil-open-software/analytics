@@ -2,6 +2,7 @@ package com.dematic.labs.business.dto;
 
 import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Set;
 
 @XmlRootElement
 public class UserDto {
@@ -10,6 +11,8 @@ public class UserDto {
     private TenantDto tenantDto;
     private String loginName;
     private String password;
+
+    private Set<RoleDto> grantedRoles;
 
     public UserDto() {
     }
@@ -45,4 +48,13 @@ public class UserDto {
     public void setPassword(@NotNull String password) {
         this.password = password;
     }
+
+    public Set<RoleDto> getGrantedRoles() {
+        return grantedRoles;
+    }
+
+    public void setGrantedRoles(Set<RoleDto> grantedRoles) {
+        this.grantedRoles = grantedRoles;
+    }
+
 }

@@ -3,9 +3,9 @@ package com.dematic.labs.business;
 import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
-import com.dematic.labs.picketlink.SecurityInitializer;
 import com.dematic.labs.persistence.CrudService;
 import com.dematic.labs.picketlink.RealmSelector;
+import com.dematic.labs.picketlink.SecurityInitializer;
 import org.apache.deltaspike.security.api.authorization.AccessDeniedException;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsNot;
@@ -23,10 +23,15 @@ import org.junit.runners.MethodSorters;
 import org.picketlink.Identity;
 import org.picketlink.credential.DefaultLoginCredentials;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import static com.dematic.labs.picketlink.SecurityInitializer.*;
 import static org.junit.Assert.*;
 
 @RunWith(Arquillian.class)
@@ -105,7 +110,7 @@ public class SecurityManagerIT {
     @Test
     public void test010GetTenantsWithAuthenticationAndAuthorization() throws Exception {
 
-        login(null, null, null);
+        login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
         securityManager.getTenants();
     }
 
@@ -128,7 +133,7 @@ public class SecurityManagerIT {
     @Test
     public void test040CreateTenantWithAuthenticationAndAuthorization() throws Exception {
 
-        login(null, null, null);
+        login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
         TenantDto tenantDto = new TenantDto();
         tenantDto.setName(NEW_TENANT);
@@ -142,7 +147,7 @@ public class SecurityManagerIT {
     @Test
     public void test050CreateDuplicateTenant() throws Exception {
 
-        login(null, null, null);
+        login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
         TenantDto tenantDto = new TenantDto();
         tenantDto.setName(NEW_TENANT);
@@ -171,7 +176,7 @@ public class SecurityManagerIT {
     @Test
     public void test080CreateTenantAdminWithAuthenticationAndAuthorization() throws Exception {
 
-        login(null, null, null);
+        login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
         UserDto userDto = new UserDto();
         TenantDto tenantDto = new TenantDto();
@@ -184,12 +189,14 @@ public class SecurityManagerIT {
         UserDto fromManager = securityManager.createTenantAdmin(userDto);
         assertNotNull(fromManager.getId());
         assertEquals(userDto.getLoginName(), fromManager.getLoginName());
+        assertNotNull(fromManager.getGrantedRoles());
+        assertEquals(ApplicationRole.getTenantAdminRoles().size(), fromManager.getGrantedRoles().size());
     }
 
     @Test
     public void test090CreateDuplicateTenantAdmin() throws Exception {
 
-        login(null, null, null);
+        login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
         UserDto userDto = new UserDto();
         TenantDto tenantDto = new TenantDto();
@@ -206,7 +213,7 @@ public class SecurityManagerIT {
     @Test
     public void test100CreateTenantAdminWithNonExistentTenant() throws Exception {
 
-        login(null, null, null);
+        login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
         UserDto userDto = new UserDto();
         TenantDto tenantDto = new TenantDto();
@@ -245,7 +252,7 @@ public class SecurityManagerIT {
     @Test
     public void test140GetTenantAdminsWithAuthenticationAndAuthorization() throws Exception {
 
-        login(null, null, null);
+        login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
         List<UserDto> tenantAdminUsers = securityManager.getTenantsAdminUsers();
 
         assertNotNull(tenantAdminUsers);
@@ -301,7 +308,7 @@ public class SecurityManagerIT {
     @Test
     public void test190CreateTenantUserWithoutAuthorization() throws Exception {
 
-        login(null, null, null);
+        login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
         exception.expectMessage(AccessDeniedException.class.getName());
         securityManager.createTenantUser(new UserDto());
@@ -462,10 +469,79 @@ public class SecurityManagerIT {
         securityManager.deleteRole("");
     }
 
-    private void login(String tenantName, String username, String password) {
-        realmSelector.setRealm(tenantName != null ? tenantName : "Dematic");
-        loginCredential.setUserId(username != null ? username : "superuser");
-        loginCredential.setPassword(password != null ? password : "abcd1234");
+    @Test
+    public void test330GrantRevokeUserRoleWithoutAuthentication() throws Exception {
+
+        exception.expectMessage(AccessDeniedException.class.getName());
+        securityManager.grantRevokeUserRole(new UserDto());
+    }
+
+    @Test
+    public void test340GrantRevokeUserRoleWithAuthenticationAndAuthorization() throws Exception {
+
+        login(NEW_TENANT, TENANT_ADMIN_USERNAME, TENANT_ADMIN_PASSWORD);
+
+        UserDto userDto = null;
+        for (UserDto item : securityManager.getUsers()) {
+            if (item.getGrantedRoles().size() == 0) {
+                //found previously created user w/o roles
+                userDto = item;
+                break;
+            }
+        }
+        assertNotNull(userDto);
+
+        List<RoleDto> roles = securityManager.getRoles();
+
+        //simple grant
+        {
+            RoleDto roleDto = roles.stream()
+                    .filter(p -> p.getName().equals(ApplicationRole.VIEW_ORGANIZATIONS))
+                    .collect(Collectors.toList()).get(0);
+            Set<RoleDto> grantedRoles = new HashSet<>();
+            grantedRoles.add(roleDto);
+            userDto.setGrantedRoles(grantedRoles);
+
+            UserDto fromManager = securityManager.grantRevokeUserRole(userDto);
+            assertNotNull(fromManager.getId());
+            assertEquals(userDto.getId(), fromManager.getId());
+            assertNotNull(fromManager.getGrantedRoles());
+            assertEquals(1, fromManager.getGrantedRoles().size());
+            assertEquals(ApplicationRole.VIEW_ORGANIZATIONS, fromManager.getGrantedRoles().iterator().next().getName());
+
+        }
+
+        //update involving both revoke and grant
+        {
+            RoleDto roleDto = roles.stream()
+                    .filter(p -> p.getName().equals(ApplicationRole.CREATE_ORGANIZATIONS))
+                    .collect(Collectors.toList()).get(0);
+            Set<RoleDto> grantedRoles = new HashSet<>();
+            grantedRoles.add(roleDto);
+            userDto.setGrantedRoles(grantedRoles);
+
+            UserDto fromManager = securityManager.grantRevokeUserRole(userDto);
+            assertNotNull(fromManager.getId());
+            assertEquals(userDto.getId(), fromManager.getId());
+            assertNotNull(fromManager.getGrantedRoles());
+            assertEquals(1, fromManager.getGrantedRoles().size());
+            assertEquals(ApplicationRole.CREATE_ORGANIZATIONS, fromManager.getGrantedRoles().iterator().next().getName());
+        }
+    }
+
+    @Test
+    public void test360GrantRevokeUserRoleWithoutAuthorization() throws Exception {
+
+        login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
+
+        exception.expectMessage(AccessDeniedException.class.getName());
+        securityManager.grantRevokeUserRole(new UserDto());
+    }
+
+    private void login(@Nonnull String tenantName, @Nonnull String username, @Nonnull String password) {
+        realmSelector.setRealm(tenantName);
+        loginCredential.setUserId(username);
+        loginCredential.setPassword(password);
 
         identity.login();
 

@@ -1,5 +1,6 @@
 package com.dematic.labs.rest;
 
+import com.dematic.labs.business.ApplicationRole;
 import com.dematic.labs.business.SecurityManagerIT;
 import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
@@ -133,7 +134,7 @@ public class RoleResourceIT extends SecuredEndpointFixture {
         ).get(RoleDto[].class);
 
         assertNotNull(list);
-        assertEquals(3, list.length);
+        assertEquals(ApplicationRole.getTenantRoles().size() + 1, list.length);
     }
 
     @Test
