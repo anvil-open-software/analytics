@@ -1,5 +1,6 @@
 package com.dematic.labs.business;
 
+import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
 import org.picketlink.authorization.annotations.RolesAllowed;
@@ -29,6 +30,8 @@ import static org.picketlink.idm.model.basic.BasicModel.grantRole;
 @Stateless
 public class SecurityManager {
 
+    public static final String TENANT_CUSTOM_ROLE_PREFIX = "t_";
+
     @Inject
     private PartitionManager partitionManager;
 
@@ -45,13 +48,13 @@ public class SecurityManager {
                 .getPartitions(Realm.class).stream().map(Realm::getName).collect(Collectors.toList());
     }
 
-    @RolesAllowed("administerTenants")
+    @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
     public List<TenantDto> getTenants() {
         return this.partitionManager
                 .getPartitions(Realm.class).stream().map(new PartitionConverter()).collect(Collectors.toList());
     }
 
-    @RolesAllowed("administerTenants")
+    @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
     public TenantDto createTenant(@NotNull TenantDto tenantDto) {
 
         Realm partition = partitionManager.getPartition(Realm.class, tenantDto.getName());
@@ -63,22 +66,27 @@ public class SecurityManager {
             throw new IllegalArgumentException("Duplicate Tenant Name");
         }
         IdentityManager identityManager = partitionManager.createIdentityManager(partition);
-        Role role = new Role("administerUsers");
-        identityManager.add(role);
+
+        for (String roleName : ApplicationRole.getTenantRoles()) {
+            Role role = new Role(roleName);
+            identityManager.add(role);
+        }
 
         return new PartitionConverter().apply(partition);
     }
 
-    @RolesAllowed("administerTenants")
+    @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
     public void deleteTenant(String id) {
         Realm partition = partitionManager.lookupById(Realm.class, id);
 
-        if (partition != null) {
+        if (partition == null) {
+            throw new IllegalArgumentException("Unknown Tenant: " + id);
+        } else {
             partitionManager.remove(partition);
         }
     }
 
-    @RolesAllowed("administerTenants")
+    @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
     public UserDto createTenantAdmin(@NotNull UserDto userDto) {
         Realm partition = partitionManager.getPartition(Realm.class, userDto.getTenantDto().getName());
         if (partition == null) {
@@ -91,22 +99,23 @@ public class SecurityManager {
         identityManager.add(user);
         identityManager.updateCredential(user, new Password(userDto.getPassword()));
 
-        Role role = BasicModel.getRole(identityManager, "administerUsers");
+        for (String roleName : ApplicationRole.getTenantAdminRoles()) {
 
-        RelationshipManager relationshipManager = partitionManager.createRelationshipManager();
+            Role role = BasicModel.getRole(identityManager, roleName);
+            grantRole(relationshipManager, user, role);
+        }
 
-        grantRole(relationshipManager, user, role);
 
         return new UserConverter().apply(user);
     }
 
-    @RolesAllowed("administerTenants")
+    @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
     public List<UserDto> getTenantsAdminUsers() {
         List<User> tenantsAdminUsers = new ArrayList<>();
 
         for (Partition partition : partitionManager.getPartitions(Realm.class)) {
             IdentityManager identityManager = partitionManager.createIdentityManager(partition);
-            Role tenantAdminRole = BasicModel.getRole(identityManager, "administerUsers");
+            Role tenantAdminRole = BasicModel.getRole(identityManager, ApplicationRole.ADMINISTER_USERS);
             if (tenantAdminRole != null) {
                 RelationshipQuery<Grant> query = relationshipManager.createRelationshipQuery(Grant.class);
                 query.setParameter(GroupRole.ROLE, tenantAdminRole);
@@ -124,7 +133,7 @@ public class SecurityManager {
         return tenantsAdminUsers.stream().map(new UserConverter()).collect(Collectors.toList());
     }
 
-    @RolesAllowed("administerUsers")
+    @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
     public List<UserDto> getUsers() {
         IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
         //noinspection unchecked
@@ -132,7 +141,7 @@ public class SecurityManager {
         return users.stream().map(new UserConverter()).collect(Collectors.toList());
     }
 
-    @RolesAllowed("administerUsers")
+    @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
     public UserDto createTenantUser(@NotNull UserDto userDto) {
 
         User user = new User(userDto.getLoginName());
@@ -141,6 +150,50 @@ public class SecurityManager {
         identityManager.updateCredential(user, new Password(userDto.getPassword()));
 
         return new UserConverter().apply(user);
+    }
+
+    @RolesAllowed({ApplicationRole.ADMINISTER_USERS, ApplicationRole.ADMINISTER_ROLES})
+    public List<RoleDto> getRoles() {
+        IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
+        //noinspection unchecked
+        List<Role> roles = queryBuilder.createIdentityQuery(Role.class).getResultList();
+        return roles.stream().map(new RoleConverter()).collect(Collectors.toList());
+    }
+
+    @RolesAllowed(ApplicationRole.ADMINISTER_ROLES)
+    public RoleDto createRole(RoleDto userDto) {
+        if (!userDto.getName().startsWith(TENANT_CUSTOM_ROLE_PREFIX)) {
+            throw new IllegalArgumentException("Custom Tenant Role must begin with \"" + TENANT_CUSTOM_ROLE_PREFIX + "\"");
+        }
+
+        Role role = new Role(userDto.getName());
+        identityManager.add(role);
+        return new RoleConverter().apply(role);
+    }
+
+    @RolesAllowed(ApplicationRole.ADMINISTER_ROLES)
+    public void deleteRole(String id) {
+        Role role = identityManager.lookupIdentityById(Role.class, id);
+
+        if (role == null) {
+            throw new IllegalArgumentException("Unknown Role: " + id);
+        } else if (!role.getName().startsWith(TENANT_CUSTOM_ROLE_PREFIX)) {
+            throw new IllegalArgumentException("Cannot delete non Custom Tenant Role: " + role.getName());
+        } else {
+                identityManager.remove(role);
+        }
+    }
+
+    private class RoleConverter implements Function<Role, RoleDto> {
+
+        @Override
+        public RoleDto apply(Role user) {
+            RoleDto userDto = new RoleDto();
+            userDto.setId(user.getId());
+            userDto.setName(user.getName());
+
+            return userDto;
+        }
     }
 
     private class UserConverter implements Function<User, UserDto> {
