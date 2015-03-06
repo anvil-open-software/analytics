@@ -193,7 +193,7 @@ public class SecurityManager {
 
         User user = getExistingById(User.class, userDto.getId());
 
-        Set<Grant> existingGrants = new HashSet<>(getGrants(identityManager, userDto));
+        Set<Grant> existingGrants = new HashSet<>(getGrants(user));
 
         Set<Grant> requestedGrants = userDto.getGrantedRoles().stream()
                 .map(new GrantConverter(user)).collect(Collectors.toSet());
@@ -217,19 +217,7 @@ public class SecurityManager {
         return rtnValue;
     }
 
-    private List<Grant> getGrants(@Nullable IdentityManager identityManager, @Nonnull UserDto userDto) {
-        /*
-         identity manager is passed in because this is sometimes called in the context of createTenantAdmin when
-         the tenant of the user (Dematic for instance admin) is not the tenant of the user (a tenant)
-         If parameter is null, this is being called in a heterogeneous context across tenants (i.e. getTenantAdmins).
-         In that case, the converterIdentityManager must be created on the fly
-         */
-        if (identityManager == null) {
-            Realm partition = partitionManager.getPartition(Realm.class, userDto.getTenantDto().getName());
-            identityManager = partitionManager.createIdentityManager(partition);
-
-        }
-        User user = getExistingById(identityManager, User.class, userDto.getId());
+    private List<Grant> getGrants(@Nonnull User user) {
 
         RelationshipQuery<Grant> query = relationshipManager.createRelationshipQuery(Grant.class);
 
@@ -272,7 +260,7 @@ public class SecurityManager {
             userDto.setId(user.getId());
             userDto.setLoginName(user.getLoginName());
             userDto.setTenantDto(new PartitionConverter().apply(user.getPartition()));
-            userDto.setGrantedRoles(getGrantedRoles(getGrants(converterIdentityManager, userDto)));
+            userDto.setGrantedRoles(getGrantedRoles(getGrants(user)));
 
             return userDto;
         }

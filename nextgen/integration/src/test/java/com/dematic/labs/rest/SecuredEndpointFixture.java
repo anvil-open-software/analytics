@@ -30,14 +30,7 @@ public abstract class SecuredEndpointFixture {
     public static final String HOSTNAME = "localhost:8080";
     public static final String CONTEXT_ROOT = "/admin/";
 
-    protected static final String tenant = "Dematic";
-    protected static final String username = "superuser";
-    protected static final String password = "abcd1234";
-
-    protected final SignatureToken token;
-
-    public SecuredEndpointFixture() throws MalformedURLException {
-        token = getToken(tenant, username, password);
+    public SecuredEndpointFixture() {
     }
 
     public static URL getBase() {
