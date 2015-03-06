@@ -11,12 +11,12 @@ RUN mkdir -p /usr/java/default && \
 
 # pull spark's built with kinesis lib from nexus and install
 RUN curl -s -u deployment:deployment123 http://54.152.64.130:8081/nexus/content/repositories/releases/org/apache/spark/1.2.1/spark-1.2.1-hadoop2.4.tgz | tar -xz -C /usr/local/
-RUN cd /usr/local && ln -s spark-1.2.1-hadoop2.4 spark
+RUN cd /usr/local && ln -s spark-1.2.1-bin-2.4.0 spark
 ENV SPARK_HOME /usr/local/spark
 RUN mkdir $SPARK_HOME/yarn-remote-client
 ADD yarn-remote-client $SPARK_HOME/yarn-remote-client
 
-RUN $BOOTSTRAP && $HADOOP_PREFIX/bin/hadoop dfsadmin -safemode leave && $HADOOP_PREFIX/bin/hdfs dfs -put $SPARK_HOME-1.2.1/-hadoop2.4/lib /spark
+RUN $BOOTSTRAP && $HADOOP_PREFIX/bin/hadoop dfsadmin -safemode leave && $HADOOP_PREFIX/bin/hdfs dfs -put $SPARK_HOME-1.2.1-bin-2.4.0/lib /spark
 
 ENV YARN_CONF_DIR $HADOOP_PREFIX/etc/hadoop
 ENV SPARK_JAR hdfs:///spark/spark-assembly-1.2.1-hadoop2.4.0.jar
