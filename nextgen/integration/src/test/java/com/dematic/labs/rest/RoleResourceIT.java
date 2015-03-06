@@ -1,6 +1,8 @@
 package com.dematic.labs.rest;
 
+import com.dematic.labs.business.ApplicationRole;
 import com.dematic.labs.business.SecurityManagerIT;
+import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
@@ -29,11 +31,11 @@ import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_TENANT_NA
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class UserResourceIT extends SecuredEndpointFixture {
+public class RoleResourceIT extends SecuredEndpointFixture {
 
-    private static String uuid;
+    private static String uuid, roleUuid;
 
-    public UserResourceIT() throws MalformedURLException {
+    public RoleResourceIT() throws MalformedURLException {
     }
 
     @BeforeClass
@@ -95,47 +97,66 @@ public class UserResourceIT extends SecuredEndpointFixture {
                 SecurityManagerIT.TENANT_ADMIN_USERNAME, SecurityManagerIT.TENANT_ADMIN_PASSWORD);
 
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/user").toExternalForm()));
+        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/role").toExternalForm()));
 
-        UserDto userDto = new UserDto();
-        userDto.setLoginName(SecurityManagerIT.TENANT_USER_USERNAME);
-        userDto.setPassword(SecurityManagerIT.TENANT_USER_PASSWORD);
-        assertNull(userDto.getId());
+        RoleDto roleDto = new RoleDto();
+        roleDto.setName(SecurityManagerIT.CUSTOM_TENANT_ROLE);
+        assertNull(roleDto.getId());
 
         Response response = signRequest(token, target.request()
                         .accept(MediaType.APPLICATION_JSON_TYPE)
                         .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
                 HttpMethod.POST, MediaType.APPLICATION_JSON
-        ).post(Entity.entity(userDto, MediaType.APPLICATION_JSON_TYPE));
+        ).post(Entity.entity(roleDto, MediaType.APPLICATION_JSON_TYPE));
 
         assertNotNull(response);
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
-        UserDto fromServer = response.readEntity(UserDto.class);
+        RoleDto fromServer = response.readEntity(RoleDto.class);
 
         assertNotNull(fromServer);
         assertNotNull(fromServer.getId());
-        assertEquals(SecurityManagerIT.TENANT_USER_USERNAME, fromServer.getLoginName());
+        roleUuid = fromServer.getId();
+        assertEquals(SecurityManagerIT.CUSTOM_TENANT_ROLE, fromServer.getName());
 
     }
 
     @Test
-    public void test03GetList() throws Exception {
+    public void test02GetList() throws Exception {
 
         SignatureToken token = getToken(SecurityManagerIT.NEW_TENANT,
                 SecurityManagerIT.TENANT_ADMIN_USERNAME, SecurityManagerIT.TENANT_ADMIN_PASSWORD);
 
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/user").toExternalForm()));
+        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/role").toExternalForm()));
 
-        UserDto[] list = signRequest(token, target
+        RoleDto[] list = signRequest(token, target
                         .request(MediaType.APPLICATION_JSON)
                         .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
                 HttpMethod.GET, null
-        ).get(UserDto[].class);
+        ).get(RoleDto[].class);
 
         assertNotNull(list);
-        assertEquals(2, list.length);
+        assertEquals(ApplicationRole.getTenantRoles().size() + 1, list.length);
+    }
+
+    @Test
+    public void test03Delete() throws Exception {
+
+        SignatureToken token = getToken(SecurityManagerIT.NEW_TENANT,
+                SecurityManagerIT.TENANT_ADMIN_USERNAME, SecurityManagerIT.TENANT_ADMIN_PASSWORD);
+
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/role/" + roleUuid).toExternalForm()));
+
+        Response response = signRequest(token, target
+                        .request(MediaType.APPLICATION_JSON)
+                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                HttpMethod.DELETE, null
+        ).delete();
+
+        assertNotNull(response);
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
     }
 
     @AfterClass
