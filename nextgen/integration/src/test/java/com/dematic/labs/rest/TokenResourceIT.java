@@ -1,5 +1,6 @@
 package com.dematic.labs.rest;
 
+import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.google.common.base.Strings;
 import org.junit.FixMethodOrder;
@@ -9,8 +10,15 @@ import org.junit.rules.ExpectedException;
 import org.junit.runners.MethodSorters;
 
 import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 
 import static org.junit.Assert.*;
 
@@ -71,6 +79,23 @@ public class TokenResourceIT extends SecuredEndpointFixture {
 
         exception.expect(NotAuthorizedException.class);
         getToken(tenant, username, password);
+    }
+
+    @Test
+    public void test5ModifiedBasicAuthWrongUri() throws IOException {
+
+        String tenant = "Dematic";
+        String username = "superuser";
+        String password = "abcd1234";
+
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/role").toExternalForm()));
+        Response response = target.request()
+                .accept(MediaType.APPLICATION_JSON_TYPE)
+                .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
+                        generateBasicAuthHeaderValue(tenant, username, password))
+                .get();
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
     }
 
 }
