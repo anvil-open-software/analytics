@@ -22,11 +22,15 @@ import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 
+import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_ADMIN_PASSWORD;
+import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_ADMIN_USERNAME;
+import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_TENANT_NAME;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TenantAdminUserResourceIT extends SecuredEndpointFixture {
 
+    private static SignatureToken token;
     private static String uuid;
 
     public TenantAdminUserResourceIT() throws MalformedURLException {
@@ -35,7 +39,7 @@ public class TenantAdminUserResourceIT extends SecuredEndpointFixture {
     @BeforeClass
     public static void before() throws MalformedURLException {
 
-        SignatureToken token = getToken(tenant, username, password);
+        token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
@@ -144,8 +148,6 @@ public class TenantAdminUserResourceIT extends SecuredEndpointFixture {
 
     @AfterClass
     public static void after() throws MalformedURLException {
-
-        SignatureToken token = getToken(tenant, username, password);
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant/" + uuid).toExternalForm()));

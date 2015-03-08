@@ -41,6 +41,13 @@ public class UserResource {
                 .entity(returnedTenantDto).build();
     }
 
-
+    @PUT
+    @Path("{id}/grant")
+    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @RolesAllowed("administerUsers")
+    public Response grant(@PathParam("id") String id, UserDto userDto) {
+        return Response.ok(securityManager.grantRevokeUserRole(userDto)).build();
+    }
 
 }

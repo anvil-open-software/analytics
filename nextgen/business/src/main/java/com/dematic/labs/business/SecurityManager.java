@@ -1,25 +1,28 @@
 package com.dematic.labs.business;
 
+import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
+import com.google.common.collect.Sets;
 import org.picketlink.authorization.annotations.RolesAllowed;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.RelationshipManager;
 import org.picketlink.idm.credential.Password;
+import org.picketlink.idm.model.IdentityType;
 import org.picketlink.idm.model.Partition;
 import org.picketlink.idm.model.basic.*;
 import org.picketlink.idm.query.IdentityQueryBuilder;
 import org.picketlink.idm.query.RelationshipQuery;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.ejb.Stateless;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -28,6 +31,8 @@ import static org.picketlink.idm.model.basic.BasicModel.grantRole;
 @SuppressWarnings("UnusedDeclaration")
 @Stateless
 public class SecurityManager {
+
+    public static final String TENANT_CUSTOM_ROLE_PREFIX = "t_";
 
     @Inject
     private PartitionManager partitionManager;
@@ -45,13 +50,13 @@ public class SecurityManager {
                 .getPartitions(Realm.class).stream().map(Realm::getName).collect(Collectors.toList());
     }
 
-    @RolesAllowed("administerTenants")
+    @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
     public List<TenantDto> getTenants() {
         return this.partitionManager
                 .getPartitions(Realm.class).stream().map(new PartitionConverter()).collect(Collectors.toList());
     }
 
-    @RolesAllowed("administerTenants")
+    @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
     public TenantDto createTenant(@NotNull TenantDto tenantDto) {
 
         Realm partition = partitionManager.getPartition(Realm.class, tenantDto.getName());
@@ -63,22 +68,27 @@ public class SecurityManager {
             throw new IllegalArgumentException("Duplicate Tenant Name");
         }
         IdentityManager identityManager = partitionManager.createIdentityManager(partition);
-        Role role = new Role("administerUsers");
-        identityManager.add(role);
+
+        for (String roleName : ApplicationRole.getTenantRoles()) {
+            Role role = new Role(roleName);
+            identityManager.add(role);
+        }
 
         return new PartitionConverter().apply(partition);
     }
 
-    @RolesAllowed("administerTenants")
+    @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
     public void deleteTenant(String id) {
         Realm partition = partitionManager.lookupById(Realm.class, id);
 
-        if (partition != null) {
+        if (partition == null) {
+            throw new IllegalArgumentException("Unknown Tenant: " + id);
+        } else {
             partitionManager.remove(partition);
         }
     }
 
-    @RolesAllowed("administerTenants")
+    @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
     public UserDto createTenantAdmin(@NotNull UserDto userDto) {
         Realm partition = partitionManager.getPartition(Realm.class, userDto.getTenantDto().getName());
         if (partition == null) {
@@ -91,22 +101,23 @@ public class SecurityManager {
         identityManager.add(user);
         identityManager.updateCredential(user, new Password(userDto.getPassword()));
 
-        Role role = BasicModel.getRole(identityManager, "administerUsers");
+        for (String roleName : ApplicationRole.getTenantAdminRoles()) {
 
-        RelationshipManager relationshipManager = partitionManager.createRelationshipManager();
+            Role role = BasicModel.getRole(identityManager, roleName);
+            grantRole(relationshipManager, user, role);
+        }
 
-        grantRole(relationshipManager, user, role);
 
-        return new UserConverter().apply(user);
+        return new UserConverter(identityManager).apply(user);
     }
 
-    @RolesAllowed("administerTenants")
+    @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
     public List<UserDto> getTenantsAdminUsers() {
         List<User> tenantsAdminUsers = new ArrayList<>();
 
         for (Partition partition : partitionManager.getPartitions(Realm.class)) {
             IdentityManager identityManager = partitionManager.createIdentityManager(partition);
-            Role tenantAdminRole = BasicModel.getRole(identityManager, "administerUsers");
+            Role tenantAdminRole = BasicModel.getRole(identityManager, ApplicationRole.ADMINISTER_USERS);
             if (tenantAdminRole != null) {
                 RelationshipQuery<Grant> query = relationshipManager.createRelationshipQuery(Grant.class);
                 query.setParameter(GroupRole.ROLE, tenantAdminRole);
@@ -121,10 +132,10 @@ public class SecurityManager {
             }
 
         }
-        return tenantsAdminUsers.stream().map(new UserConverter()).collect(Collectors.toList());
+        return tenantsAdminUsers.stream().map(new UserConverter(null)).collect(Collectors.toList());
     }
 
-    @RolesAllowed("administerUsers")
+    @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
     public List<UserDto> getUsers() {
         IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
         //noinspection unchecked
@@ -132,7 +143,11 @@ public class SecurityManager {
         return users.stream().map(new UserConverter()).collect(Collectors.toList());
     }
 
-    @RolesAllowed("administerUsers")
+    public UserDto getUser(UserDto userDto) {
+        return new UserConverter().apply(getExistingById(User.class, userDto.getId()));
+    }
+
+    @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
     public UserDto createTenantUser(@NotNull UserDto userDto) {
 
         User user = new User(userDto.getLoginName());
@@ -143,7 +158,101 @@ public class SecurityManager {
         return new UserConverter().apply(user);
     }
 
+    @RolesAllowed({ApplicationRole.ADMINISTER_USERS, ApplicationRole.ADMINISTER_ROLES})
+    public List<RoleDto> getRoles() {
+        IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
+        //noinspection unchecked
+        List<Role> roles = queryBuilder.createIdentityQuery(Role.class).getResultList();
+        return roles.stream().map(new RoleConverter()).collect(Collectors.toList());
+    }
+
+    @RolesAllowed(ApplicationRole.ADMINISTER_ROLES)
+    public RoleDto createRole(RoleDto userDto) {
+        if (!userDto.getName().startsWith(TENANT_CUSTOM_ROLE_PREFIX)) {
+            throw new IllegalArgumentException("Custom Tenant Role must begin with \"" + TENANT_CUSTOM_ROLE_PREFIX + "\"");
+        }
+
+        Role role = new Role(userDto.getName());
+        identityManager.add(role);
+        return new RoleConverter().apply(role);
+    }
+
+    @RolesAllowed(ApplicationRole.ADMINISTER_ROLES)
+    public void deleteRole(String id) {
+        Role role = getExistingById(Role.class, id);
+
+        if (!role.getName().startsWith(TENANT_CUSTOM_ROLE_PREFIX)) {
+            throw new IllegalArgumentException("Cannot delete non Custom Tenant Role: " + role.getName());
+        } else {
+                identityManager.remove(role);
+        }
+    }
+
+    @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
+    public UserDto grantRevokeUserRole(@Nonnull UserDto userDto) {
+
+        User user = getExistingById(User.class, userDto.getId());
+
+        Set<Grant> existingGrants = new HashSet<>(getGrants(user));
+
+        Set<Grant> requestedGrants = userDto.getGrantedRoles().stream()
+                .map(new GrantConverter(user)).collect(Collectors.toSet());
+
+        Sets.difference(existingGrants, requestedGrants).forEach(relationshipManager::remove);
+
+        Sets.difference(requestedGrants, existingGrants).forEach(relationshipManager::add);
+
+        return new UserConverter().apply(user);
+    }
+
+    private <T extends IdentityType> T getExistingById(Class<T> clazz, String id) {
+        return getExistingById(identityManager, clazz, id);
+    }
+
+    private <T extends IdentityType> T getExistingById(@Nonnull IdentityManager identityManager, Class<T> clazz, String id) {
+        T rtnValue = identityManager.lookupIdentityById(clazz, id);
+        if (rtnValue == null) {
+            throw new IllegalArgumentException("Unknown " + clazz.getSimpleName() + ": " + id);
+        }
+        return rtnValue;
+    }
+
+    private List<Grant> getGrants(@Nonnull User user) {
+
+        RelationshipQuery<Grant> query = relationshipManager.createRelationshipQuery(Grant.class);
+
+        query.setParameter(Grant.ASSIGNEE, user);
+        //noinspection unchecked
+        return query.getResultList();
+    }
+
+    private Set<RoleDto> getGrantedRoles(List<Grant> grants) {
+        return grants.stream().map(Grant::getRole).map(new RoleConverter()).collect(Collectors.toSet());
+    }
+
+    private class RoleConverter implements Function<Role, RoleDto> {
+
+        @Override
+        public RoleDto apply(Role user) {
+            RoleDto userDto = new RoleDto();
+            userDto.setId(user.getId());
+            userDto.setName(user.getName());
+
+            return userDto;
+        }
+    }
+
     private class UserConverter implements Function<User, UserDto> {
+
+        private final IdentityManager converterIdentityManager;
+
+        private UserConverter() {
+            this.converterIdentityManager = identityManager;
+        }
+
+        private UserConverter(@Nullable IdentityManager identityManager) {
+            this.converterIdentityManager = identityManager;
+        }
 
         @Override
         public UserDto apply(User user) {
@@ -151,6 +260,7 @@ public class SecurityManager {
             userDto.setId(user.getId());
             userDto.setLoginName(user.getLoginName());
             userDto.setTenantDto(new PartitionConverter().apply(user.getPartition()));
+            userDto.setGrantedRoles(getGrantedRoles(getGrants(user)));
 
             return userDto;
         }
@@ -164,6 +274,20 @@ public class SecurityManager {
             rtnValue.setName(partition.getName());
 
             return rtnValue;
+        }
+    }
+
+    private class GrantConverter implements Function<RoleDto, Grant> {
+
+        private final User user;
+        public GrantConverter(User user) {
+            this.user = user;
+        }
+
+        @Override
+        public Grant apply(RoleDto roleDto) {
+            Role role = getExistingById(Role.class, roleDto.getId());
+            return new Grant(user, role);
         }
     }
 }
