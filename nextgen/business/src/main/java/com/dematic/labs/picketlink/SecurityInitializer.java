@@ -16,6 +16,7 @@
  **/
 package com.dematic.labs.picketlink;
 
+import com.dematic.labs.business.ApplicationRole;
 import org.picketlink.event.PartitionManagerCreateEvent;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
@@ -36,6 +37,10 @@ import static org.picketlink.idm.model.basic.BasicModel.grantRole;
 @Startup
 public class SecurityInitializer {
 
+    public static final String INSTANCE_TENANT_NAME = "Dematic";
+    public static final String INSTANCE_ADMIN_USERNAME = "superuser";
+    public static final String INSTANCE_ADMIN_PASSWORD = "abcd1234";
+
     /**
      * <p>Creates some default users for each realm/company.</p>
      */
@@ -44,7 +49,7 @@ public class SecurityInitializer {
 
         partitionManager.add(new Realm(Realm.DEFAULT_REALM));
 
-        User superUser = createUserForRealm(partitionManager, "Dematic", "superuser", "abcd1234", "administerTenants");
+        User superUser = createUserForRealm(partitionManager, INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD, ApplicationRole.ADMINISTER_TENANTS);
         createUserForRealm(partitionManager, "Safeway", "janeAdmin", "abcd1234", "tenantAdmin");
         createUserForRealm(partitionManager, "Safeway", "joeUser", "abcd1234", "user");
     }

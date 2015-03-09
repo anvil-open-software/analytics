@@ -20,6 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 
+import static com.dematic.labs.picketlink.SecurityInitializer.*;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -34,14 +35,10 @@ public class TokenResourceIT extends SecuredEndpointFixture {
     @Test
     public void test1ModifiedBasicAuth() throws IOException {
 
-        String tenant = "Dematic";
-        String username = "superuser";
-        String password = "abcd1234";
-
-        SignatureToken token = getToken(tenant, username, password);
+        SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
         assertNotNull(token);
-        assertEquals(token.getSubject(), username);
+        assertEquals(INSTANCE_ADMIN_USERNAME, token.getSubject());
 
         String signatureKey = token.getSignatureKey();
 
@@ -51,34 +48,22 @@ public class TokenResourceIT extends SecuredEndpointFixture {
     @Test
     public void test2BadTenant() throws IOException {
 
-        String tenant = "Bad";
-        String username = "superuser";
-        String password = "abcd1234";
-
         exception.expect(NotAuthorizedException.class);
-        getToken(tenant, username, password);
+        getToken("Bad", INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
     }
 
     @Test
     public void test3BadUsername() throws IOException {
 
-        String tenant = "Dematic";
-        String username = "Bad";
-        String password = "abcd1234";
-
         exception.expect(NotAuthorizedException.class);
-        getToken(tenant, username, password);
+        getToken(INSTANCE_TENANT_NAME, "Bad", INSTANCE_ADMIN_PASSWORD);
     }
 
     @Test
     public void test4BadPassword() throws IOException {
 
-        String tenant = "Dematic";
-        String username = "superuser";
-        String password = "Bad";
-
         exception.expect(NotAuthorizedException.class);
-        getToken(tenant, username, password);
+        getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, "Bad");
     }
 
     @Test
