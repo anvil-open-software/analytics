@@ -12,21 +12,6 @@ angular.module("app").config(function($routeProvider, $locationProvider) {
     controller: 'HomeController'
   });
 
-  $routeProvider.when('/$resource/list-of-books', {
-    templateUrl: 'books_resource.html',
-    controller: 'BooksResourceController'
-  });
-
-  $routeProvider.when('/$http/list-of-books', {
-    templateUrl: 'books_http.html',
-    controller: 'BooksHttpController',
-    resolve: {
-      books: function(BookService) {
-        return BookService.getBooks();
-      }
-    }
-  });
-
   $routeProvider.otherwise({ redirectTo: '/login' });
 
 });

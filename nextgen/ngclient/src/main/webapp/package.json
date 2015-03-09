@@ -1,11 +1,11 @@
 {
-  "name": "lineman-angular-template",
-  "title": "An HTML/JS/CSS app using Angular.JS",
+  "name": "ngclient",
+  "title": "The DLABS Angular-based UI",
   "version": "0.0.1",
   "private": true,
   "author": {
-    "name": "John Doe",
-    "company": "ACME, Inc."
+    "name": "Rodrigo Silveira",
+    "company": "DLABS"
   },
   "devDependencies": {
     "coffee-script": "^1.6.3",
