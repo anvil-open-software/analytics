@@ -69,16 +69,12 @@ public class TokenResourceIT extends SecuredEndpointFixture {
     @Test
     public void test5ModifiedBasicAuthWrongUri() throws IOException {
 
-        String tenant = "Dematic";
-        String username = "superuser";
-        String password = "abcd1234";
-
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/role").toExternalForm()));
         Response response = target.request()
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
-                        generateBasicAuthHeaderValue(tenant, username, password))
+                        generateBasicAuthHeaderValue(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD))
                 .get();
         assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
     }
