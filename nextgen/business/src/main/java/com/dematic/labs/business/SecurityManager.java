@@ -16,7 +16,6 @@ import org.picketlink.idm.query.IdentityQueryBuilder;
 import org.picketlink.idm.query.RelationshipQuery;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.ejb.Stateless;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
@@ -28,20 +27,19 @@ import java.util.stream.Collectors;
 
 import static org.picketlink.idm.model.basic.BasicModel.grantRole;
 
-@SuppressWarnings("UnusedDeclaration")
 @Stateless
 public class SecurityManager {
 
     public static final String TENANT_CUSTOM_ROLE_PREFIX = "t_";
 
     @Inject
-    private PartitionManager partitionManager;
+    protected PartitionManager partitionManager;
 
     @Inject
-    private RelationshipManager relationshipManager;
+    protected RelationshipManager relationshipManager;
 
     @Inject
-    private IdentityManager identityManager;
+    protected IdentityManager identityManager;
 
     @Produces
     @Named("supportedRealms")
@@ -108,7 +106,7 @@ public class SecurityManager {
         }
 
 
-        return new UserConverter(identityManager).apply(user);
+        return new UserConverter().apply(user);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
@@ -132,7 +130,7 @@ public class SecurityManager {
             }
 
         }
-        return tenantsAdminUsers.stream().map(new UserConverter(null)).collect(Collectors.toList());
+        return tenantsAdminUsers.stream().map(new UserConverter()).collect(Collectors.toList());
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
@@ -141,10 +139,6 @@ public class SecurityManager {
         //noinspection unchecked
         Collection<User> users = queryBuilder.createIdentityQuery(User.class).getResultList();
         return users.stream().map(new UserConverter()).collect(Collectors.toList());
-    }
-
-    public UserDto getUser(UserDto userDto) {
-        return new UserConverter().apply(getExistingById(User.class, userDto.getId()));
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
@@ -243,16 +237,6 @@ public class SecurityManager {
     }
 
     private class UserConverter implements Function<User, UserDto> {
-
-        private final IdentityManager converterIdentityManager;
-
-        private UserConverter() {
-            this.converterIdentityManager = identityManager;
-        }
-
-        private UserConverter(@Nullable IdentityManager identityManager) {
-            this.converterIdentityManager = identityManager;
-        }
 
         @Override
         public UserDto apply(User user) {

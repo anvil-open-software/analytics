@@ -1,6 +1,7 @@
 package com.dematic.labs.rest;
 
 import com.dematic.labs.business.ApplicationRole;
+import com.dematic.labs.business.dto.OrganizationDto;
 import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
@@ -24,7 +25,6 @@ import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,18 +34,18 @@ import static com.dematic.labs.picketlink.SecurityInitializer.*;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class UserRoleGrantResourceIT extends SecuredEndpointFixture {
+public class OrganizationResourceIT extends SecuredEndpointFixture {
 
     private static String tenantUuid;
-    private static List<RoleDto> roles;
-    private static UserDto tenantUserDto;
 
-    public UserRoleGrantResourceIT() throws MalformedURLException {
+    public OrganizationResourceIT() throws MalformedURLException {
     }
 
     @BeforeClass
     public static void before() throws MalformedURLException {
 
+        List<RoleDto> roles;
+        UserDto tenantUserDto;
         {
             SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
@@ -94,7 +94,6 @@ public class UserRoleGrantResourceIT extends SecuredEndpointFixture {
                 assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
 
             }
-
         }
 
         {
@@ -128,7 +127,6 @@ public class UserRoleGrantResourceIT extends SecuredEndpointFixture {
 
             //get roles
             {
-
                 Client client = ClientBuilder.newClient();
                 WebTarget target = client.target(URI.create(new URL(getBase(), "resources/role").toExternalForm()));
 
@@ -141,44 +139,92 @@ public class UserRoleGrantResourceIT extends SecuredEndpointFixture {
                 assertNotNull(roles);
                 assertEquals(ApplicationRole.getTenantRoles().size(), roles.size());
             }
+
+            //grant roles
+            {
+                Client client = ClientBuilder.newClient();
+                WebTarget target = client.target(
+                        URI.create(
+                                new URL(getBase(), "resources/user/" + tenantUserDto.getId() + "/grant").toExternalForm()));
+
+                assertEquals(0, tenantUserDto.getGrantedRoles().size());
+
+                Set<RoleDto> grantedRoles = roles.stream()
+                        .filter(p -> p.getName().equals(ApplicationRole.VIEW_ORGANIZATIONS)
+                                || p.getName().equals(ApplicationRole.CREATE_ORGANIZATIONS))
+                        .collect(Collectors.toSet());
+                tenantUserDto.setGrantedRoles(grantedRoles);
+
+                Response response = signRequest(token, target.request()
+                                .accept(MediaType.APPLICATION_JSON_TYPE)
+                                .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                        HttpMethod.PUT, MediaType.APPLICATION_JSON
+                ).put(Entity.entity(tenantUserDto, MediaType.APPLICATION_JSON_TYPE));
+
+                assertNotNull(response);
+                assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            }
         }
     }
 
     @Test
-    public void test010Grant() throws MalformedURLException {
+    public void test2PostViaDto() throws MalformedURLException {
 
-        SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
+        String uuid;
+
+        SignatureToken token = getToken(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
+        {
+            Client client = ClientBuilder.newClient();
+            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/principal").toExternalForm()));
+
+            OrganizationDto organizationDto = new OrganizationDto();
+            organizationDto.setName("Fred");
+
+            Response response = signRequest(token, target.request()
+                            .accept(MediaType.APPLICATION_JSON_TYPE)
+                            .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                    HttpMethod.POST, MediaType.APPLICATION_XML
+                    ).post(Entity.entity(organizationDto, MediaType.APPLICATION_XML_TYPE));
+
+            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+
+            String location = response.getLocation().toString();
+            String[] locationElements = location.split("/");
+            uuid = locationElements[locationElements.length-1];
+        }
+
+        {
+            Client client = ClientBuilder.newClient();
+            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/principal").toExternalForm()));
+            target.register(OrganizationDto.class);
+
+            OrganizationDto p = signRequest(token, target
+                            .path("{id}")
+                            .resolveTemplate("id", uuid)
+                            .request(MediaType.APPLICATION_XML)
+                            .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                    HttpMethod.GET,
+                    null).get(OrganizationDto.class);
+
+            assertNotNull(p);
+        }
+
+    }
+
+    @Test
+    public void test3GetList() throws Exception {
+        SignatureToken token = getToken(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
 
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(
-                URI.create(
-                        new URL(getBase(), "resources/user/" + tenantUserDto.getId() + "/grant").toExternalForm()));
+        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/principal").toExternalForm()));
 
-        assertEquals(0, tenantUserDto.getGrantedRoles().size());
-
-        RoleDto roleDto = roles.stream()
-                .filter(p -> p.getName().equals(ApplicationRole.VIEW_ORGANIZATIONS))
-                .collect(Collectors.toList()).get(0);
-        Set<RoleDto> grantedRoles = new HashSet<>();
-        grantedRoles.add(roleDto);
-        tenantUserDto.setGrantedRoles(grantedRoles);
-
-        Response response = signRequest(token, target.request()
-                        .accept(MediaType.APPLICATION_JSON_TYPE)
+        OrganizationDto[] list = signRequest(token, target
+                        .request(MediaType.APPLICATION_XML)
                         .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                HttpMethod.PUT, MediaType.APPLICATION_JSON
-        ).put(Entity.entity(tenantUserDto, MediaType.APPLICATION_JSON_TYPE));
+                HttpMethod.GET, null
+                ).get(OrganizationDto[].class);
 
-        assertNotNull(response);
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-
-        UserDto fromServer = response.readEntity(UserDto.class);
-
-        assertNotNull(fromServer);
-        assertNotNull(fromServer.getGrantedRoles());
-        assertEquals(1, fromServer.getGrantedRoles().size());
-        assertEquals(ApplicationRole.VIEW_ORGANIZATIONS, fromServer.getGrantedRoles().iterator().next().getName());
-
+        assertEquals(1, list.length);
     }
 
     @AfterClass

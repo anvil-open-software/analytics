@@ -1,13 +1,16 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.business.SecurityManagerIT;
+import com.dematic.labs.business.SecurityFixture;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.dto.RestError;
 import org.hamcrest.core.StringStartsWith;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
+import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import javax.ws.rs.HttpMethod;
@@ -22,9 +25,9 @@ import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 
-import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_ADMIN_PASSWORD;
-import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_ADMIN_USERNAME;
-import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_TENANT_NAME;
+import static com.dematic.labs.business.SecurityFixture.TENANT_A;
+import static com.dematic.labs.business.SecurityFixture.TENANT_A_ADMIN_USERNAME;
+import static com.dematic.labs.picketlink.SecurityInitializer.*;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -45,7 +48,7 @@ public class TenantAdminUserResourceIT extends SecuredEndpointFixture {
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
 
         TenantDto tenantDto = new TenantDto();
-        tenantDto.setName(SecurityManagerIT.NEW_TENANT);
+        tenantDto.setName(TENANT_A);
 
         Response response = signRequest(token, target.request()
                         .accept(MediaType.APPLICATION_JSON_TYPE)
@@ -70,10 +73,10 @@ public class TenantAdminUserResourceIT extends SecuredEndpointFixture {
 
             UserDto userDto = new UserDto();
             TenantDto tenantDto = new TenantDto();
-            tenantDto.setName(SecurityManagerIT.NEW_TENANT);
+            tenantDto.setName(TENANT_A);
             userDto.setTenantDto(tenantDto);
-            userDto.setLoginName(SecurityManagerIT.TENANT_ADMIN_USERNAME);
-            userDto.setPassword(SecurityManagerIT.TENANT_ADMIN_PASSWORD);
+            userDto.setLoginName(TENANT_A_ADMIN_USERNAME);
+            userDto.setPassword(SecurityFixture.TENANT_A_ADMIN_PASSWORD);
             assertNull(userDto.getId());
 
             Response response = signRequest(token, target.request()
@@ -108,10 +111,10 @@ public class TenantAdminUserResourceIT extends SecuredEndpointFixture {
 
             UserDto userDto = new UserDto();
             TenantDto tenantDto = new TenantDto();
-            tenantDto.setName(SecurityManagerIT.NEW_TENANT);
+            tenantDto.setName(TENANT_A);
             userDto.setTenantDto(tenantDto);
-            userDto.setLoginName(SecurityManagerIT.TENANT_ADMIN_USERNAME);
-            userDto.setPassword(SecurityManagerIT.TENANT_ADMIN_PASSWORD);
+            userDto.setLoginName(TENANT_A_ADMIN_USERNAME);
+            userDto.setPassword(SecurityFixture.TENANT_A_ADMIN_PASSWORD);
             assertNull(userDto.getId());
 
             Response response = signRequest(token, target.request()
@@ -153,7 +156,7 @@ public class TenantAdminUserResourceIT extends SecuredEndpointFixture {
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant/" + uuid).toExternalForm()));
 
         TenantDto tenantDto = new TenantDto();
-        tenantDto.setName(SecurityManagerIT.NEW_TENANT);
+        tenantDto.setName(TENANT_A);
 
         signRequest(token, target.request()
                         .accept(MediaType.APPLICATION_JSON_TYPE)

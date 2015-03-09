@@ -4,13 +4,13 @@ import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
-public class PrincipalDto {
+public class OrganizationDto {
 
     private String id;
 
-    private String username;
+    private String name;
 
-    public PrincipalDto() {
+    public OrganizationDto() {
 
     }
 
@@ -18,15 +18,15 @@ public class PrincipalDto {
         return id;
     }
 
-    public String getUsername() {
-        return username;
+    public String getName() {
+        return name;
     }
 
     public void setId(@NotNull String id) {
         this.id = id;
     }
-    public void setUsername(@NotNull String username) {
-        this.username = username;
+    public void setName(@NotNull String name) {
+        this.name = name;
     }
 
 }

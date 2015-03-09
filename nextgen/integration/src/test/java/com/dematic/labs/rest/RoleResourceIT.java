@@ -25,9 +25,8 @@ import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 
-import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_ADMIN_PASSWORD;
-import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_ADMIN_USERNAME;
-import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_TENANT_NAME;
+import static com.dematic.labs.business.SecurityFixture.*;
+import static com.dematic.labs.picketlink.SecurityInitializer.*;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -49,7 +48,7 @@ public class RoleResourceIT extends SecuredEndpointFixture {
             WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
 
             TenantDto tenantDto = new TenantDto();
-            tenantDto.setName(SecurityManagerIT.NEW_TENANT);
+            tenantDto.setName(TENANT_A);
 
             Response response = signRequest(token, target.request()
                             .accept(MediaType.APPLICATION_JSON_TYPE)
@@ -72,10 +71,10 @@ public class RoleResourceIT extends SecuredEndpointFixture {
 
             UserDto userDto = new UserDto();
             TenantDto tenantDto = new TenantDto();
-            tenantDto.setName(SecurityManagerIT.NEW_TENANT);
+            tenantDto.setName(TENANT_A);
             userDto.setTenantDto(tenantDto);
-            userDto.setLoginName(SecurityManagerIT.TENANT_ADMIN_USERNAME);
-            userDto.setPassword(SecurityManagerIT.TENANT_ADMIN_PASSWORD);
+            userDto.setLoginName(TENANT_A_ADMIN_USERNAME);
+            userDto.setPassword(TENANT_A_ADMIN_PASSWORD);
             assertNull(userDto.getId());
 
             Response response = signRequest(token, target.request()
@@ -93,8 +92,7 @@ public class RoleResourceIT extends SecuredEndpointFixture {
     @Test
     public void test01Create() throws MalformedURLException {
 
-        SignatureToken token = getToken(SecurityManagerIT.NEW_TENANT,
-                SecurityManagerIT.TENANT_ADMIN_USERNAME, SecurityManagerIT.TENANT_ADMIN_PASSWORD);
+        SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/role").toExternalForm()));
@@ -124,8 +122,7 @@ public class RoleResourceIT extends SecuredEndpointFixture {
     @Test
     public void test02GetList() throws Exception {
 
-        SignatureToken token = getToken(SecurityManagerIT.NEW_TENANT,
-                SecurityManagerIT.TENANT_ADMIN_USERNAME, SecurityManagerIT.TENANT_ADMIN_PASSWORD);
+        SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/role").toExternalForm()));
@@ -143,8 +140,7 @@ public class RoleResourceIT extends SecuredEndpointFixture {
     @Test
     public void test03Delete() throws Exception {
 
-        SignatureToken token = getToken(SecurityManagerIT.NEW_TENANT,
-                SecurityManagerIT.TENANT_ADMIN_USERNAME, SecurityManagerIT.TENANT_ADMIN_PASSWORD);
+        SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/role/" + roleUuid).toExternalForm()));
@@ -168,7 +164,7 @@ public class RoleResourceIT extends SecuredEndpointFixture {
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant/" + uuid).toExternalForm()));
 
         TenantDto tenantDto = new TenantDto();
-        tenantDto.setName(SecurityManagerIT.NEW_TENANT);
+        tenantDto.setName(TENANT_A);
 
         signRequest(token, target.request()
                         .accept(MediaType.APPLICATION_JSON_TYPE)
