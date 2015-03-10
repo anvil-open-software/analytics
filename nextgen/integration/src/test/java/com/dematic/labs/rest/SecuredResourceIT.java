@@ -208,4 +208,19 @@ public class SecuredResourceIT extends SecuredEndpointFixture {
 
     }
 
+    @Test
+    public void test9TokenSignatureAuthWrongUri() throws IOException {
+
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/token").toExternalForm()));
+
+        Response response = signRequest(token, target.request()
+                        .accept(MediaType.APPLICATION_JSON_TYPE)
+                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                HttpMethod.GET,
+                null).get();
+
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+    }
+
 }

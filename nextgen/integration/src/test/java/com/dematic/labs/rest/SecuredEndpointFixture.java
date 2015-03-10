@@ -52,7 +52,7 @@ public abstract class SecuredEndpointFixture {
                 .get(SignatureToken.class);
     }
 
-    private static String generateBasicAuthHeaderValue(String tenant, String username, String password) {
+    protected static String generateBasicAuthHeaderValue(String tenant, String username, String password) {
         //TODO - add base64 encoding
         return "DLabsU " + tenant + ":" + username + ":" + password;
     }
