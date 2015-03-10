@@ -1,7 +1,7 @@
 package com.dematic.labs.business;
 
 import com.dematic.labs.business.dto.OrganizationDto;
-import com.dematic.labs.persistence.CrudService;
+import com.dematic.labs.persistence.entities.CrudService;
 import com.dematic.labs.persistence.entities.*;
 import org.apache.deltaspike.security.api.authorization.AccessDeniedException;
 import org.jboss.arquillian.container.test.api.Deployment;

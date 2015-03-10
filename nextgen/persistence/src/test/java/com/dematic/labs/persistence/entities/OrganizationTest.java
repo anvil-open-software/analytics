@@ -1,6 +1,5 @@
 package com.dematic.labs.persistence.entities;
 
-import com.dematic.labs.persistence.CrudService;
 import com.dematic.labs.persistence.EmbeddedH2;
 import com.dematic.labs.persistence.JpaRule;
 import org.h2.jdbc.JdbcSQLException;

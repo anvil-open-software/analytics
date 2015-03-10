@@ -15,11 +15,11 @@ public class Organization extends OwnedAssetEntity {
     private String name;
 
     @SuppressWarnings("UnusedDeclaration")
-    public Organization() {
+    Organization() {
         super();
     }
 
-    public Organization(UUID tenantId) {
+    Organization(UUID tenantId) {
         super(tenantId);
     }
 
