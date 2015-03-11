@@ -10,7 +10,7 @@ import java.util.UUID;
 public abstract class OwnedAssetEntity extends IdentifiableEntity {
 
     @Column(length = 36)
-    @NotNull
+    @NotNull(message = "Tenant ID may not be null")
     private String tenantId;
 
     OwnedAssetEntity(@Nonnull UUID tenantId) {

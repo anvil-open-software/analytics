@@ -12,10 +12,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequestScoped
 @Path("user")
-public class UserResource {
+public class UserResource extends HrefResource {
 
     @EJB
     SecurityManager securityManager;
@@ -27,9 +28,9 @@ public class UserResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerUsers")
     public List<UserDto> getList() {
-        return securityManager.getUsers();
+        return securityManager.getUsers()
+                .stream().map(new HrefDecorator<>(uriInfo.getBaseUri().toString())).collect(Collectors.toList());
     }
-
 
     @POST
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
@@ -38,7 +39,7 @@ public class UserResource {
     public Response create(UserDto userDto) {
         UserDto returnedTenantDto = securityManager.createTenantUser(userDto);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(returnedTenantDto.getId()).build())
-                .entity(returnedTenantDto).build();
+                .entity(new HrefDecorator<>(uriInfo.getBaseUri().toString()).apply(returnedTenantDto)).build();
     }
 
     @PUT
@@ -47,7 +48,7 @@ public class UserResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerUsers")
     public Response grant(@PathParam("id") String id, UserDto userDto) {
-        return Response.ok(securityManager.grantRevokeUserRole(userDto)).build();
+        return Response.ok(new HrefDecorator<>(uriInfo.getBaseUri().toString()).apply(securityManager.grantRevokeUserRole(userDto))).build();
     }
 
 }

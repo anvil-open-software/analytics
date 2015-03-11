@@ -151,7 +151,8 @@ public class OrganizationResourceIT extends SecuredEndpointFixture {
 
                 Set<RoleDto> grantedRoles = roles.stream()
                         .filter(p -> p.getName().equals(ApplicationRole.VIEW_ORGANIZATIONS)
-                                || p.getName().equals(ApplicationRole.CREATE_ORGANIZATIONS))
+                                || p.getName().equals(ApplicationRole.CREATE_ORGANIZATIONS)
+                                || p.getName().equals(ApplicationRole.ADMINISTER_ORGANIZATION_BUSINESS_ROLES))
                         .collect(Collectors.toSet());
                 tenantUserDto.setGrantedRoles(grantedRoles);
 
@@ -168,14 +169,14 @@ public class OrganizationResourceIT extends SecuredEndpointFixture {
     }
 
     @Test
-    public void test2PostViaDto() throws MalformedURLException {
+    public void test020PostAndGet() throws MalformedURLException {
 
         String uuid;
 
         SignatureToken token = getToken(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
         {
             Client client = ClientBuilder.newClient();
-            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/principal").toExternalForm()));
+            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/organization").toExternalForm()));
 
             OrganizationDto organizationDto = new OrganizationDto();
             organizationDto.setName("Fred");
@@ -195,7 +196,7 @@ public class OrganizationResourceIT extends SecuredEndpointFixture {
 
         {
             Client client = ClientBuilder.newClient();
-            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/principal").toExternalForm()));
+            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/organization").toExternalForm()));
             target.register(OrganizationDto.class);
 
             OrganizationDto p = signRequest(token, target
@@ -212,11 +213,11 @@ public class OrganizationResourceIT extends SecuredEndpointFixture {
     }
 
     @Test
-    public void test3GetList() throws Exception {
+    public void test030GetList() throws Exception {
         SignatureToken token = getToken(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
 
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/principal").toExternalForm()));
+        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/organization").toExternalForm()));
 
         OrganizationDto[] list = signRequest(token, target
                         .request(MediaType.APPLICATION_XML)

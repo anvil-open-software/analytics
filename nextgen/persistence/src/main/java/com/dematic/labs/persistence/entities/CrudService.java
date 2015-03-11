@@ -66,8 +66,8 @@ public class CrudService {
         }
     }
 
-    @NotNull
-    public <T> T findExisting(UUID id, Class<T> clazz) {
+    @Nonnull
+    public <T> T findExisting(Class<T> clazz, UUID id) {
         T rtnValue = entityManager.find(clazz, id.toString());
         if (rtnValue == null) {
             throw new IllegalArgumentException("Entity not found with id: " + id);

@@ -1,9 +1,8 @@
 package com.dematic.labs.business;
 
+import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
 import com.dematic.labs.business.dto.OrganizationDto;
-import com.dematic.labs.persistence.entities.CrudService;
-import com.dematic.labs.persistence.entities.Organization;
-import com.dematic.labs.persistence.entities.QOrganization;
+import com.dematic.labs.persistence.entities.*;
 import com.mysema.query.jpa.JPQLQuery;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
@@ -11,6 +10,7 @@ import javax.annotation.Nonnull;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
@@ -34,7 +34,7 @@ public class OrganizationManager {
     public List<OrganizationDto> getOrganizations() {
 
         QOrganization qOrganization = QOrganization.organization;
-        JPQLQuery query = crudService.createQuery(qOrganization).from();
+        JPQLQuery query = crudService.createQuery(qOrganization);
 
         return query.list(qOrganization).stream().map(new OrganizationConverter()).collect(Collectors.toList());
     }
@@ -42,16 +42,61 @@ public class OrganizationManager {
     @RolesAllowed(ApplicationRole.CREATE_ORGANIZATIONS)
     public OrganizationDto create(@NotNull OrganizationDto organizationDto) {
 
-        Organization organization = crudService.createNewOwnedAsset(Organization.class);
+        if (organizationDto.getId() != null) {
+            throw new IllegalArgumentException("Organization ID must be null when creating a new organization");
+        }
+
+        return createOrUpdate(organizationDto);
+    }
+
+    @RolesAllowed(ApplicationRole.CREATE_ORGANIZATIONS)
+    public OrganizationDto update(@NotNull OrganizationDto organizationDto) {
+
+        if (organizationDto.getId() == null) {
+            throw new IllegalArgumentException("Organization ID must not be null when updating an existing organization");
+        }
+
+        return createOrUpdate(organizationDto);
+    }
+
+    @Nonnull
+    private OrganizationDto createOrUpdate(@NotNull OrganizationDto organizationDto) {
+
+        Organization organization;
+        if (organizationDto.getId() == null) {
+            organization = crudService.createNewOwnedAsset(Organization.class);
+        } else {
+            organization = crudService.findExisting(Organization.class, UUID.fromString(organizationDto.getId()));
+        }
         organization.setName(organizationDto.getName());
-        crudService.create(organization);
+
+        if (organizationDto.getId() == null) {
+            crudService.create(organization);
+        }
 
         return new OrganizationConverter().apply(organization);
     }
 
     @RolesAllowed(ApplicationRole.VIEW_ORGANIZATIONS)
-    public OrganizationDto getOrganization(UUID uuid) {
-        Organization organization = crudService.findExisting(uuid, Organization.class);
+    public OrganizationDto getOrganization(@Nonnull UUID uuid) {
+        Organization organization = crudService.findExisting(Organization.class, uuid);
+
+        return new OrganizationConverter().apply(organization);
+    }
+
+    @RolesAllowed(ApplicationRole.ADMINISTER_ORGANIZATION_BUSINESS_ROLES)
+    public OrganizationDto grantRevokeBusinessRole(OrganizationDto organizationDto) {
+
+        if (organizationDto.getId() == null) {
+            throw new IllegalArgumentException("Organization ID must not be null when granting/revoking business roles on an existing organization");
+        }
+        Organization organization = crudService.findExisting(Organization.class, UUID.fromString(organizationDto.getId()));
+
+        new ArrayList<>(organization.getBusinessRoles().values()).stream()
+                .map(OrganizationBusinessRole::getBusinessRole).forEach(organization::removeBusinessRole);
+
+        new ArrayList<>(organizationDto.getBusinessRoles()).stream()
+                .map(new BusinessRoleDtoConverter()).forEach(organization::addBusinessRole);
 
         return new OrganizationConverter().apply(organization);
     }
@@ -63,9 +108,28 @@ public class OrganizationManager {
             OrganizationDto organizationDto = new OrganizationDto();
             organizationDto.setId(organization.getId().toString());
             organizationDto.setName(organization.getName());
+            organizationDto.setBusinessRoles(organization.getBusinessRoles().values().stream()
+                    .map(new BusinessRoleConverter()).collect(Collectors.toList()));
 
             return organizationDto;
         }
     }
 
+    private class BusinessRoleDtoConverter implements Function<OrganizationBusinessRoleDto, OrganizationBusinessRole> {
+        @Override
+        public OrganizationBusinessRole apply(OrganizationBusinessRoleDto organizationBusinessRoleDto) {
+            return new OrganizationBusinessRole(
+                    BusinessRole.valueOf(BusinessRole.class, organizationBusinessRoleDto.getBusinessRole()),
+                    organizationBusinessRoleDto.isActive());
+        }
+    }
+
+    private class BusinessRoleConverter implements Function<OrganizationBusinessRole, OrganizationBusinessRoleDto> {
+        @Override
+        public OrganizationBusinessRoleDto apply(OrganizationBusinessRole organizationBusinessRole) {
+            return new OrganizationBusinessRoleDto(
+                    organizationBusinessRole.getBusinessRole(),
+                    organizationBusinessRole.isActive());
+        }
+    }
 }

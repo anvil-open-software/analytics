@@ -4,9 +4,7 @@ import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
-public class TenantDto {
-
-    private String id;
+public class TenantDto extends IdentifiableDto {
 
     private String name;
 
@@ -14,16 +12,10 @@ public class TenantDto {
     public TenantDto() {
     }
 
-    public String getId() {
-        return id;
-    }
     public String getName() {
         return name;
     }
 
-    public void setId(@NotNull String id) {
-        this.id = id;
-    }
     public void setName(@NotNull String username) {
         this.name = username;
     }

@@ -216,6 +216,7 @@ public class SecuredResourceIT extends SecuredEndpointFixture {
     @Test
     public void test9TokenSignatureAuthWrongUri() throws IOException {
 
+        SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/token").toExternalForm()));
 

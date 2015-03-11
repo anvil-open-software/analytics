@@ -11,11 +11,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequestScoped
 @Path("tenant")
-public class TenantResource {
+public class TenantResource extends HrefResource {
 
     @EJB
     SecurityManager securityManager;
@@ -27,7 +29,8 @@ public class TenantResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerTenants")
     public List<TenantDto> getList() {
-        return securityManager.getTenants();
+        return securityManager.getTenants()
+                .stream().map(new HrefDecorator<>(uriInfo.getBaseUri().toString())).collect(Collectors.toList());
     }
 
 
@@ -37,8 +40,9 @@ public class TenantResource {
     @RolesAllowed("administerTenants")
     public Response create(TenantDto tenantDto) {
         TenantDto returnedTenantDto = securityManager.createTenant(tenantDto);
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(returnedTenantDto.getId()).build())
-                .entity(returnedTenantDto).build();
+        URI uri = uriInfo.getBaseUriBuilder().path(returnedTenantDto.getId()).build();
+        return Response.created(uri)
+                .entity(new HrefDecorator<>(uriInfo.getBaseUri().toString()).apply(returnedTenantDto)).build();
     }
 
     @DELETE

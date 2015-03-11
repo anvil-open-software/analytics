@@ -1,5 +1,6 @@
 package com.dematic.labs.business;
 
+import com.dematic.labs.business.dto.IdentifiableDto;
 import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
@@ -65,6 +66,7 @@ public class SecurityFixture {
                         TenantDto.class,
                         UserDto.class,
                         RoleDto.class,
+                        IdentifiableDto.class,
                         ApplicationRole.class,
                         securityInitializer,
                         RealmSelector.class,

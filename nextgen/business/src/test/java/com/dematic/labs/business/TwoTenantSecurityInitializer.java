@@ -37,7 +37,8 @@ class TwoTenantSecurityInitializer extends AbstractSecurityInitializer {
                 , ApplicationRole.getTenantAdminRoles().toArray(new String[]{}));
 
         createUserForPartition(partitionManager, tenantA, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD
-                , ApplicationRole.CREATE_ORGANIZATIONS, ApplicationRole.VIEW_ORGANIZATIONS);
+                , ApplicationRole.CREATE_ORGANIZATIONS,
+                ApplicationRole.VIEW_ORGANIZATIONS, ApplicationRole.ADMINISTER_ORGANIZATION_BUSINESS_ROLES);
 
 
         //noinspection ToArrayCallWithZeroLengthArrayArgument

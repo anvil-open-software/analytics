@@ -15,7 +15,7 @@ import javax.ws.rs.core.UriInfo;
 import java.util.UUID;
 
 @RequestScoped
-@Path("principal")
+@Path("organization")
 public class OrganizationResource {
 
     @EJB
