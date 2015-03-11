@@ -53,4 +53,14 @@ public class OrganizationResource {
         return organizationManager.getOrganizations().toArray(new OrganizationDto[0]);
     }
 
+    @PUT
+    @Path("{id}/grant")
+    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @RolesAllowed(ApplicationRole.ADMINISTER_ORGANIZATION_BUSINESS_ROLES)
+    public Response grant(@PathParam("id") String id, OrganizationDto organizationDto) {
+        OrganizationDto returnedOrganizationDto = organizationManager.grantRevokeBusinessRole(organizationDto);
+        return Response.ok(returnedOrganizationDto).build();
+    }
+
 }

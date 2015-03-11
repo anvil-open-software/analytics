@@ -1,6 +1,5 @@
 package com.dematic.labs.business;
 
-import com.dematic.labs.business.dto.IdentifiableDto;
 import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
 import com.dematic.labs.business.dto.OrganizationDto;
 import com.dematic.labs.persistence.entities.*;
@@ -222,7 +221,7 @@ public class OrganizationManagerIT {
         organizationManager.grantRevokeBusinessRole(new OrganizationDto());
     }
 
-    private class OrganizationBusinessRoleDtoMatcher extends TypeSafeMatcher<OrganizationBusinessRoleDto> {
+    public static class OrganizationBusinessRoleDtoMatcher extends TypeSafeMatcher<OrganizationBusinessRoleDto> {
 
         private String businessRole;
         private boolean active;
