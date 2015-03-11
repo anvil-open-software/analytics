@@ -22,6 +22,7 @@ import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.HttpMethod;
 import java.time.Instant;
 import java.util.Enumeration;
 import java.util.SortedMap;
@@ -70,7 +71,7 @@ public class DLabsAuthenticationScheme implements HttpAuthenticationScheme<Basic
     @Override
     public void extractCredential(HttpServletRequest request, DefaultLoginCredentials creds) {
 
-        if (isDLabsAuthentication(request, USERNAME_AUTHENTICATION_SCHEME_NAME)) {
+        if (isDLabsAuthentication(request, USERNAME_AUTHENTICATION_SCHEME_NAME) && isGetTokenRequest(request)) {
 
             String[] realmUsernameAndPassword = extractRealmAndCredentials(request, USERNAME_AUTHENTICATION_SCHEME_NAME);
 
@@ -88,7 +89,7 @@ public class DLabsAuthenticationScheme implements HttpAuthenticationScheme<Basic
                     creds.setPassword(password);
                 }
             }
-        } else if (isDLabsAuthentication(request, TOKEN_AUTHENTICATION_SCHEME_NAME)) {
+        } else if (isDLabsAuthentication(request, TOKEN_AUTHENTICATION_SCHEME_NAME) && !isGetTokenRequest(request)) {
 
             // if credentials are not present, we try to extract the token from the request.
             String[] realmUsernameAndSignature = extractRealmAndCredentials(request, TOKEN_AUTHENTICATION_SCHEME_NAME);
@@ -111,6 +112,10 @@ public class DLabsAuthenticationScheme implements HttpAuthenticationScheme<Basic
                 }
             }
         }
+    }
+
+    private boolean isGetTokenRequest(HttpServletRequest request) {
+        return request.getMethod().equals(HttpMethod.GET) && request.getRequestURI().endsWith("token");
     }
 
     @Override
