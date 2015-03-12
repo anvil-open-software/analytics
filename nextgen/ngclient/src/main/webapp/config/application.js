@@ -64,13 +64,14 @@ module.exports = function(lineman) {
           }
       },
       appendTasks: {
-        common: app.appendTasks.common.concat("dlHelloWorld","dl-dev-copy",'dl-dev-uglifly')
+        common: app.appendTasks.common.concat("dlHelloWorld","dl-dev-copy"/*,'dl-dev-uglifly'*/)
      },
      "watch": {
          "js": {
             "tasks": [
                 "concat_sourcemap:js",
-                "dl-dev-copy"
+                "dl-dev-copy"/* ,
+                "dl-dev-uglify" */
             ]
         }
     }
