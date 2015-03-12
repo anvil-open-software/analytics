@@ -51,9 +51,21 @@ module.exports = function(lineman) {
                   }]
           }
       },
-     appendTasks: {
-        common: app.appendTasks.common.concat("dlHelloWorld","dl-dev-copy")
-    },
+      loadNpmTasks: lineman.config.application.loadNpmTasks.concat('grunt-contrib-uglify'),
+      uglify: {
+          'dl-dev-uglifly': {
+              options: {
+                  sourceMap: true,
+                  sourceMapName: '../../../target/ngclient.war/js/app.js.map'
+              },
+              files: {
+                  '../../../target/ngclient.war/js/app.js': ['generated/js/app.js']
+              }
+          }
+      },
+      appendTasks: {
+        common: app.appendTasks.common.concat("dlHelloWorld","dl-dev-copy",'dl-dev-uglifly')
+     },
      "watch": {
          "js": {
             "tasks": [
@@ -63,8 +75,7 @@ module.exports = function(lineman) {
         }
     }
 
-
-          // Sass
+    // Sass
     //
     // Lineman supports Sass via grunt-contrib-sass, which requires you first
     // have Ruby installed as well as the `sass` gem. To enable it, comment out the
