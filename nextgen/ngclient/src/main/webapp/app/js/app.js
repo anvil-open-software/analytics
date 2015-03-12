@@ -13,6 +13,7 @@ angular.module("app",
 		};
 
 		$rootScope.alert = function(thing) {
+            // comment
 			alert(thing);
 		};
 	}

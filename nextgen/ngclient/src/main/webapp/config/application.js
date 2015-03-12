@@ -12,6 +12,8 @@
  *   $ lineman config concat.js #=> to see the JS config for the concat task.
  */
 module.exports = function(lineman) {
+    var app = lineman.config.application;
+
   //Override application configuration here. Common examples follow in the comments.
   return {
     // grunt-angular-templates assumes your module is named "app", but
@@ -37,9 +39,32 @@ module.exports = function(lineman) {
       //   host: 'localhost',
       //   port: 3000
       // }
+    },
+    loadNpmTasks: lineman.config.application.loadNpmTasks.concat('grunt-contrib-copy'),
+      copy: {
+          'dl-dev-copy': {
+                  files: [{
+                      expand: true,
+                      cwd: 'generated/',
+                      src: ['**'],
+                      dest: '../../../target/ngclient.war/'
+                  }]
+          }
+      },
+     appendTasks: {
+        common: app.appendTasks.common.concat("dlHelloWorld","dl-dev-copy")
+    },
+     "watch": {
+         "js": {
+            "tasks": [
+                "concat_sourcemap:js",
+                "dl-dev-copy"
+            ]
+        }
     }
 
-    // Sass
+
+          // Sass
     //
     // Lineman supports Sass via grunt-contrib-sass, which requires you first
     // have Ruby installed as well as the `sass` gem. To enable it, comment out the
