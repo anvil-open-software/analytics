@@ -12,7 +12,6 @@
  *   $ lineman config concat.js #=> to see the JS config for the concat task.
  */
 module.exports = function(lineman) {
-    var app = lineman.config.application;
 
   //Override application configuration here. Common examples follow in the comments.
   return {
@@ -40,15 +39,15 @@ module.exports = function(lineman) {
       //   port: 3000
       // }
     },
-    loadNpmTasks: lineman.config.application.loadNpmTasks.concat('grunt-contrib-copy'),
+      loadNpmTasks: lineman.config.application.loadNpmTasks.concat('grunt-contrib-copy'),
       copy: {
           'dl-dev-copy': {
-                  files: [{
-                      expand: true,
-                      cwd: 'generated/',
-                      src: ['**'],
-                      dest: '../../../target/ngclient.war/'
-                  }]
+              files: [{
+                  expand: true,
+                  cwd: 'generated/',
+                  src: ['**'],
+                  dest: '../../../target/ngclient.war/'
+              }]
           }
       },
       loadNpmTasks: lineman.config.application.loadNpmTasks.concat('grunt-contrib-uglify'),
@@ -62,19 +61,7 @@ module.exports = function(lineman) {
                   '../../../target/ngclient.war/js/app.js': ['generated/js/app.js']
               }
           }
-      },
-      appendTasks: {
-        common: app.appendTasks.common.concat("dlHelloWorld","dl-dev-copy"/*,'dl-dev-uglifly'*/)
-     },
-     "watch": {
-         "js": {
-            "tasks": [
-                "concat_sourcemap:js",
-                "dl-dev-copy"/* ,
-                "dl-dev-uglify" */
-            ]
-        }
-    }
+      }
 
     // Sass
     //
