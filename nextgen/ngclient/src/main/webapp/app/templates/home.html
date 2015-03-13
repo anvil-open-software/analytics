@@ -1,22 +1,22 @@
 <div id="home" class="row">
-  <div class="large-6 large-offset-3">
-    <h2>Welcome to the {{ title }} page!</h2>
+    <div class="large-6 large-offset-3">
+        <h3>Hello {{authenticatedUser.token}} from {{authenticatedUser.realm}}</h3>
+        <h3>Welcome to the {{ title }} page!</h3>
+        <div class="alert-box">{{ message }}</div>
 
-    <div class="alert-box">{{ message }}</div>
+        <ul class="small-block-grid-2">
+            <li>
+                <img class="th" src="img/pic_1.png" shows-message-when-hovered message="Im the Dematic Log.">
+            </li>
+            <li>
+                <img class="th" src="img/pic_2.png" shows-message-when-hovered message="Im the Dematic multishuttle.">
+            </li>
+        </ul>
 
-    <ul class="small-block-grid-2">
-      <li>
-        <img class="th" src="img/pic_1.png" shows-message-when-hovered message="Im the Dematic Log.">
-      </li>
-      <li>
-        <img class="th" src="img/pic_2.png" shows-message-when-hovered message="Im the Dematic multishuttle.">
-      </li>
-    </ul>
-
-    <div class="row">
-      <div class="large-12 columns">
-        <button ng-click="logout()" class="button large expand radius">Log Out</button>
-      </div>
+        <div class="row">
+            <div class="large-12 columns">
+                <button ng-click="logout()" class="button large expand radius">Log Out</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
