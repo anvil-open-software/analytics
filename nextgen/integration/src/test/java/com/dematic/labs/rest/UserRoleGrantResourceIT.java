@@ -1,7 +1,6 @@
 package com.dematic.labs.rest;
 
 import com.dematic.labs.business.ApplicationRole;
-import com.dematic.labs.business.SecurityManagerIT;
 import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
@@ -30,7 +29,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.dematic.labs.business.SecurityManagerIT.*;
+import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
 import static org.junit.Assert.*;
 
@@ -56,7 +55,7 @@ public class UserRoleGrantResourceIT extends SecuredEndpointFixture {
                 WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
 
                 TenantDto tenantDto = new TenantDto();
-                tenantDto.setName(NEW_TENANT);
+                tenantDto.setName(TENANT_A);
 
                 Response response = signRequest(token, target.request()
                                 .accept(MediaType.APPLICATION_JSON_TYPE)
@@ -79,10 +78,10 @@ public class UserRoleGrantResourceIT extends SecuredEndpointFixture {
 
                 UserDto userDto = new UserDto();
                 TenantDto tenantDto = new TenantDto();
-                tenantDto.setName(NEW_TENANT);
+                tenantDto.setName(TENANT_A);
                 userDto.setTenantDto(tenantDto);
-                userDto.setLoginName(TENANT_ADMIN_USERNAME);
-                userDto.setPassword(TENANT_ADMIN_PASSWORD);
+                userDto.setLoginName(TENANT_A_ADMIN_USERNAME);
+                userDto.setPassword(TENANT_A_ADMIN_PASSWORD);
                 assertNull(userDto.getId());
 
                 Response response = signRequest(token, target.request()
@@ -99,7 +98,7 @@ public class UserRoleGrantResourceIT extends SecuredEndpointFixture {
         }
 
         {
-            SignatureToken token = getToken(NEW_TENANT, TENANT_ADMIN_USERNAME, TENANT_ADMIN_PASSWORD);
+            SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
             //create tenant user
             {
@@ -107,8 +106,8 @@ public class UserRoleGrantResourceIT extends SecuredEndpointFixture {
                 WebTarget target = client.target(URI.create(new URL(getBase(), "resources/user").toExternalForm()));
 
                 UserDto userDto = new UserDto();
-                userDto.setLoginName(SecurityManagerIT.TENANT_USER_USERNAME);
-                userDto.setPassword(SecurityManagerIT.TENANT_USER_PASSWORD);
+                userDto.setLoginName(TENANT_A_USER_USERNAME);
+                userDto.setPassword(TENANT_A_USER_PASSWORD);
                 assertNull(userDto.getId());
 
                 Response response = signRequest(token, target.request()
@@ -124,7 +123,7 @@ public class UserRoleGrantResourceIT extends SecuredEndpointFixture {
 
                 assertNotNull(tenantUserDto);
                 assertNotNull(tenantUserDto.getId());
-                assertEquals(SecurityManagerIT.TENANT_USER_USERNAME, tenantUserDto.getLoginName());
+                assertEquals(TENANT_A_USER_USERNAME, tenantUserDto.getLoginName());
             }
 
             //get roles
@@ -148,7 +147,7 @@ public class UserRoleGrantResourceIT extends SecuredEndpointFixture {
     @Test
     public void test010Grant() throws MalformedURLException {
 
-        SignatureToken token = getToken(NEW_TENANT, TENANT_ADMIN_USERNAME, TENANT_ADMIN_PASSWORD);
+        SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(
@@ -191,7 +190,7 @@ public class UserRoleGrantResourceIT extends SecuredEndpointFixture {
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant/" + tenantUuid).toExternalForm()));
 
         TenantDto tenantDto = new TenantDto();
-        tenantDto.setName(NEW_TENANT);
+        tenantDto.setName(TENANT_A);
 
         signRequest(token, target.request()
                         .accept(MediaType.APPLICATION_JSON_TYPE)

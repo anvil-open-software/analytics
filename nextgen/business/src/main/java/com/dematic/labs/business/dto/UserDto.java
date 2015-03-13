@@ -5,9 +5,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Set;
 
 @XmlRootElement
-public class UserDto {
+public class UserDto extends IdentifiableDto {
 
-    private String id;
     private TenantDto tenantDto;
     private String loginName;
     private String password;
@@ -15,14 +14,6 @@ public class UserDto {
     private Set<RoleDto> grantedRoles;
 
     public UserDto() {
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public TenantDto getTenantDto() {

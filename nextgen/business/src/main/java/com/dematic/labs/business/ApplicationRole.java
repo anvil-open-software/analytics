@@ -11,6 +11,7 @@ public class ApplicationRole {
     public static final String ADMINISTER_USERS = "administerUsers";
     public static final String VIEW_ORGANIZATIONS = "viewOrganizations";
     public static final String CREATE_ORGANIZATIONS = "createOrganizations";
+    public static final String ADMINISTER_ORGANIZATION_BUSINESS_ROLES = "administerOrganizationBusinessRoles";
 
 
     public static List<String> getTenantRoles() {
@@ -19,6 +20,7 @@ public class ApplicationRole {
         rtnValue.add(ADMINISTER_USERS);
         rtnValue.add(VIEW_ORGANIZATIONS);
         rtnValue.add(CREATE_ORGANIZATIONS);
+        rtnValue.add(ADMINISTER_ORGANIZATION_BUSINESS_ROLES);
         return  rtnValue;
     }
 

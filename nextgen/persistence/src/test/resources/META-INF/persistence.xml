@@ -3,7 +3,8 @@
 
     <persistence-unit name="NewPersistenceUnit" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
-        <class>com.dematic.labs.persistence.entities.Principal</class>
+        <class>com.dematic.labs.persistence.entities.Organization</class>
+        <class>com.dematic.labs.persistence.entities.OrganizationBusinessRole</class>
         <properties>
             <property name="hibernate.archive.autodetection" value="class"/>
             <property name="hibernate.show_sql" value="true"/>
