@@ -13,6 +13,7 @@ angular.module('Authentication')
   };
 
   $scope.logout = function() {
-    AuthenticationService.logout().success(onLogoutSuccess);
+    //AuthenticationService.logout().success(onLogoutSuccess);
+      onLogoutSuccess();
   };
 });
