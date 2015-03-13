@@ -1,1 +1,4 @@
 nextgen/admin/overlays
+nextgen/ngclient/src/main/webapp/dist
+index.html
+nextgen/ngclient/src/main/webapp/generated
