@@ -14,7 +14,7 @@ RUN mkdir -p /usr/java/default && \
 RUN yum update -y; yum clean all
 
 # pull spark's built with kinesis lib from nexus and install, spark includes version 1.2.1 and hadoop 2.6
-RUN curl -s -u $NEXUS_USERNAME:$NEXUS_PASSWORD http://$NEXUS_URL/nexus/content/repositories/releases/org/apache/spark/1.2.1/spark-1.2.1.tgz | tar -xz -C /usr/local/
+RUN curl -s -u ${nexus.Username}:${nexus.Password} http://${nexus.Ip}/nexus/content/repositories/releases/org/apache/spark/1.2.1/spark-1.2.1.tgz | tar -xz -C /usr/local/
 RUN cd /usr/local && ln -s spark-1.2.1-bin-2.6.0 spark
 ENV SPARK_HOME /usr/local/spark
 RUN mkdir $SPARK_HOME/yarn-remote-client
