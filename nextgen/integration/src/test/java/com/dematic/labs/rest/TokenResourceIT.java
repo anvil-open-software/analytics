@@ -21,10 +21,13 @@ import java.net.URI;
 import java.net.URL;
 
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
+import static com.dematic.labs.rest.SecuredEndpointHelper.generateBasicAuthHeaderValue;
+import static com.dematic.labs.rest.SecuredEndpointHelper.getBase;
+import static com.dematic.labs.rest.SecuredEndpointHelper.getToken;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class TokenResourceIT extends SecuredEndpointFixture {
+public class TokenResourceIT {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();

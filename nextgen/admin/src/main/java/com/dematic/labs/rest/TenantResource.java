@@ -2,6 +2,7 @@ package com.dematic.labs.rest;
 
 import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.TenantDto;
+import com.dematic.labs.rest.dto.HrefDecorator;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
 import javax.ejb.EJB;
@@ -15,9 +16,11 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.dematic.labs.business.SecurityManager.TENANT_RESOURCE_PATH;
+
 @RequestScoped
-@Path("tenant")
-public class TenantResource extends HrefResource {
+@Path(TENANT_RESOURCE_PATH)
+public class TenantResource {
 
     @EJB
     SecurityManager securityManager;
@@ -30,7 +33,7 @@ public class TenantResource extends HrefResource {
     @RolesAllowed("administerTenants")
     public List<TenantDto> getList() {
         return securityManager.getTenants()
-                .stream().map(new HrefDecorator<>(uriInfo.getBaseUri().toString())).collect(Collectors.toList());
+                .stream().map(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath())).collect(Collectors.toList());
     }
 
 
@@ -42,7 +45,7 @@ public class TenantResource extends HrefResource {
         TenantDto returnedTenantDto = securityManager.createTenant(tenantDto);
         URI uri = uriInfo.getBaseUriBuilder().path(returnedTenantDto.getId()).build();
         return Response.created(uri)
-                .entity(new HrefDecorator<>(uriInfo.getBaseUri().toString()).apply(returnedTenantDto)).build();
+                .entity(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath()).apply(returnedTenantDto)).build();
     }
 
     @DELETE

@@ -23,10 +23,13 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
+import static com.dematic.labs.rest.SecuredEndpointHelper.getBase;
+import static com.dematic.labs.rest.SecuredEndpointHelper.getToken;
+import static com.dematic.labs.rest.SecuredEndpointHelper.signRequest;
 import static org.junit.Assert.assertEquals;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class SecuredResourceIT extends SecuredEndpointFixture {
+public class SecuredResourceIT {
 
     public SecuredResourceIT() throws MalformedURLException {
     }

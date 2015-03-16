@@ -3,10 +3,10 @@ package com.dematic.labs.rest;
 import com.dematic.labs.business.ApplicationRole;
 import com.dematic.labs.business.SecurityManagerIT;
 import com.dematic.labs.business.dto.RoleDto;
-import com.dematic.labs.business.dto.TenantDto;
-import com.dematic.labs.business.dto.UserDto;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
+import com.dematic.labs.rest.matchers.CreatedResponseMatcher;
+import com.dematic.labs.rest.matchers.IdentifiableDtoHrefMatcher;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -24,13 +24,18 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
+import java.util.List;
 
 import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
+import static com.dematic.labs.rest.SecuredEndpointHelper.getBase;
+import static com.dematic.labs.rest.SecuredEndpointHelper.getToken;
+import static com.dematic.labs.rest.SecuredEndpointHelper.signRequest;
+import static org.hamcrest.Matchers.iterableWithSize;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class RoleResourceIT extends SecuredEndpointFixture {
+public class RoleResourceIT {
 
     private static String uuid, roleUuid;
 
@@ -42,51 +47,9 @@ public class RoleResourceIT extends SecuredEndpointFixture {
 
         SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
-        //create tenant
-        {
-            Client client = ClientBuilder.newClient();
-            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
+        uuid = IdentityManagementHelper.createTenant(token, TENANT_A).getId();
 
-            TenantDto tenantDto = new TenantDto();
-            tenantDto.setName(TENANT_A);
-
-            Response response = signRequest(token, target.request()
-                            .accept(MediaType.APPLICATION_JSON_TYPE)
-                            .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                    HttpMethod.POST, MediaType.APPLICATION_JSON
-            ).post(Entity.entity(tenantDto, MediaType.APPLICATION_JSON_TYPE));
-
-            assertNotNull(response);
-            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-
-            String location = response.getLocation().toString();
-            String[] locationElements = location.split("/");
-            uuid = locationElements[locationElements.length-1];
-        }
-
-        //create tenant admin
-        {
-            Client client = ClientBuilder.newClient();
-            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenantAdminUser").toExternalForm()));
-
-            UserDto userDto = new UserDto();
-            TenantDto tenantDto = new TenantDto();
-            tenantDto.setName(TENANT_A);
-            userDto.setTenantDto(tenantDto);
-            userDto.setLoginName(TENANT_A_ADMIN_USERNAME);
-            userDto.setPassword(TENANT_A_ADMIN_PASSWORD);
-            assertNull(userDto.getId());
-
-            Response response = signRequest(token, target.request()
-                            .accept(MediaType.APPLICATION_JSON_TYPE)
-                            .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                    HttpMethod.POST, MediaType.APPLICATION_JSON
-            ).post(Entity.entity(userDto, MediaType.APPLICATION_JSON_TYPE));
-
-            assertNotNull(response);
-            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-
-        }
+        IdentityManagementHelper.createTenantAdmin(token, TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
     }
 
     @Test
@@ -107,15 +70,14 @@ public class RoleResourceIT extends SecuredEndpointFixture {
                 HttpMethod.POST, MediaType.APPLICATION_JSON
         ).post(Entity.entity(roleDto, MediaType.APPLICATION_JSON_TYPE));
 
-        assertNotNull(response);
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-
         RoleDto fromServer = response.readEntity(RoleDto.class);
 
-        assertNotNull(fromServer);
-        assertNotNull(fromServer.getId());
-        roleUuid = fromServer.getId();
+        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoHrefMatcher<>()));
+
         assertEquals(SecurityManagerIT.CUSTOM_TENANT_ROLE, fromServer.getName());
+
+        roleUuid = fromServer.getId();
 
     }
 
@@ -124,17 +86,9 @@ public class RoleResourceIT extends SecuredEndpointFixture {
 
         SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/role").toExternalForm()));
+        List<RoleDto> list = IdentityManagementHelper.getRoles(token);
 
-        RoleDto[] list = signRequest(token, target
-                        .request(MediaType.APPLICATION_JSON)
-                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                HttpMethod.GET, null
-        ).get(RoleDto[].class);
-
-        assertNotNull(list);
-        assertEquals(ApplicationRole.getTenantRoles().size() + 1, list.length);
+        assertThat(list, iterableWithSize(ApplicationRole.getTenantRoles().size() + 1));
     }
 
     @Test
@@ -160,17 +114,7 @@ public class RoleResourceIT extends SecuredEndpointFixture {
 
         SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant/" + uuid).toExternalForm()));
-
-        TenantDto tenantDto = new TenantDto();
-        tenantDto.setName(TENANT_A);
-
-        signRequest(token, target.request()
-                        .accept(MediaType.APPLICATION_JSON_TYPE)
-                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                HttpMethod.DELETE, null
-        ).delete();
+        IdentityManagementHelper.deleteTenant(token, uuid);
 
     }
 

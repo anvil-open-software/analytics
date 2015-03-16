@@ -23,14 +23,15 @@ import java.util.TreeMap;
 import static com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme.generateStringToSign;
 import static com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme.sign;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-public abstract class SecuredEndpointFixture {
+public abstract class SecuredEndpointHelper {
 
     public static final String SCHEME = "http";
     public static final String HOSTNAME = "localhost:8080";
     public static final String CONTEXT_ROOT = "/admin/";
 
-    public SecuredEndpointFixture() {
+    public SecuredEndpointHelper() {
     }
 
     public static URL getBase() {
@@ -38,13 +39,20 @@ public abstract class SecuredEndpointFixture {
             return new URL(SCHEME + "://" + HOSTNAME + CONTEXT_ROOT);
 
         } catch (MalformedURLException e) {
-            return null;
+            fail("Cannot create base URL");
         }
+        return null;
     }
 
-    protected static SignatureToken getToken(String tenant, String username, String password) throws MalformedURLException {
+    protected static SignatureToken getToken(String tenant, String username, String password) {
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/token").toExternalForm()));
+        String tokenEndPoint = null;
+        try {
+            tokenEndPoint = new URL(getBase(), "resources/token").toExternalForm();
+        } catch (MalformedURLException e) {
+            fail("Cannot create token endpoint");
+        }
+        WebTarget target = client.target(URI.create(tokenEndPoint));
         return target.request()
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
