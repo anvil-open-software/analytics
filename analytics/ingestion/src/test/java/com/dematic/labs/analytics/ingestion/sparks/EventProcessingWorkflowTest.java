@@ -6,6 +6,7 @@ import com.dematic.labs.analytics.common.Event;
 import com.dematic.labs.analytics.common.kinesis.KinesisStreamRule;
 import com.dematic.labs.analytics.common.kinesis.consumer.EventToByteArrayTransformer;
 import com.jayway.awaitility.Awaitility;
+import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -45,7 +46,7 @@ public final class EventProcessingWorkflowTest {
         // consume and process events from a Kinesis stream using sparks streaming
         JavaStreamingContext streamingContext = null;
         try {
-            streamingContext = getStreamingContext(getConfiguration());
+            streamingContext = getStreamingContext(getLocalConfiguration(), Durations.seconds(2));
             final EventProcessor eventProcessor = new EventProcessor();
             eventProcessor.process(getEventStreamReceiver(streamingContext, kinesisStreamRule.getAmazonKinesisClient(),
                     kinesisStreamRule.getKinesisConnectorConfiguration()));
