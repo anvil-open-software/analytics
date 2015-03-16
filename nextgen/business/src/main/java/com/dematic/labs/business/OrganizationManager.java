@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 @Stateless
 public class OrganizationManager {
 
+    public static final String ORGANIZATION_RESOURCE_PATH = "organization";
     private CrudService crudService;
 
     @SuppressWarnings("UnusedDeclaration")

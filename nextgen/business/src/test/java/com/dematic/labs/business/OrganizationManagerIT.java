@@ -2,10 +2,9 @@ package com.dematic.labs.business;
 
 import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
 import com.dematic.labs.business.dto.OrganizationDto;
+import com.dematic.labs.business.matchers.OrganizationBusinessRoleDtoMatcher;
 import com.dematic.labs.persistence.entities.*;
 import org.apache.deltaspike.security.api.authorization.AccessDeniedException;
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -16,7 +15,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.UUID;
@@ -56,6 +54,7 @@ public class OrganizationManagerIT {
                             BusinessRole.class,
                             OrganizationDto.class,
                             OrganizationBusinessRoleDto.class,
+                            OrganizationBusinessRoleDtoMatcher.class,
                             QOrganization.class,
                             QOwnedAssetEntity.class,
                             QIdentifiableEntity.class,
@@ -221,27 +220,4 @@ public class OrganizationManagerIT {
         organizationManager.grantRevokeBusinessRole(new OrganizationDto());
     }
 
-    public static class OrganizationBusinessRoleDtoMatcher extends TypeSafeMatcher<OrganizationBusinessRoleDto> {
-
-        private String businessRole;
-        private boolean active;
-
-        public OrganizationBusinessRoleDtoMatcher(@Nonnull BusinessRole businessRole, boolean active) {
-            this.businessRole = businessRole.toString();
-            this.active = active;
-        }
-
-        @Override
-        protected boolean matchesSafely(OrganizationBusinessRoleDto organizationBusinessRole) {
-            return organizationBusinessRole.getBusinessRole().equals(businessRole) &&
-                    organizationBusinessRole.isActive() == active;
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText(" business role [").appendText(businessRole)
-                    .appendText("] and active: ").appendValue(active);
-
-        }
-    }
 }

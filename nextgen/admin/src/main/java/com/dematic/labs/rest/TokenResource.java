@@ -20,7 +20,7 @@ public class TokenResource {
 
     @GET
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    public SignatureToken getList() {
+    public SignatureToken getToken() {
         return (SignatureToken) getCredentials().getCredential();
     }
 

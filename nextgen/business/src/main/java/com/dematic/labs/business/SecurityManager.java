@@ -30,6 +30,10 @@ import static org.picketlink.idm.model.basic.BasicModel.grantRole;
 @Stateless
 public class SecurityManager {
 
+    public static final String TENANT_RESOURCE_PATH = "tenant";
+    public static final String USER_RESOURCE_PATH = "user";
+    public static final String ROLE_RESOURCE_PATH = "role";
+
     public static final String TENANT_CUSTOM_ROLE_PREFIX = "t_";
 
     @Inject
