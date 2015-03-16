@@ -8,6 +8,8 @@ import java.util.List;
 
 /**
  * Class will pull events from a Kinesis stream and process the events.
+ *
+ * // TODO: Remove used in the unit tests.
  */
 @SuppressWarnings("UnusedDeclaration")
 public final class EventProcessor implements Serializable {
