@@ -2,6 +2,7 @@ package com.dematic.labs.rest;
 
 import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.UserDto;
+import com.dematic.labs.rest.dto.UserDtoHrefDecorator;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
 import javax.ejb.EJB;
@@ -12,9 +13,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.dematic.labs.business.SecurityManager.USER_RESOURCE_PATH;
 
 @RequestScoped
-@Path("user")
+@Path(USER_RESOURCE_PATH)
 public class UserResource {
 
     @EJB
@@ -27,18 +31,19 @@ public class UserResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerUsers")
     public List<UserDto> getList() {
-        return securityManager.getUsers();
+        return securityManager.getUsers()
+                .stream().map(new UserDtoHrefDecorator(uriInfo.getAbsolutePath().getPath())).collect(Collectors.toList());
     }
-
 
     @POST
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerUsers")
     public Response create(UserDto userDto) {
+
         UserDto returnedTenantDto = securityManager.createTenantUser(userDto);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(returnedTenantDto.getId()).build())
-                .entity(returnedTenantDto).build();
+                .entity(new UserDtoHrefDecorator(uriInfo.getAbsolutePath().getPath()).apply(returnedTenantDto)).build();
     }
 
     @PUT
@@ -47,7 +52,9 @@ public class UserResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerUsers")
     public Response grant(@PathParam("id") String id, UserDto userDto) {
-        return Response.ok(securityManager.grantRevokeUserRole(userDto)).build();
+        String rawPath = uriInfo.getAbsolutePath().getPath();
+        String cookedPath = rawPath.substring(0, rawPath.indexOf(id)-1);
+        return Response.ok(new UserDtoHrefDecorator(cookedPath).apply(securityManager.grantRevokeUserRole(userDto))).build();
     }
 
 }

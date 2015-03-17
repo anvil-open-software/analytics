@@ -10,6 +10,7 @@
     <modules>
         <module>common</module>
         <module>ingestion</module>
+        <module>assembly</module>
     </modules>
     <packaging>pom</packaging>
 

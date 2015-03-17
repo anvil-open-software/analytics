@@ -39,6 +39,10 @@ public class JpaRule extends ExternalResource {
 
     @Override
     public void after() {
+        EntityTransaction trx = entityManager.getTransaction();
+        if (trx != null && trx.isActive()) {
+            trx.rollback();
+        }
         entityManager.close();
         emf.close();
     }

@@ -1,10 +1,10 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.business.SecurityManagerIT;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.dto.RestError;
+import com.dematic.labs.rest.matchers.IdentifiableDtoHrefMatcher;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -16,22 +16,28 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
+import java.util.List;
 
-import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_ADMIN_PASSWORD;
-import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_ADMIN_USERNAME;
-import static com.dematic.labs.picketlink.SecurityInitializer.INSTANCE_TENANT_NAME;
+import static com.dematic.labs.business.SecurityFixture.*;
+import static com.dematic.labs.picketlink.SecurityInitializer.*;
+import static com.dematic.labs.rest.SecuredEndpointHelper.getBase;
+import static com.dematic.labs.rest.SecuredEndpointHelper.getToken;
+import static com.dematic.labs.rest.SecuredEndpointHelper.signRequest;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class TenantResourceIT extends SecuredEndpointFixture {
+public class TenantResourceIT {
 
-    private static SignatureToken token;
     private static String uuid;
 
     public TenantResourceIT() throws MalformedURLException {
@@ -39,22 +45,29 @@ public class TenantResourceIT extends SecuredEndpointFixture {
 
     @BeforeClass
     public static void before() throws MalformedURLException {
-        token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
+        SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
+
+        uuid = IdentityManagementHelper.createTenant(token, TENANT_A).getId();
+
+        IdentityManagementHelper.createTenantAdmin(token, TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
     }
 
     @Test
     public void test01GetList() throws Exception {
+
+        SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
+
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
 
-        TenantDto[] list = signRequest(token, target
+        List<TenantDto> list = signRequest(token, target
                         .request(MediaType.APPLICATION_JSON)
                         .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
                 HttpMethod.GET, null
-        ).get(TenantDto[].class);
+        ).get(new GenericType<List<TenantDto>>() {});
 
-        assertNotNull(list);
-        assertTrue(list.length > 0);
+        assertThat(list, not(empty()));
+        assertThat(list, everyItem(new IdentifiableDtoHrefMatcher<>()));
     }
 
     /*
@@ -64,12 +77,12 @@ public class TenantResourceIT extends SecuredEndpointFixture {
     @Test
     public void test02GetListWithoutAuthorization() throws Exception {
 
-        SignatureToken userToken = getToken("Safeway", "joeUser", "abcd1234");
+        SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
 
-        Response response = signRequest(userToken, target
+        Response response = signRequest(token, target
                         .request(MediaType.APPLICATION_JSON)
                         .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
                 HttpMethod.GET, null
@@ -84,47 +97,15 @@ public class TenantResourceIT extends SecuredEndpointFixture {
     }
 
     @Test
-    public void test03Create() throws MalformedURLException {
-
-        {
-            Client client = ClientBuilder.newClient();
-            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
-
-            TenantDto tenantDto = new TenantDto();
-            tenantDto.setName(SecurityManagerIT.NEW_TENANT);
-
-            Response response = signRequest(token, target.request()
-                            .accept(MediaType.APPLICATION_JSON_TYPE)
-                            .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                    HttpMethod.POST, MediaType.APPLICATION_JSON
-            ).post(Entity.entity(tenantDto, MediaType.APPLICATION_JSON_TYPE));
-
-            assertNotNull(response);
-            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-
-            String location = response.getLocation().toString();
-            String[] locationElements = location.split("/");
-            uuid = locationElements[locationElements.length-1];
-
-            TenantDto fromServer = response.readEntity(TenantDto.class);
-
-            assertNotNull(fromServer);
-            assertNotNull(fromServer.getId());
-            assertFalse(fromServer.getId().isEmpty());
-            assertEquals(uuid, fromServer.getId());
-        }
-
-    }
-
-    @Test
     public void test04CreateDuplicate() throws MalformedURLException {
 
+        SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
         {
             Client client = ClientBuilder.newClient();
             WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
 
             TenantDto tenantDto = new TenantDto();
-            tenantDto.setName(SecurityManagerIT.NEW_TENANT);
+            tenantDto.setName(TENANT_A);
 
             Response response = signRequest(token, target.request()
                             .accept(MediaType.APPLICATION_JSON_TYPE)
@@ -146,17 +127,9 @@ public class TenantResourceIT extends SecuredEndpointFixture {
     @AfterClass
     public static void after() throws MalformedURLException {
 
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant/" + uuid).toExternalForm()));
+        SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
-        TenantDto tenantDto = new TenantDto();
-        tenantDto.setName(SecurityManagerIT.NEW_TENANT);
-
-        signRequest(token, target.request()
-                        .accept(MediaType.APPLICATION_JSON_TYPE)
-                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                HttpMethod.DELETE, null
-        ).delete();
+        IdentityManagementHelper.deleteTenant(token, uuid);
 
     }
 

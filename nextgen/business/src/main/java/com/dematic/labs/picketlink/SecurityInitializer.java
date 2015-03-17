@@ -18,64 +18,33 @@ package com.dematic.labs.picketlink;
 
 import com.dematic.labs.business.ApplicationRole;
 import org.picketlink.event.PartitionManagerCreateEvent;
-import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
-import org.picketlink.idm.RelationshipManager;
-import org.picketlink.idm.credential.Password;
+import org.picketlink.idm.model.Partition;
 import org.picketlink.idm.model.basic.Realm;
-import org.picketlink.idm.model.basic.Role;
-import org.picketlink.idm.model.basic.User;
 
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.enterprise.event.Observes;
 
-import static org.picketlink.idm.model.basic.BasicModel.grantRole;
-
 @SuppressWarnings("UnusedDeclaration")
 @Singleton
 @Startup
-public class SecurityInitializer {
+public class SecurityInitializer extends AbstractSecurityInitializer {
 
     public static final String INSTANCE_TENANT_NAME = "Dematic";
     public static final String INSTANCE_ADMIN_USERNAME = "superuser";
     public static final String INSTANCE_ADMIN_PASSWORD = "abcd1234";
 
-    /**
-     * <p>Creates some default users for each realm/company.</p>
-     */
-    public void createDefaultUsers(@Observes PartitionManagerCreateEvent event) {
+    public void initialize(@Observes PartitionManagerCreateEvent event) {
         PartitionManager partitionManager = event.getPartitionManager();
 
         partitionManager.add(new Realm(Realm.DEFAULT_REALM));
 
-        User superUser = createUserForRealm(partitionManager, INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD, ApplicationRole.ADMINISTER_TENANTS);
-        createUserForRealm(partitionManager, "Safeway", "janeAdmin", "abcd1234", "tenantAdmin");
-        createUserForRealm(partitionManager, "Safeway", "joeUser", "abcd1234", "user");
+        Partition instance = createPartition(partitionManager, INSTANCE_TENANT_NAME, ApplicationRole.ADMINISTER_TENANTS);
+
+        createUserForPartition(partitionManager, instance, INSTANCE_ADMIN_USERNAME
+                , INSTANCE_ADMIN_PASSWORD, ApplicationRole.ADMINISTER_TENANTS);
+
     }
 
-    private User createUserForRealm(PartitionManager partitionManager,
-                                    String realmName, String loginName, String password, String roleName) {
-        Realm partition = partitionManager.getPartition(Realm.class, realmName);
-
-        if (partition == null) {
-            partition = new Realm(realmName);
-            partitionManager.add(partition);
-        }
-
-        IdentityManager identityManager = partitionManager.createIdentityManager(partition);
-
-        User user = new User(loginName);
-
-        identityManager.add(user);
-        identityManager.updateCredential(user, new Password(password));
-
-        Role role = new Role(roleName);
-        identityManager.add(role);
-
-        RelationshipManager relationshipManager = partitionManager.createRelationshipManager();
-
-        grantRole(relationshipManager, user, role);
-        return user;
-    }
 }

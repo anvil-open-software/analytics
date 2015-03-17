@@ -1,10 +1,6 @@
 package com.dematic.labs.ngclient;
 
-
-import org.junit.AfterClass;
-import org.junit.Test;
-import org.junit.BeforeClass;
-import org.junit.FixMethodOrder;
+import org.junit.*;
 import org.junit.runners.MethodSorters;
 
 import org.openqa.selenium.By;
@@ -12,9 +8,7 @@ import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -58,8 +52,8 @@ public class NgClientIT {
         WebElement login = null;
         WebDriverWait wait;
         WebElement hello;
-        WebElement welcome = null;
-        WebElement logout = null;
+        WebElement welcome;
+        //WebElement logout = null;
 
         driver.get("http://127.0.0.1:8080/ngclient/");
         try {
@@ -84,20 +78,14 @@ public class NgClientIT {
         username.sendKeys("superuser");
         password.sendKeys("abcd1234");
         login.submit();
-        try {
-            Thread.sleep(10000);
-        }
-        catch (InterruptedException e) {
-            fail("Wait home page interrupted");
-        }
 
         wait = new WebDriverWait(driver, 40);
         hello = wait.until(ExpectedConditions.elementToBeClickable(By.id("hello")));
-        assertEquals(hello.getText().compareTo("Hello superuser from Dematic"), 0);
+        Assert.assertEquals(hello.getText().compareTo("Hello superuser from Dematic"), 0);
 
         wait = new WebDriverWait(driver, 40);
         welcome = wait.until(ExpectedConditions.elementToBeClickable(By.id("welcome")));
-        assertEquals(welcome.getText().compareTo("Welcome to the Home page!"), 0);
+        Assert.assertEquals(welcome.getText().compareTo("Welcome to the Home page!"), 0);
 
     }
 

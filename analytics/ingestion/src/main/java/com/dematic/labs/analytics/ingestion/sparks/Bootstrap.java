@@ -10,6 +10,7 @@ import com.amazonaws.services.kinesis.model.StreamDescription;
 import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
 import org.apache.spark.storage.StorageLevel;
+import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
@@ -32,13 +33,13 @@ public final class Bootstrap {
         return new DefaultAWSCredentialsProviderChain();
     }
 
-    public static SparkConf getConfiguration() {
+    public static SparkConf getLocalConfiguration() {
         // run locally w 2 thread
         return new SparkConf().setMaster("local[2]").setAppName(SPARKS_APP_NAME);
     }
 
-    public static JavaStreamingContext getStreamingContext(final SparkConf configuration) {
-        return new JavaStreamingContext(configuration, Durations.seconds(2));
+    public static JavaStreamingContext getStreamingContext(final SparkConf configuration, final Duration duration) {
+        return new JavaStreamingContext(configuration, duration);
     }
 
     public static JavaDStream<byte[]> getEventStreamReceiver(final JavaStreamingContext streamingContext,
