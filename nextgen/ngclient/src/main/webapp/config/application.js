@@ -49,7 +49,7 @@ module.exports = function(lineman) {
                   dest: '../../../target/ngclient.war/'
               }]
           }
-      },
+      }/*,
       loadNpmTasks: lineman.config.application.loadNpmTasks.concat('grunt-contrib-uglify'),
       uglify: {
           'dl-dev-uglifly': {
@@ -62,6 +62,7 @@ module.exports = function(lineman) {
               }
           }
       }
+      */
 
     // Sass
     //
