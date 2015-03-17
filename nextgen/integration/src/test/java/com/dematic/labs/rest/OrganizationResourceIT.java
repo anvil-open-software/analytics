@@ -1,6 +1,7 @@
 package com.dematic.labs.rest;
 
 import com.dematic.labs.business.ApplicationRole;
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
 import com.dematic.labs.business.dto.OrganizationDto;
 import com.dematic.labs.business.dto.UserDto;
@@ -125,15 +126,15 @@ public class OrganizationResourceIT {
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/organization").toExternalForm()));
 
-        List<OrganizationDto> list = signRequest(token, target
+        CollectionDto<OrganizationDto> collectionDto = signRequest(token, target
                         .request(MediaType.APPLICATION_JSON)
                         .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
                 HttpMethod.GET, null
-                ).get(new GenericType<List<OrganizationDto>>() {
+                ).get(new GenericType<CollectionDto<OrganizationDto>>() {
         });
 
-        assertThat(list, iterableWithSize(1));
-        assertThat(list, everyItem(new IdentifiableDtoHrefMatcher<>()));
+        assertThat(collectionDto.getItems(), iterableWithSize(1));
+        assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoHrefMatcher<>()));
     }
 
     @Test

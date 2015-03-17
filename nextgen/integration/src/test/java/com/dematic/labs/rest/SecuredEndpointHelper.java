@@ -30,13 +30,14 @@ public abstract class SecuredEndpointHelper {
     public static final String SCHEME = "http";
     public static final String HOSTNAME = "localhost:8080";
     public static final String CONTEXT_ROOT = "/admin/";
+    public static final String BASE_URL = SCHEME + "://" + HOSTNAME + CONTEXT_ROOT;
 
     public SecuredEndpointHelper() {
     }
 
     public static URL getBase() {
         try {
-            return new URL(SCHEME + "://" + HOSTNAME + CONTEXT_ROOT);
+            return new URL(BASE_URL);
 
         } catch (MalformedURLException e) {
             fail("Cannot create base URL");

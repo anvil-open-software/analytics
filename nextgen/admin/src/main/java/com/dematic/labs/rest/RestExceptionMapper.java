@@ -5,6 +5,7 @@ import org.apache.deltaspike.security.api.authorization.AccessDeniedException;
 import org.picketlink.idm.IdentityManagementException;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.validation.ConstraintViolationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
@@ -21,7 +22,9 @@ public class RestExceptionMapper implements ExceptionMapper<Throwable> {
 
         exceptionMapping.put(AccessDeniedException.class, Response.Status.FORBIDDEN);
         exceptionMapping.put(IllegalArgumentException.class, Response.Status.BAD_REQUEST);
+        exceptionMapping.put(IllegalStateException.class, Response.Status.BAD_REQUEST);
         exceptionMapping.put(IdentityManagementException.class, Response.Status.BAD_REQUEST);
+        exceptionMapping.put(ConstraintViolationException.class, Response.Status.BAD_REQUEST);
    }
 
     @Override
@@ -32,7 +35,14 @@ public class RestExceptionMapper implements ExceptionMapper<Throwable> {
             Response.StatusType status = exceptionMapping.get(throwableClass);
 
             if (status != null) {
-                return Response.status(status).entity(new RestError(status, throwable.getMessage())).build();
+                RestError restError;
+                if (throwable instanceof ConstraintViolationException) {
+                    restError = new RestError(status, (ConstraintViolationException) throwable);
+                } else {
+                    restError = new RestError(status, throwable.getMessage());
+                }
+
+                return Response.status(status).entity(restError).build();
             }
         }
 

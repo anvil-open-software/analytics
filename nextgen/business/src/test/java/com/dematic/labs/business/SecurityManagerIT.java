@@ -1,8 +1,10 @@
 package com.dematic.labs.business;
 
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
+import com.dematic.labs.matchers.ConstraintViolationMatcher;
 import org.apache.deltaspike.security.api.authorization.AccessDeniedException;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsNot;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
+import static org.hamcrest.Matchers.iterableWithSize;
 import static org.junit.Assert.*;
 
 @RunWith(Arquillian.class)
@@ -53,14 +56,25 @@ public class SecurityManagerIT {
     public void test000GetTenantsWithoutAuthentication() throws Exception {
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getTenants();
+        securityManager.getTenants(Pagination.DEFAULT);
     }
 
     @Test
     public void test010GetTenantsWithAuthenticationAndAuthorization() throws Exception {
 
         securityFixture.login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
-        securityManager.getTenants();
+        CollectionDto<TenantDto> collectionDto = securityManager.getTenants(Pagination.DEFAULT);
+
+        assertThat(collectionDto.getItems(), iterableWithSize(collectionDto.getSize()));
+    }
+
+    @Test
+    public void test015GetTenantsWithInvalidPagination() throws Exception {
+
+        securityFixture.login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
+        exception.expectCause(new ConstraintViolationMatcher("Pagination offset must be positive",
+                "Pagination limit must be positive"));
+        securityManager.getTenants(new Pagination(-1, -1));
     }
 
     @Test
@@ -69,7 +83,7 @@ public class SecurityManagerIT {
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getTenants();
+        securityManager.getTenants(Pagination.DEFAULT);
     }
 
     @Test

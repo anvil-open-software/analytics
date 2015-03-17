@@ -1,8 +1,8 @@
 package com.dematic.labs.business.dto;
 
-import javax.validation.constraints.NotNull;
+import javax.annotation.Nonnull;
 
-public class IdentifiableDto {
+public abstract class IdentifiableDto {
 
     private String id;
     private String href;
@@ -11,7 +11,7 @@ public class IdentifiableDto {
         return id;
     }
 
-    public void setId(@NotNull String id) {
+    public void setId(@Nonnull String id) {
         this.id = id;
     }
 
@@ -19,7 +19,7 @@ public class IdentifiableDto {
         return href;
     }
 
-    public void setHref(String href) {
+    public void setHref(@Nonnull String href) {
         this.href = href;
     }
 

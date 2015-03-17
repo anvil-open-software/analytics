@@ -1,5 +1,6 @@
 package com.dematic.labs.business;
 
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
@@ -20,6 +21,7 @@ import javax.ejb.Stateless;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.function.Function;
@@ -53,9 +55,11 @@ public class SecurityManager {
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
-    public List<TenantDto> getTenants() {
-        return this.partitionManager
-                .getPartitions(Realm.class).stream().map(new PartitionConverter()).collect(Collectors.toList());
+    public CollectionDto<TenantDto> getTenants(@Valid Pagination pagination) {
+
+        List<TenantDto> partitions = partitionManager.getPartitions(Realm.class)
+                .stream().map(new PartitionConverter()).collect(Collectors.toList());
+        return new CollectionDto<>(partitions, pagination, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)

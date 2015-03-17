@@ -1,5 +1,6 @@
 package com.dematic.labs.rest;
 
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
@@ -23,15 +24,11 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
-import java.util.List;
 
 import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
-import static com.dematic.labs.rest.SecuredEndpointHelper.getBase;
-import static com.dematic.labs.rest.SecuredEndpointHelper.getToken;
-import static com.dematic.labs.rest.SecuredEndpointHelper.signRequest;
-import static org.hamcrest.Matchers.everyItem;
-import static org.hamcrest.Matchers.not;
+import static com.dematic.labs.rest.SecuredEndpointHelper.*;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.junit.Assert.*;
 
@@ -53,21 +50,47 @@ public class TenantResourceIT {
     }
 
     @Test
-    public void test01GetList() throws Exception {
+    public void test01GetList() throws MalformedURLException {
 
         SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
         Client client = ClientBuilder.newClient();
         WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant").toExternalForm()));
 
-        List<TenantDto> list = signRequest(token, target
+        CollectionDto<TenantDto> collectionDto = signRequest(token, target
                         .request(MediaType.APPLICATION_JSON)
                         .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
                 HttpMethod.GET, null
-        ).get(new GenericType<List<TenantDto>>() {});
+        ).get(new GenericType<CollectionDto<TenantDto>>() {});
 
-        assertThat(list, not(empty()));
-        assertThat(list, everyItem(new IdentifiableDtoHrefMatcher<>()));
+        assertThat(collectionDto.getItems(), not(empty()));
+        assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoHrefMatcher<>()));
+    }
+
+    @Test
+    public void test01GetListWithPaginationOffsetOvershoot() {
+
+        SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
+
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(SecuredEndpointHelper.BASE_URL);
+
+        Response response = signRequest(token, target
+                        .path("resources/tenant")
+                        .queryParam("offset", "10")
+                        .request(MediaType.APPLICATION_JSON)
+                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                HttpMethod.GET, null
+        ).get();
+
+        assertNotNull(response);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+
+        RestError error = response.readEntity(RestError.class);
+        assertNotNull(error);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), error.getHttpStatusCode());
+        assertEquals(Response.Status.BAD_REQUEST.getReasonPhrase(), error.getHttpStatus());
+        assertEquals("Offset [10] exceeds size of collection [3]", error.getMessage());
     }
 
     /*
@@ -75,7 +98,7 @@ public class TenantResourceIT {
      2) that ExceptionMapping is wired correctly
      */
     @Test
-    public void test02GetListWithoutAuthorization() throws Exception {
+    public void test02GetListWithoutAuthorization() throws MalformedURLException {
 
         SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
@@ -94,6 +117,30 @@ public class TenantResourceIT {
         RestError error = response.readEntity(RestError.class);
         assertNotNull(error);
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), error.getHttpStatusCode());
+    }
+
+    @Test
+    public void test03GetListInvalidPagination() throws MalformedURLException {
+
+        SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
+
+        Client client = ClientBuilder.newClient();
+        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenant?limit=-1&offset=-1").toExternalForm()));
+
+        Response response = signRequest(token, target
+                        .request(MediaType.APPLICATION_JSON)
+                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
+                HttpMethod.GET, null
+        ).get();
+
+        assertNotNull(response);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+
+        RestError error = response.readEntity(RestError.class);
+        assertNotNull(error);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), error.getHttpStatusCode());
+        assertThat(error.getConstraintViolationMessages(), containsInAnyOrder("Pagination offset must be positive",
+                "Pagination limit must be positive"));
     }
 
     @Test
