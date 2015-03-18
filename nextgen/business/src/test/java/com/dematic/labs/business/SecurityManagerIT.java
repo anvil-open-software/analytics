@@ -20,7 +20,6 @@ import org.junit.runners.MethodSorters;
 
 import javax.inject.Inject;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -209,17 +208,17 @@ public class SecurityManagerIT {
     public void test130GetTenantAdminsWithoutAuthentication() throws Exception {
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getTenantsAdminUsers();
+        securityManager.getTenantsAdminUsers(Pagination.DEFAULT);
     }
 
     @Test
     public void test140GetTenantAdminsWithAuthenticationAndAuthorization() throws Exception {
 
         securityFixture.login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
-        List<UserDto> tenantAdminUsers = securityManager.getTenantsAdminUsers();
+        CollectionDto<UserDto> tenantAdminUsers = securityManager.getTenantsAdminUsers(Pagination.DEFAULT);
 
         assertNotNull(tenantAdminUsers);
-        assertThat(tenantAdminUsers, new IsNot<>(new IsEmptyIterable<>()));
+        assertThat(tenantAdminUsers.getItems(), new IsNot<>(new IsEmptyIterable<>()));
     }
 
     @Test
@@ -228,7 +227,7 @@ public class SecurityManagerIT {
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getTenantsAdminUsers();
+        securityManager.getTenantsAdminUsers(Pagination.DEFAULT);
     }
 
     @Test
@@ -288,17 +287,17 @@ public class SecurityManagerIT {
     public void test210GetRolesWithoutAuthentication() throws Exception {
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getRoles();
+        securityManager.getRoles(Pagination.DEFAULT);
     }
 
     @Test
     public void test220GetRolesWithAuthenticationAndAuthorization() throws Exception {
 
         securityFixture.login(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
-        List<RoleDto> roles = securityManager.getRoles();
+        CollectionDto<RoleDto> roles = securityManager.getRoles(Pagination.DEFAULT);
 
         assertNotNull(roles);
-        assertThat(roles, new IsNot<>(new IsEmptyIterable<>()));
+        assertThat(roles.getItems(), new IsNot<>(new IsEmptyIterable<>()));
     }
 
     @Test
@@ -307,7 +306,7 @@ public class SecurityManagerIT {
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getRoles();
+        securityManager.getRoles(Pagination.DEFAULT);
     }
 
     @Test
@@ -378,11 +377,11 @@ public class SecurityManagerIT {
 
         securityFixture.login(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
-        List<RoleDto> roleDtos = securityManager.getRoles();
+        CollectionDto<RoleDto> roleDtos = securityManager.getRoles(Pagination.DEFAULT);
 
         RoleDto roleToDelete = null;
 
-        for (RoleDto roleDto : roleDtos) {
+        for (RoleDto roleDto : roleDtos.getItems()) {
             if (roleDto.getName().startsWith(SecurityManager.TENANT_CUSTOM_ROLE_PREFIX)) {
                 roleToDelete = roleDto;
                 break;
@@ -398,11 +397,11 @@ public class SecurityManagerIT {
 
         securityFixture.login(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
-        List<RoleDto> roleDtos = securityManager.getRoles();
+        CollectionDto<RoleDto> roleDtoCollection = securityManager.getRoles(Pagination.DEFAULT);
 
         RoleDto roleToDelete = null;
 
-        for (RoleDto roleDto : roleDtos) {
+        for (RoleDto roleDto : roleDtoCollection.getItems()) {
             if (!roleDto.getName().startsWith(SecurityManager.TENANT_CUSTOM_ROLE_PREFIX)) {
                 roleToDelete = roleDto;
                 break;
@@ -445,7 +444,7 @@ public class SecurityManagerIT {
         securityFixture.login(TENANT_B, TENANT_B_ADMIN_USERNAME, TENANT_B_ADMIN_PASSWORD);
 
         UserDto userDto = null;
-        for (UserDto item : securityManager.getUsers()) {
+        for (UserDto item : securityManager.getUsers(Pagination.DEFAULT).getItems()) {
             if (item.getGrantedRoles().size() == 0) {
                 //found previously created user w/o roles
                 userDto = item;
@@ -454,11 +453,11 @@ public class SecurityManagerIT {
         }
         assertNotNull(userDto);
 
-        List<RoleDto> roles = securityManager.getRoles();
+        CollectionDto<RoleDto> roles = securityManager.getRoles(Pagination.DEFAULT);
 
         //simple grant
         {
-            RoleDto roleDto = roles.stream()
+            RoleDto roleDto = roles.getItems().stream()
                     .filter(p -> p.getName().equals(ApplicationRole.VIEW_ORGANIZATIONS))
                     .collect(Collectors.toList()).get(0);
             Set<RoleDto> grantedRoles = new HashSet<>();
@@ -476,7 +475,7 @@ public class SecurityManagerIT {
 
         //update involving both revoke and grant
         {
-            RoleDto roleDto = roles.stream()
+            RoleDto roleDto = roles.getItems().stream()
                     .filter(p -> p.getName().equals(ApplicationRole.CREATE_ORGANIZATIONS))
                     .collect(Collectors.toList()).get(0);
             Set<RoleDto> grantedRoles = new HashSet<>();

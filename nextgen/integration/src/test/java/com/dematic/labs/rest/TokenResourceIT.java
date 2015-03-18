@@ -15,15 +15,10 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
-import static com.dematic.labs.rest.SecuredEndpointHelper.generateBasicAuthHeaderValue;
-import static com.dematic.labs.rest.SecuredEndpointHelper.getBase;
-import static com.dematic.labs.rest.SecuredEndpointHelper.getToken;
+import static com.dematic.labs.rest.SecuredEndpointHelper.*;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -36,7 +31,7 @@ public class TokenResourceIT {
     }
 
     @Test
-    public void test1ModifiedBasicAuth() throws IOException {
+    public void test1ModifiedBasicAuth() {
 
         SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
@@ -49,33 +44,34 @@ public class TokenResourceIT {
     }
 
     @Test
-    public void test2BadTenant() throws IOException {
+    public void test2BadTenant() {
 
         exception.expect(NotAuthorizedException.class);
         getToken("Bad", INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
     }
 
     @Test
-    public void test3BadUsername() throws IOException {
+    public void test3BadUsername() {
 
         exception.expect(NotAuthorizedException.class);
         getToken(INSTANCE_TENANT_NAME, "Bad", INSTANCE_ADMIN_PASSWORD);
     }
 
     @Test
-    public void test4BadPassword() throws IOException {
+    public void test4BadPassword() {
 
         exception.expect(NotAuthorizedException.class);
         getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, "Bad");
     }
 
     @Test
-    public void test5ModifiedBasicAuthWrongUri() throws IOException {
+    public void test5ModifiedBasicAuthWrongUri()  {
 
         Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/role").toExternalForm()));
-        Response response = target.request()
-                .accept(MediaType.APPLICATION_JSON_TYPE)
+        WebTarget target = client.target(BASE_URL);
+        Response response = target
+                .path("resources/role")
+                .request(MediaType.APPLICATION_JSON_TYPE)
                 .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
                         generateBasicAuthHeaderValue(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD))
                 .get();

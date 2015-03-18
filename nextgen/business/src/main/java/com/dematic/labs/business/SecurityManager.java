@@ -118,7 +118,7 @@ public class SecurityManager {
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
-    public List<UserDto> getTenantsAdminUsers() {
+    public CollectionDto<UserDto> getTenantsAdminUsers(@Valid Pagination pagination) {
         List<User> tenantsAdminUsers = new ArrayList<>();
 
         for (Partition partition : partitionManager.getPartitions(Realm.class)) {
@@ -136,17 +136,20 @@ public class SecurityManager {
                     }
                 }
             }
-
         }
-        return tenantsAdminUsers.stream().map(new UserConverter()).collect(Collectors.toList());
+        return new CollectionDto<>(tenantsAdminUsers.stream().map(new UserConverter()).collect(Collectors.toList()),
+                pagination, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
-    public List<UserDto> getUsers() {
+    public CollectionDto<UserDto> getUsers(Pagination pagination) {
         IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
         //noinspection unchecked
         Collection<User> users = queryBuilder.createIdentityQuery(User.class).getResultList();
-        return users.stream().map(new UserConverter()).collect(Collectors.toList());
+        List<UserDto> userDtoList = users.stream()
+                .map(new UserConverter())
+                .collect(Collectors.toList());
+        return new CollectionDto<>(userDtoList, pagination, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
@@ -161,11 +164,14 @@ public class SecurityManager {
     }
 
     @RolesAllowed({ApplicationRole.ADMINISTER_USERS, ApplicationRole.ADMINISTER_ROLES})
-    public List<RoleDto> getRoles() {
+    public CollectionDto<RoleDto> getRoles(Pagination pagination) {
         IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
         //noinspection unchecked
         List<Role> roles = queryBuilder.createIdentityQuery(Role.class).getResultList();
-        return roles.stream().map(new RoleConverter()).collect(Collectors.toList());
+        List<RoleDto> roleDtoList = roles.stream()
+                .map(new RoleConverter())
+                .collect(Collectors.toList());
+        return new CollectionDto<>(roleDtoList, pagination, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_ROLES)

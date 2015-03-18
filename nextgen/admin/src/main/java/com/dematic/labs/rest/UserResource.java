@@ -1,6 +1,8 @@
 package com.dematic.labs.rest;
 
+import com.dematic.labs.business.Pagination;
 import com.dematic.labs.business.SecurityManager;
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.UserDto;
 import com.dematic.labs.rest.dto.UserDtoHrefDecorator;
 import org.picketlink.authorization.annotations.RolesAllowed;
@@ -12,7 +14,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.dematic.labs.business.SecurityManager.USER_RESOURCE_PATH;
@@ -30,9 +31,15 @@ public class UserResource {
     @GET
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerUsers")
-    public List<UserDto> getList() {
-        return securityManager.getUsers()
-                .stream().map(new UserDtoHrefDecorator(uriInfo.getAbsolutePath().getPath())).collect(Collectors.toList());
+    public CollectionDto<UserDto> getList(@DefaultValue("0") @QueryParam("offset") int offset,
+                                 @DefaultValue("25") @QueryParam("limit") int limit) {
+
+        CollectionDto<UserDto> collectionDto = securityManager.getUsers(new Pagination(offset, limit));
+        collectionDto.getItems().stream()
+                .map(new UserDtoHrefDecorator(uriInfo.getAbsolutePath().getPath()))
+                .collect(Collectors.toList());
+
+        return collectionDto;
     }
 
     @POST
