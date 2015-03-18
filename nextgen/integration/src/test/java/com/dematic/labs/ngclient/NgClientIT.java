@@ -1,5 +1,6 @@
 package com.dematic.labs.ngclient;
 
+import com.gargoylesoftware.htmlunit.BrowserVersion;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
 
@@ -9,6 +10,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -20,7 +22,6 @@ import static org.junit.Assert.*;
 public class NgClientIT {
 
     private static WebDriver driver;
-    //private static HtmlUnitDriver driver;
 
     public NgClientIT() { }
 
@@ -45,33 +46,20 @@ public class NgClientIT {
 
     @Test
     public void test2Login ()  throws MalformedURLException {
-        WebElement username = null;
-        WebElement password = null;
-        WebElement login = null;
+        WebElement username;
+        WebElement password;
+        WebElement login;
         WebDriverWait wait;
         WebElement hello;
         WebElement welcome;
         //WebElement logout = null;
 
         driver.get("http://127.0.0.1:8080/ngclient/");
-        try {
-            username = driver.findElement(By.name("username"));
-        }
-        catch (NoSuchElementException e) {
-            fail("Did not find element named username");
-        }
-        try {
-            password = driver.findElement(By.name("password"));
-        }
-        catch (NoSuchElementException e) {
-            fail("Did not find element named password");
-        }
-        try {
-            login = driver.findElement(By.id("log-in"));
-        }
-        catch (NoSuchElementException e) {
-            fail("Did not find element with id log-in");
-        }
+
+        username = driver.findElement(By.name("username"));
+        //username=(new WebDriverWait(driver, 1)).until(ExpectedConditions.presenceOfElementLocated(By.name("username")));
+        password = driver.findElement(By.name("password"));
+        login = driver.findElement(By.id("log-in"));
 
         username.sendKeys("superuser");
         password.sendKeys("abcd1234");
@@ -84,7 +72,6 @@ public class NgClientIT {
         wait = new WebDriverWait(driver, 40);
         welcome = wait.until(ExpectedConditions.elementToBeClickable(By.id("welcome")));
         Assert.assertEquals(welcome.getText().compareTo("Welcome to the Home page!"), 0);
-
     }
 
     @AfterClass
