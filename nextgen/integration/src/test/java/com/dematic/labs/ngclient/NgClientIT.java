@@ -26,6 +26,7 @@ public class NgClientIT {
 
     @BeforeClass
     public static void before() throws MalformedURLException {
+        System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
         driver = new ChromeDriver();
     }
 
