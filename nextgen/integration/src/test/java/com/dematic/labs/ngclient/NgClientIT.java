@@ -28,7 +28,7 @@ public class NgClientIT {
     public static void before() throws MalformedURLException {
         ChromeOptions options = new ChromeOptions();
         options.setBinary("/usr/bin");
-        driver = new ChromeDriver();
+        driver = new ChromeDriver(options);
     }
 
     @Test
@@ -90,9 +90,7 @@ public class NgClientIT {
 
     @AfterClass
     public static void after() {
-        if (null != driver) {
-            driver.close();
-            driver.quit();
-        }
+        driver.close();
+        driver.quit();
     }
 }
