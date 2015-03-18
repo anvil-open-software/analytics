@@ -2,6 +2,8 @@ package com.dematic.labs.rest;
 
 import com.dematic.labs.business.ApplicationRole;
 import com.dematic.labs.business.OrganizationManager;
+import com.dematic.labs.business.Pagination;
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.OrganizationDto;
 import com.dematic.labs.rest.dto.HrefDecorator;
 import org.picketlink.authorization.annotations.RolesAllowed;
@@ -13,7 +15,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -55,9 +56,15 @@ public class OrganizationResource {
     @GET
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed(ApplicationRole.VIEW_ORGANIZATIONS)
-    public List<OrganizationDto> getList() {
-        return organizationManager.getOrganizations().
-                stream().map(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath())).collect(Collectors.toList());
+    public CollectionDto<OrganizationDto> getList(@DefaultValue("0") @QueryParam("offset") int offset,
+                                                  @DefaultValue("25") @QueryParam("limit") int limit) {
+
+        CollectionDto<OrganizationDto> collectionDto = organizationManager
+                .getOrganizations(new Pagination(offset, limit));
+        collectionDto.getItems().stream()
+                .map(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath()))
+                .collect(Collectors.toList());
+        return collectionDto;
     }
 
     @PUT

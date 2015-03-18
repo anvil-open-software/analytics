@@ -1,22 +1,18 @@
 package com.dematic.labs.persistence.entities;
 
+import com.dematic.labs.matchers.ConstraintViolationMatcher;
 import com.dematic.labs.persistence.EmbeddedH2;
 import com.dematic.labs.persistence.JpaRule;
 import org.h2.jdbc.JdbcSQLException;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
-import org.hamcrest.collection.IsIterableContainingInAnyOrder;
-import org.hamcrest.core.IsEqual;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.util.Arrays;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
@@ -183,32 +179,6 @@ public class OrganizationTest {
 
         expectedException.expect(new ConstraintViolationMatcher("Organization Name may not be null", "Tenant ID may not be null"));
         crudService.create(organization);
-    }
-
-    private class ConstraintViolationMatcher extends TypeSafeMatcher<javax.validation.ConstraintViolationException> {
-
-        private final IsIterableContainingInAnyOrder<String> elementMatcher;
-
-        public ConstraintViolationMatcher(String... expectedMessages) {
-
-            elementMatcher = new IsIterableContainingInAnyOrder<>(Arrays.asList(expectedMessages).stream()
-                    .map(IsEqual::equalTo).collect(Collectors.toList()));
-        }
-
-        @Override
-        protected boolean matchesSafely(javax.validation.ConstraintViolationException constraintViolationException) {
-
-            Set<String> violations = constraintViolationException.getConstraintViolations().stream()
-                    .map(javax.validation.ConstraintViolation::getMessage).collect(Collectors.toSet());
-
-            return elementMatcher.matches(violations);
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendDescriptionOf(elementMatcher);
-        }
-
     }
 
     private class HibernateWrappedCauseMatcher extends TypeSafeMatcher<Throwable> {

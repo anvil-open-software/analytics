@@ -1,6 +1,8 @@
 package com.dematic.labs.rest;
 
+import com.dematic.labs.business.Pagination;
 import com.dematic.labs.business.SecurityManager;
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.UserDto;
 import com.dematic.labs.rest.dto.UserDtoHrefDecorator;
 import org.picketlink.authorization.annotations.RolesAllowed;
@@ -12,13 +14,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @RequestScoped
 @Path("tenantAdminUser")
 public class TenantAdminUserResource {
 
+    public static final String DEFAULT_LIMIT = "25";
     @EJB
     SecurityManager securityManager;
 
@@ -28,9 +30,14 @@ public class TenantAdminUserResource {
     @GET
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerTenants")
-    public List<UserDto> getList() {
-        return securityManager.getTenantsAdminUsers()
-                .stream().map(new UserDtoHrefDecorator(uriInfo.getAbsolutePath().getPath())).collect(Collectors.toList());
+    public CollectionDto<UserDto> getList(@DefaultValue("0") @QueryParam("offset") int offset,
+                                 @DefaultValue(DEFAULT_LIMIT) @QueryParam("limit") int limit) {
+        CollectionDto<UserDto> collectionDto = securityManager.getTenantsAdminUsers(new Pagination(offset, limit));
+        collectionDto.getItems()
+                .stream()
+                .map(new UserDtoHrefDecorator(uriInfo.getAbsolutePath().getPath()))
+                .collect(Collectors.toList());
+        return collectionDto;
     }
 
 

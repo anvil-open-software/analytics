@@ -1,5 +1,6 @@
 package com.dematic.labs.rest;
 
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.UserDto;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
@@ -11,16 +12,11 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import javax.ws.rs.HttpMethod;
-import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 import java.time.Instant;
-import java.util.List;
 
 import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
@@ -34,11 +30,11 @@ public class UserResourceIT {
 
     private static String uuid;
 
-    public UserResourceIT() throws MalformedURLException {
+    public UserResourceIT() {
     }
 
     @BeforeClass
-    public static void before() throws MalformedURLException {
+    public static void before() {
 
         SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
@@ -48,7 +44,7 @@ public class UserResourceIT {
     }
 
     @Test
-    public void test01Create() throws MalformedURLException {
+    public void test01Create() {
 
         SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
@@ -57,25 +53,27 @@ public class UserResourceIT {
     }
 
     @Test
-    public void test03GetList() throws Exception {
+    public void test03GetList() {
+
+        Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
+                .path("resources/user")
+                .request(MediaType.APPLICATION_JSON);
 
         SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/user").toExternalForm()));
 
-        List<UserDto> list = signRequest(token, target
-                        .request(MediaType.APPLICATION_JSON)
-                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                HttpMethod.GET, null
-        ).get(new GenericType<List<UserDto>>() {});
+        CollectionDto<UserDto> collectionDto = request
+                .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
+                .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
+                        signRequest(request, token, HttpMethod.GET, null))
+                .get(new GenericType<CollectionDto<UserDto>>() {});
 
-        assertThat(list, iterableWithSize(2));
-        assertThat(list, everyItem(new UserDtoHrefMatcher()));
+        assertThat(collectionDto.getItems(), iterableWithSize(2));
+        assertThat(collectionDto.getItems(), everyItem(new UserDtoHrefMatcher()));
     }
 
     @AfterClass
-    public static void after() throws MalformedURLException {
+    public static void after() {
 
         SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
