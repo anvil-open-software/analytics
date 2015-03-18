@@ -26,14 +26,12 @@ public class NgClientIT {
 
     @BeforeClass
     public static void before() throws MalformedURLException {
-        ChromeOptions options = new ChromeOptions();
-        options.setBinary("/usr/bin");
-        driver = new ChromeDriver(options);
+        driver = new ChromeDriver();
     }
 
     @Test
     public void test1GetLandingPage ()  throws MalformedURLException {
-        // Little change to force a build ...
+        // Little change to force a build ..
         driver.get("http://127.0.0.1:8080/ngclient/");
         System.out.print("Title: " + driver.getTitle());
         assertTrue(driver.getTitle().startsWith("ngclient"));
