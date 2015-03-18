@@ -90,7 +90,9 @@ public class NgClientIT {
 
     @AfterClass
     public static void after() {
-        driver.close();
-        driver.quit();
+        if (null != driver) {
+            driver.close();
+            driver.quit();
+        }
     }
 }
