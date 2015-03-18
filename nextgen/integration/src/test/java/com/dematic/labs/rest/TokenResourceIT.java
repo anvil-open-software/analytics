@@ -1,5 +1,6 @@
 package com.dematic.labs.rest;
 
+import com.dematic.labs.business.ApplicationRole;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.google.common.base.Strings;
@@ -19,6 +20,7 @@ import java.net.MalformedURLException;
 
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
 import static com.dematic.labs.rest.SecuredEndpointHelper.*;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -41,6 +43,8 @@ public class TokenResourceIT {
         String signatureKey = token.getSignatureKey();
 
         assertFalse(Strings.isNullOrEmpty(signatureKey));
+
+        assertThat(token.getGrantedRoles(), containsInAnyOrder(ApplicationRole.ADMINISTER_TENANTS));
     }
 
     @Test
