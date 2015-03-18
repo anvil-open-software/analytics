@@ -1,16 +1,12 @@
 package com.dematic.labs.ngclient;
 
-import com.gargoylesoftware.htmlunit.BrowserVersion;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -26,25 +22,21 @@ public class NgClientIT {
     public NgClientIT() { }
 
     @BeforeClass
-    public static void before() throws MalformedURLException {
+    public static void beforeClass() throws MalformedURLException {
+        //System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
         driver = new ChromeDriver();
     }
 
     @Test
-    public void test1GetLandingPage ()  throws MalformedURLException {
-        // Little change to force a build ...
+    public void test000GetLandingPage ()  throws MalformedURLException {
+        // Little change to force a build ....
         driver.get("http://127.0.0.1:8080/ngclient/");
-        System.out.print("Title: " + driver.getTitle());
-        assertTrue(driver.getTitle().startsWith("ngclient"));
+        String title = driver.getTitle();
+        assertEquals(title.compareTo("ngclient"), 0);
     }
 
     @Test
-    public void test1Name() throws Exception {
-
-    }
-
-    @Test
-    public void test2Login ()  throws MalformedURLException {
+    public void test100Login ()  throws MalformedURLException {
         WebElement username;
         WebElement password;
         WebElement login;
@@ -74,7 +66,7 @@ public class NgClientIT {
     }
 
     @AfterClass
-    public static void after() {
+    public static void afterClass() {
         driver.close();
         driver.quit();
     }

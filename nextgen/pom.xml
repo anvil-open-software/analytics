@@ -285,6 +285,8 @@
                         <regionName>${regionName}</regionName>
                         <!--suppress MavenModelInspection -->
                         <kinesisInputStream>${kinesisInputStream}</kinesisInputStream>
+                        <!-- required for selenium integration tests -->
+                        <webdriver.chrome.driver>/usr/bin/chromedriver</webdriver.chrome.driver>
                     </systemPropertyVariables>
                 </configuration>
                 <dependencies>
