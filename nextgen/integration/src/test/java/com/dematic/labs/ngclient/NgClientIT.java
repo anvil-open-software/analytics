@@ -9,6 +9,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -25,11 +26,12 @@ public class NgClientIT {
 
     @BeforeClass
     public static void before() throws MalformedURLException {
-        //driver = new HtmlUnitDriver();
-
+        driver = new HtmlUnitDriver();
+        /*
         ChromeOptions options = new ChromeOptions();
         options.setBinary("/usr/bin");
         driver = new ChromeDriver();
+        */
 
     }
 
