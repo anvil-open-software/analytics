@@ -1,6 +1,6 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.business.Pagination;
+import com.dematic.labs.business.dto.Pagination;
 import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.TenantDto;
@@ -33,7 +33,7 @@ public class TenantResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerTenants")
     public CollectionDto<TenantDto> getList(@DefaultValue("0") @QueryParam("offset") int offset,
-                                            @DefaultValue("25") @QueryParam("limit") int limit) {
+                                            @DefaultValue(Pagination.DEFAULT_LIMIT_AS_STRING) @QueryParam("limit") int limit) {
         CollectionDto<TenantDto> collectionDto = securityManager.getTenants(new Pagination(offset, limit));
         collectionDto.getItems().stream()
                 .map(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath()))

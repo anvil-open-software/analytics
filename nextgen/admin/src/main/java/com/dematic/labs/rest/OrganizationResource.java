@@ -2,7 +2,7 @@ package com.dematic.labs.rest;
 
 import com.dematic.labs.business.ApplicationRole;
 import com.dematic.labs.business.OrganizationManager;
-import com.dematic.labs.business.Pagination;
+import com.dematic.labs.business.dto.Pagination;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.OrganizationDto;
 import com.dematic.labs.rest.dto.HrefDecorator;

@@ -4,10 +4,12 @@ import com.dematic.labs.business.SecurityFixture;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
+import com.dematic.labs.business.matchers.UserDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.dto.RestError;
 import com.dematic.labs.rest.matchers.UserDtoHrefMatcher;
+import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.hamcrest.core.StringStartsWith;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -23,6 +25,8 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
@@ -35,7 +39,7 @@ import static org.junit.Assert.*;
 public class TenantAdminUserResourceIT {
 
     private static SignatureToken token;
-    private static String uuid;
+    private static List<String> uuidList = new ArrayList<>();
 
     public TenantAdminUserResourceIT() {
     }
@@ -45,7 +49,8 @@ public class TenantAdminUserResourceIT {
 
         token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
-        uuid = IdentityManagementHelper.createTenant(token, TENANT_A).getId();
+        uuidList.add(IdentityManagementHelper.createTenant(token, TENANT_A).getId());
+        uuidList.add(IdentityManagementHelper.createTenant(token, TENANT_B).getId());
     }
 
     @Test
@@ -104,10 +109,37 @@ public class TenantAdminUserResourceIT {
         assertThat(collectionDto.getItems(), everyItem(new UserDtoHrefMatcher()));
     }
 
+    @Test
+    public void test04GetListWithSort() throws Exception {
+
+        IdentityManagementHelper.createTenantAdmin(token, TENANT_B, TENANT_B_ADMIN_USERNAME, TENANT_B_ADMIN_PASSWORD);
+        IdentityManagementHelper.createTenantAdmin(token, TENANT_B, "second"+TENANT_B_ADMIN_USERNAME, TENANT_B_ADMIN_PASSWORD);
+        IdentityManagementHelper.createTenantAdmin(token, TENANT_B, "last"+TENANT_B_ADMIN_USERNAME, TENANT_B_ADMIN_PASSWORD);
+
+        Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
+                .path("resources/tenantAdminUser")
+                .queryParam("orderBy", "tenantDto.name DESC,loginName".replace(" ", "%20"))
+                .request(MediaType.APPLICATION_JSON);
+
+        CollectionDto<UserDto> collectionDto = request
+                .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
+                .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
+                        signRequest(request, token, HttpMethod.GET, null))
+                .get(new GenericType<CollectionDto<UserDto>>() {});
+
+        assertThat(collectionDto.getItems(), iterableWithSize(4));
+        assertThat(collectionDto.getItems(), everyItem(new UserDtoHrefMatcher()));
+        assertThat(collectionDto.getItems(), IsIterableContainingInOrder.contains(
+                new UserDtoMatcher(TENANT_B_ADMIN_USERNAME, TENANT_B),
+                new UserDtoMatcher("last"+TENANT_B_ADMIN_USERNAME, TENANT_B),
+                new UserDtoMatcher("second"+TENANT_B_ADMIN_USERNAME, TENANT_B),
+                new UserDtoMatcher(TENANT_A_ADMIN_USERNAME, TENANT_A)));
+    }
+
     @AfterClass
     public static void after() {
 
-        IdentityManagementHelper.deleteTenant(token, uuid);
+        uuidList.forEach(p -> IdentityManagementHelper.deleteTenant(token, p));
 
     }
 

@@ -1,13 +1,17 @@
 package com.dematic.labs.business.dto;
 
-import com.dematic.labs.business.Pagination;
+import org.apache.commons.beanutils.BeanComparator;
+import org.apache.commons.collections4.comparators.ComparatorChain;
 
 import javax.annotation.Nonnull;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @XmlRootElement
 public class CollectionDto<T extends IdentifiableDto> {
+
+    private static final String NO_SUCH_METHOD_EXCEPTION_TEXT = NoSuchMethodException.class.getSimpleName() + ":";
 
     private int offset;
     private int limit;
@@ -23,19 +27,40 @@ public class CollectionDto<T extends IdentifiableDto> {
         this(items, pagination, false);
     }
 
-    public CollectionDto(@Nonnull List<T> items, @Nonnull Pagination pagination, boolean listNeedsPagination) {
+    public CollectionDto(@Nonnull List<T> items, @Nonnull Pagination pagination, boolean listNeedsProcessing) {
         List<T> cookedItems = items;
         int cookedLimit = pagination.getLimit();
-        if (listNeedsPagination) {
-            if ((pagination.getOffset() + pagination.getLimit()) > items.size()) {
-                if (pagination.getOffset() > items.size()) {
+        if (listNeedsProcessing) {
+            List<T> sortedItems = items;
+            if (!pagination.getOrderBy().isEmpty()) {
+                ComparatorChain<T> comparatorChain = new ComparatorChain<>();
+
+                for (Pagination.ColumnSort columnSort : pagination.getOrderBy()) {
+                    BeanComparator<T> beanComparator = new BeanComparator<>(columnSort.getPropertyName());
+                    comparatorChain.addComparator(beanComparator,
+                            columnSort.getSortDirection().equals(SortDirection.DESC));
+                }
+                try {
+                    sortedItems = items.stream().sorted(comparatorChain).collect(Collectors.toList());
+                } catch (RuntimeException re) {
+                    int startIndex = re.getMessage().lastIndexOf(NO_SUCH_METHOD_EXCEPTION_TEXT);
+                    if (startIndex > -1) {
+                        throw new IllegalArgumentException(
+                                re.getMessage().substring(startIndex + NO_SUCH_METHOD_EXCEPTION_TEXT.length()));
+                    }
+                    throw re;
+                }
+            }
+
+            if ((pagination.getOffset() + pagination.getLimit()) > sortedItems.size()) {
+                if (pagination.getOffset() > sortedItems.size()) {
                     throw new IllegalStateException(
                             String.format("Offset [%d] exceeds size of collection [%d]",
-                                    pagination.getOffset(), items.size()));
+                                    pagination.getOffset(), sortedItems.size()));
                 }
-                cookedLimit = items.size() - pagination.getOffset();
+                cookedLimit = sortedItems.size() - pagination.getOffset();
             }
-            cookedItems = items.subList(pagination.getOffset(), pagination.getOffset() + cookedLimit);
+            cookedItems = sortedItems.subList(pagination.getOffset(), pagination.getOffset() + cookedLimit);
         }
 
         this.offset = pagination.getOffset();

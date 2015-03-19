@@ -1,9 +1,6 @@
 package com.dematic.labs.business;
 
-import com.dematic.labs.business.dto.CollectionDto;
-import com.dematic.labs.business.dto.RoleDto;
-import com.dematic.labs.business.dto.TenantDto;
-import com.dematic.labs.business.dto.UserDto;
+import com.dematic.labs.business.dto.*;
 import com.dematic.labs.matchers.ConstraintViolationMatcher;
 import org.apache.deltaspike.security.api.authorization.AccessDeniedException;
 import org.hamcrest.collection.IsEmptyIterable;

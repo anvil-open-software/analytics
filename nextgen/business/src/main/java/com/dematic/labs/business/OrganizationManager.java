@@ -3,6 +3,7 @@ package com.dematic.labs.business;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
 import com.dematic.labs.business.dto.OrganizationDto;
+import com.dematic.labs.business.dto.Pagination;
 import com.dematic.labs.persistence.entities.*;
 import com.mysema.query.jpa.JPQLQuery;
 import org.picketlink.authorization.annotations.RolesAllowed;

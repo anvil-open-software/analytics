@@ -1,7 +1,7 @@
 package com.dematic.labs.rest;
 
 import com.dematic.labs.business.ApplicationRole;
-import com.dematic.labs.business.Pagination;
+import com.dematic.labs.business.dto.Pagination;
 import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.RoleDto;
