@@ -18,19 +18,19 @@ import static org.junit.Assert.*;
 public class NgClientIT {
 
     private static WebDriver driver;
+    private static String homePage = "http://127.0.0.1:8080/ngclient/";
 
     public NgClientIT() { }
 
     @BeforeClass
     public static void beforeClass() throws MalformedURLException {
-        //System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver");
         driver = new ChromeDriver();
     }
 
     @Test
     public void test000GetLandingPage ()  throws MalformedURLException {
         // Little change to force a build ....
-        driver.get("http://127.0.0.1:8080/ngclient/");
+        driver.get(homePage);
         String title = driver.getTitle();
         assertEquals(title.compareTo("ngclient"), 0);
     }
@@ -45,10 +45,10 @@ public class NgClientIT {
         WebElement welcome;
         //WebElement logout = null;
 
-        driver.get("http://127.0.0.1:8080/ngclient/");
+        driver.get(homePage);
 
         username = driver.findElement(By.name("username"));
-        //username=(new WebDriverWait(driver, 1)).until(ExpectedConditions.presenceOfElementLocated(By.name("username")));
+        //username=(new WebDriverWait(driver, 16)).until(ExpectedConditions.presenceOfElementLocated(By.name("username")));
         password = driver.findElement(By.name("password"));
         login = driver.findElement(By.id("log-in"));
 
