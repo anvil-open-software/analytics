@@ -29,7 +29,7 @@ public class NgClientIT {
 
     @Test
     public void test000GetLandingPage ()  throws MalformedURLException {
-        // Little change to force a build ....
+        // Little change to force a build .....
         driver.get(homePage);
         String title = driver.getTitle();
         assertEquals(title.compareTo("ngclient"), 0);
