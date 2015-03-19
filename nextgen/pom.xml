@@ -317,6 +317,7 @@
                         <kinesisInputStream>${kinesisInputStream}</kinesisInputStream>
                         <webdriver.chrome.driver>/usr/bin/chromedriver</webdriver.chrome.driver>
                         <webdriver.chrome.logfile>/tmp/chromedriver.log</webdriver.chrome.logfile>
+                        <DISPLAY>0:0</DISPLAY>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>
