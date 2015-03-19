@@ -4,7 +4,6 @@ MAINTAINER michael.mitchell@dematic.com
 
 ENV REFRESHED_AT 2015-03-13
 
-
 # Install java 8 and make default
 RUN mkdir -p /usr/java/default && \
     curl -Ls 'http://download.oracle.com/otn-pub/java/jdk/8u31-b13/jdk-8u31-linux-x64.tar.gz' -H 'Cookie: oraclelicense=accept-securebackup-cookie' | \

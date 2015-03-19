@@ -11,6 +11,7 @@
         <module>common</module>
         <module>ingestion</module>
         <module>assembly</module>
+        <module>integration</module>
     </modules>
     <packaging>pom</packaging>
 
