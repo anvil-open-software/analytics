@@ -6,6 +6,7 @@ import org.jboss.resteasy.client.jaxrs.internal.ClientInvocation;
 import org.jboss.resteasy.client.jaxrs.internal.ClientRequestHeaders;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -29,14 +30,15 @@ public abstract class SecuredEndpointHelper {
 
     public static final String SCHEME = "http";
     public static final String HOSTNAME = "localhost:8080";
-    public static final String CONTEXT_ROOT = "/ngclient/";
+    public static final String CONTEXT_ROOT = "/admin/";
+    public static final String BASE_URL = SCHEME + "://" + HOSTNAME + CONTEXT_ROOT;
 
     public SecuredEndpointHelper() {
     }
 
     public static URL getBase() {
         try {
-            return new URL(SCHEME + "://" + HOSTNAME + CONTEXT_ROOT);
+            return new URL(BASE_URL);
 
         } catch (MalformedURLException e) {
             fail("Cannot create base URL");
@@ -69,16 +71,14 @@ public abstract class SecuredEndpointHelper {
         return "DLabsT " + tenant + ":" + username + ":" + signature;
     }
 
-    protected static Invocation.Builder signRequest(@Nonnull SignatureToken token, @Nonnull Invocation.Builder request, @Nonnull String httpMethod, String postPutContentType) {
+    protected static String signRequest(@Nonnull Invocation.Builder request, @Nonnull SignatureToken token,
+                                        @Nonnull String httpMethod, @Nullable String postPutContentType) {
 
         String stringToSign = extractStringToSignFromRequest(httpMethod, postPutContentType, request);
 
         String signature = sign(stringToSign, token.getSignatureKey());
 
-        request.header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
-                generateSignatureAuthHeaderValue(token.getRealm(), token.getSubject(), signature));
-
-        return request;
+        return generateSignatureAuthHeaderValue(token.getRealm(), token.getSubject(), signature);
     }
 
     protected static String extractStringToSignFromRequest(String httpMethod, String postPutContentType, Invocation.Builder request) {
