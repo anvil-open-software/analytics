@@ -26,10 +26,18 @@ WebDriver is the name of the key interface against which tests must be written. 
 
 One of the implementations, [HtmlUnit](https://code.google.com/p/selenium/wiki/HtmlUnitDriver), is very enticing since it does not require a browser at all. Unfortunately it was not be for me this time around. I made an attempt to use the _**HtmlUnit**_ interface implementation but was not successful due to an apparent [incompatibility between _**HtmlUnit**_ and AngularJS](http://stackoverflow.com/questions/20153104/htmlunit-not-working-with-angularjs) associated with AngularJS use of the document.querySelectorAll() when it boots. After spending a few houes attemping recommendations found on a few blogs, I gave up; some brave or smarter sould might consider to do this later on.
 
-## Selenium Bowser Bridge
-[Selenium WebDriver]((http://docs.seleniumhq.org/docs/01_introducing_selenium.jsp)) is an open source tool for automated testing of webapps across many browsers. It provides capabilities for navigating to web pages, user input, JavaScript execution, and more. All implementations of WebDriver that communicate with the browser, or a RemoteWebDriver, server shall use a common [wire protocol](https://code.google.com/p/selenium/wiki/JsonWireProtocol#Introduction). This wire protocol defines a RESTful web service using JSON over HTTP.
+## Selenium Browser Bridge
+You will have to download and install your own. Since we are focusing on Google Chrome for the time being, we will use Chromedriver](https://code.google.com/p/selenium/wiki/ChromeDriver); see this [document](https://sites.google.com/a/chromium.org/chromedriver/getting-started) for instructions on how to install _**Chromedriver**_. For simplicity sake, please:
+1. Ensure that the _**/usr/bin**_ folder is in your _**PATH**_.
+2. Ensure that Chromedriver is installed in _**/usr/bin**_ or that you have a _**/usr/bin/Chromedriver**_ symbolic link to the place where you installed Chromedriver.
 
-As indicated, given the narrow purposes of our first tests, we will focus on only one broweser, Google Chrome, and use Chromedriver](https://code.google.com/p/selenium/wiki/ChromeDriver) was wire protocol implementation to driver the Google Chrome browser.
+One was also installed in the build environment. In addition it was necessary to define a few runtime properites in the _**maven-failsafe-plugin**_ section of the _**nextgen**_ _**pom.xml**_ file:
+```xml
+    <webdriver.chrome.driver>${webdriver.chrome.driver}</webdriver.chrome.driver>
+    <webdriver.chrome.logfile>${webdriver.chrome.logfile}</webdriver.chrome.logfile>
+```
+
+Where the _**webdriver.chrome.driver**_ and _**webdriver.chrome.logfile**_ properties are defined in your _**junit.properties**_ file in the _**.m2**_ folder.
 
 ## Browser
 Except for the browser-less Webdriver interfaceas, [HtmlUnit](https://code.google.com/p/selenium/wiki/HtmlUnitDriver) and [PhantonJS](http://phantomjs.org/), you will need to have a browser installed in order to run Selenium WebDriver tests. We will use Google Chrome which must be installed in the folder natural to the environment in which it is being tested, as indicated in [this document](https://code.google.com/p/selenium/wiki/ChromeDriver). 
