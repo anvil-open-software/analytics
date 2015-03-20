@@ -1,7 +1,7 @@
 package com.dematic.labs.rest.helpers;
 
-import com.dematic.labs.business.dto.Pagination;
-import com.dematic.labs.business.dto.SortDirection;
+import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.entities.SortDirection;
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.Rule;
 import org.junit.Test;

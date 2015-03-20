@@ -2,6 +2,9 @@ package com.dematic.labs.business;
 
 import com.dematic.labs.business.dto.*;
 import com.dematic.labs.matchers.ConstraintViolationMatcher;
+import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.entities.SortDirection;
+import com.dematic.labs.persistence.query.PaginationHelper;
 import com.dematic.labs.picketlink.AbstractSecurityInitializer;
 import com.dematic.labs.picketlink.RealmSelector;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -55,6 +58,14 @@ public class SecurityFixture {
                 .resolve("com.mysema.querydsl:querydsl-jpa")
                 .withTransitivity().asFile();
 
+        File[] commonsCollectionDependency = Maven.resolver().loadPomFromFile("pom.xml")
+                .resolve("org.apache.commons:commons-collections4:4.0")
+                .withTransitivity().asFile();
+
+        File[] commonsBeanUtilsDependency = Maven.resolver().loadPomFromFile("pom.xml")
+                .resolve("commons-beanutils:commons-beanutils:1.9.2")
+                .withTransitivity().asFile();
+
         File[] picketLinkDependency = Maven.resolver().loadPomFromFile("pom.xml")
                 .resolve("org.picketlink:picketlink")
                 .withTransitivity().asFile();
@@ -64,8 +75,11 @@ public class SecurityFixture {
                         TenantDto.class,
                         UserDto.class,
                         RoleDto.class,
+                        NamedDto.class,
                         IdentifiableDto.class,
                         Pagination.class,
+                        PaginationHelper.class,
+                        SortDirection.class,
                         CollectionDto.class,
                         ConstraintViolationMatcher.class,
                         ApplicationRole.class,
@@ -76,6 +90,8 @@ public class SecurityFixture {
                         AbstractSecurityInitializer.class)
                 .addAsLibraries(picketLinkDependency)
                 .addAsLibraries(queryDslDependency)
+                .addAsLibraries(commonsCollectionDependency)
+                .addAsLibraries(commonsBeanUtilsDependency)
                 .addAsLibraries(databaseDependency)
                 .addAsResource("META-INF/beans.xml")
                 .addAsResource("META-INF/persistence.xml");

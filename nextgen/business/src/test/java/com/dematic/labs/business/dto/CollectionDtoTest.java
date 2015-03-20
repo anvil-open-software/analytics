@@ -1,5 +1,7 @@
 package com.dematic.labs.business.dto;
 
+import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.entities.SortDirection;
 import org.joda.time.LocalDate;
 import org.junit.Rule;
 import org.junit.Test;

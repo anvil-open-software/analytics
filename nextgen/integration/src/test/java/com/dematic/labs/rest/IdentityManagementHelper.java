@@ -4,7 +4,7 @@ import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
-import com.dematic.labs.business.matchers.RoleDtoMatcher;
+import com.dematic.labs.business.matchers.NamedDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.matchers.CreatedResponseMatcher;
@@ -172,8 +172,9 @@ public class IdentityManagementHelper {
 
         assertThat(fromServer.getGrantedRoles(), everyItem(new IdentifiableDtoHrefMatcher<>()));
 
+        //noinspection RedundantTypeArguments
         List<Matcher<? super RoleDto>> matcherList = roleNameList.stream()
-                .map(RoleDtoMatcher::new).collect(Collectors.toList());
+                .map(NamedDtoMatcher<RoleDto>::new).collect(Collectors.toList());
         assertThat(fromServer.getGrantedRoles(), containsInAnyOrder(matcherList));
 
         return fromServer;

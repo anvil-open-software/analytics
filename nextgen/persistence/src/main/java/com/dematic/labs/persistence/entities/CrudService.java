@@ -4,10 +4,7 @@ import com.dematic.labs.picketlink.RealmSelector;
 import com.mysema.query.jpa.JPQLQuery;
 import com.mysema.query.jpa.impl.JPAQuery;
 import com.mysema.query.support.Expressions;
-import com.mysema.query.types.EntityPath;
-import com.mysema.query.types.Expression;
-import com.mysema.query.types.Ops;
-import com.mysema.query.types.Path;
+import com.mysema.query.types.*;
 import org.picketlink.annotations.PicketLink;
 
 import javax.annotation.Nonnull;
@@ -19,7 +16,9 @@ import javax.persistence.PersistenceContext;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.picketlink.common.reflection.Reflections.findDeclaredConstructor;
 
@@ -75,16 +74,31 @@ public class CrudService {
         return rtnValue;
     }
 
+    // inspections want @SafeVarargs and final on method which interferes with stateless bean
+    @SuppressWarnings("unchecked")
     @Nonnull
-    public JPQLQuery createQuery(EntityPath<?>... sources) {
+    public <T extends OwnedAssetEntity> JPQLQuery createQuery(Pagination pagination, EntityPath<T>... sources) {
         JPQLQuery rtnValue = new JPAQuery(entityManager);
 
         rtnValue.from(sources);
-        for (EntityPath<?> path : sources) {
+        for (EntityPath<T> path : sources) {
             Path<String> tenantIdField = Expressions.path(String.class, path, "tenantId");
             Expression<String> tenantIdValue = Expressions.constant(realmSelector.select().getId());
             rtnValue.where(Expressions.predicate(Ops.EQ, tenantIdField, tenantIdValue));
         }
+
+        if (!pagination.getOrderBy().isEmpty()) {
+            List<OrderSpecifier<? extends Comparable>> orderSpecifierList = pagination.getOrderBy()
+                    .stream()
+                    .map(columnSort -> new OrderSpecifier<>(
+                            columnSort.getOrder(), columnSort.getPath()))
+                    .collect(Collectors.toList());
+
+
+            rtnValue.orderBy(orderSpecifierList.toArray(new OrderSpecifier<?>[orderSpecifierList.size()]));
+        }
+        rtnValue.offset(pagination.getOffset()).limit(pagination.getLimit());
+
         return rtnValue;
     }
 

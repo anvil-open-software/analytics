@@ -2,6 +2,8 @@ package com.dematic.labs.business;
 
 import com.dematic.labs.business.dto.*;
 import com.dematic.labs.matchers.ConstraintViolationMatcher;
+import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.entities.SortDirection;
 import org.apache.deltaspike.security.api.authorization.AccessDeniedException;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsNot;
@@ -16,7 +18,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -71,6 +75,16 @@ public class SecurityManagerIT {
         exception.expectCause(new ConstraintViolationMatcher("Pagination offset must be positive",
                 "Pagination limit must be positive"));
         securityManager.getTenants(new Pagination(-1, -1));
+    }
+
+    @Test
+    public void test017GetTenantsWithInvalidSort() throws Exception {
+
+        securityFixture.login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
+        exception.expectCause(new ConstraintViolationMatcher("Sort Column name may not be empty"));
+        List<Pagination.ColumnSort> orderBy = new ArrayList<>();
+        orderBy.add(new Pagination.ColumnSort("", SortDirection.ASC));
+        securityManager.getTenants(new Pagination(0, Pagination.DEFAULT_LIMIT, orderBy));
     }
 
     @Test

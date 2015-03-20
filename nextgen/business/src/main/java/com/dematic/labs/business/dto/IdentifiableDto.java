@@ -5,6 +5,8 @@ import javax.annotation.Nonnull;
 public abstract class IdentifiableDto {
 
     private String id;
+
+    //TODO - rename to a neutral term for protocol specific locator
     private String href;
 
     public String getId() {

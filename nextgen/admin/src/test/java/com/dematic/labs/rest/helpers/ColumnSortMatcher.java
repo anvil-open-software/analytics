@@ -1,7 +1,7 @@
 package com.dematic.labs.rest.helpers;
 
-import com.dematic.labs.business.dto.Pagination.ColumnSort;
-import com.dematic.labs.business.dto.SortDirection;
+import com.dematic.labs.persistence.entities.Pagination.ColumnSort;
+import com.dematic.labs.persistence.entities.SortDirection;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 

@@ -1,6 +1,7 @@
 package com.dematic.labs.business;
 
 import com.dematic.labs.business.dto.*;
+import com.dematic.labs.persistence.entities.Pagination;
 import com.google.common.collect.Sets;
 import org.picketlink.Identity;
 import org.picketlink.authorization.annotations.LoggedIn;

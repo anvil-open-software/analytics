@@ -5,6 +5,7 @@ import com.dematic.labs.business.dto.OrganizationDto;
 import com.dematic.labs.business.matchers.OrganizationBusinessRoleDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
+import com.dematic.labs.rest.matchers.CreatedResponseMatcher;
 import com.dematic.labs.rest.matchers.IdentifiableDtoHrefMatcher;
 import org.hamcrest.Matcher;
 
@@ -27,6 +28,31 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 public class OrganizationHelper {
+
+    public static OrganizationDto createOrganization(SignatureToken token, String name) {
+
+        Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
+                .path("resources/organization")
+                .request(MediaType.APPLICATION_JSON);
+
+        OrganizationDto organizationDto = new OrganizationDto();
+        organizationDto.setName(name);
+
+        Response response = request
+                .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
+                .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
+                        signRequest(request, token, HttpMethod.POST, MediaType.APPLICATION_JSON))
+                .post(Entity.entity(organizationDto, MediaType.APPLICATION_JSON));
+
+        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        OrganizationDto fromServer = response.readEntity(OrganizationDto.class);
+
+        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoHrefMatcher<>()));
+
+        assertEquals(name, fromServer.getName());
+        return fromServer;
+    }
+
     public static OrganizationDto getOrganization(SignatureToken token, String uuid) {
 
         Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
@@ -76,4 +102,5 @@ public class OrganizationHelper {
         assertThat(fromServer.getBusinessRoles(), containsInAnyOrder(businessRoleNameMatcherList));
         return fromServer;
     }
+
 }

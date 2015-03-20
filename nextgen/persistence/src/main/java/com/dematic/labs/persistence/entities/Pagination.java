@@ -1,8 +1,14 @@
-package com.dematic.labs.business.dto;
+package com.dematic.labs.persistence.entities;
+
+import com.mysema.query.types.Order;
+import com.mysema.query.types.Path;
 
 import javax.annotation.Nonnull;
+import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,6 +29,7 @@ public class Pagination {
     @Max(value = MAX_LIMIT, message = "Pagination limit may not exceed " + MAX_LIMIT)
     private final int limit;
 
+    @Valid
     private final List<ColumnSort> orderBy = new ArrayList<>();
 
     public Pagination(int offset, int limit) {
@@ -50,8 +57,15 @@ public class Pagination {
     }
 
     public static class ColumnSort {
+
+        @Size(min = 1, message = "Sort Column name may not be empty")
         private final String propertyName;
+
+        @NotNull
         private final SortDirection sortDirection;
+
+        private Path<? extends Comparable> path;
+        private Order order;
 
         public ColumnSort(@Nonnull String propertyName, @Nonnull SortDirection sortDirection) {
             this.propertyName = propertyName;
@@ -66,5 +80,20 @@ public class Pagination {
             return sortDirection;
         }
 
+        public void setQueryDslPath(@Nonnull Path<? extends Comparable> path) {
+            this.path = path;
+        }
+
+        public void setQueryDslOrder(@Nonnull Order order) {
+            this.order = order;
+        }
+
+        public Order getOrder() {
+            return order;
+        }
+
+        public Path<? extends Comparable> getPath() {
+            return path;
+        }
     }
 }

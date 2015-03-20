@@ -3,8 +3,9 @@ package com.dematic.labs.business;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
 import com.dematic.labs.business.dto.OrganizationDto;
-import com.dematic.labs.business.dto.Pagination;
+import com.dematic.labs.persistence.entities.Pagination;
 import com.dematic.labs.persistence.entities.*;
+import com.dematic.labs.persistence.query.PaginationHelper;
 import com.mysema.query.jpa.JPQLQuery;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
@@ -38,9 +39,11 @@ public class OrganizationManager {
     public CollectionDto<OrganizationDto> getOrganizations(@Valid Pagination pagination) {
 
         QOrganization qOrganization = QOrganization.organization;
-        JPQLQuery query = crudService.createQuery(qOrganization);
 
-        query.offset(pagination.getOffset()).limit(pagination.getLimit());
+        PaginationHelper.convertPropertyStringsToQueryPaths(pagination, qOrganization);
+        JPQLQuery query = crudService.createQuery(pagination, qOrganization);
+
+        //QBean
         List<OrganizationDto> organizationDtoList = query.list(qOrganization)
                 .stream().map(new OrganizationConverter()).collect(Collectors.toList());
 

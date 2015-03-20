@@ -1,14 +1,12 @@
 package com.dematic.labs.business.dto;
 
-import javax.validation.constraints.NotNull;
+import javax.annotation.Nonnull;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
 
 @XmlRootElement
-public class OrganizationDto extends IdentifiableDto {
-
-    private String name;
+public class OrganizationDto extends NamedDto {
 
     private List<OrganizationBusinessRoleDto> businessRoles = new ArrayList<>();
 
@@ -16,12 +14,8 @@ public class OrganizationDto extends IdentifiableDto {
 
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(@NotNull String name) {
-        this.name = name;
+    public OrganizationDto(@Nonnull String name) {
+        setName(name);
     }
 
     public List<OrganizationBusinessRoleDto> getBusinessRoles() {

@@ -1,6 +1,6 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.business.dto.Pagination;
+import com.dematic.labs.persistence.entities.Pagination;
 import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.UserDto;
