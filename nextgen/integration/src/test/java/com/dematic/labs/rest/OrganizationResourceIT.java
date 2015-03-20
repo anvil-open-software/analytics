@@ -1,9 +1,7 @@
 package com.dematic.labs.rest;
 
 import com.dematic.labs.business.ApplicationRole;
-import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
-import com.dematic.labs.business.dto.OrganizationDto;
-import com.dematic.labs.business.dto.UserDto;
+import com.dematic.labs.business.dto.*;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.persistence.entities.BusinessRole;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
@@ -18,16 +16,10 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import javax.ws.rs.HttpMethod;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.client.*;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -35,9 +27,7 @@ import java.util.stream.Collectors;
 
 import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
-import static com.dematic.labs.rest.SecuredEndpointHelper.getBase;
-import static com.dematic.labs.rest.SecuredEndpointHelper.getToken;
-import static com.dematic.labs.rest.SecuredEndpointHelper.signRequest;
+import static com.dematic.labs.rest.SecuredEndpointHelper.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -48,7 +38,7 @@ public class OrganizationResourceIT {
     private static String tenantUuid, organizationUuid;
 
    @BeforeClass
-    public static void before() throws MalformedURLException {
+    public static void before() {
 
         {
             SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
@@ -71,77 +61,80 @@ public class OrganizationResourceIT {
     }
 
     @Test
-    public void test010GetBusinessRoles() throws Exception {
+    public void test010GetBusinessRoles() {
+
         SignatureToken token = getToken(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
 
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/businessRole").toExternalForm()));
+        Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
+                .path("resources/businessRole")
+                .request(MediaType.APPLICATION_JSON);
 
-        String[] list = signRequest(token, target
-                        .request(MediaType.APPLICATION_JSON)
-                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                HttpMethod.GET, null
-        ).get(String[].class);
+        List<String> list = request
+                .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
+                .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
+                        signRequest(request, token, HttpMethod.GET, null))
+                .get(new GenericType<List<String>>() {});
 
         List<Matcher<? super String>> businessRoleNameMatcherList = Arrays.asList(BusinessRole.values()).stream()
                 .map(BusinessRole::name).map(IsEqual::<String>equalTo).collect(Collectors.toList());
-        assertThat(list, arrayContainingInAnyOrder(businessRoleNameMatcherList));
+        assertThat(list, contains(businessRoleNameMatcherList));
     }
 
     @Test
-    public void test020Post() throws MalformedURLException {
+    public void test020Post() {
 
         String organizationName = "ACME";
 
+        Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
+                .path("resources/organization")
+                .request(MediaType.APPLICATION_JSON);
+
+        OrganizationDto organizationDto = new OrganizationDto();
+        organizationDto.setName(organizationName);
+
         SignatureToken token = getToken(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
-        {
-            Client client = ClientBuilder.newClient();
-            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/organization").toExternalForm()));
 
-            OrganizationDto organizationDto = new OrganizationDto();
-            organizationDto.setName(organizationName);
+        Response response = request
+                .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
+                .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
+                        signRequest(request, token, HttpMethod.POST, MediaType.APPLICATION_JSON))
+                .post(Entity.entity(organizationDto, MediaType.APPLICATION_JSON));
 
-            Response response = signRequest(token, target.request()
-                            .accept(MediaType.APPLICATION_JSON)
-                            .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                    HttpMethod.POST, MediaType.APPLICATION_JSON
-                    ).post(Entity.entity(organizationDto, MediaType.APPLICATION_JSON));
+        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
+        OrganizationDto fromServer = response.readEntity(OrganizationDto.class);
 
-            assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-            OrganizationDto fromServer = response.readEntity(OrganizationDto.class);
+        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoHrefMatcher<>()));
 
-            assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoHrefMatcher<>()));
-
-            assertEquals(organizationName, fromServer.getName());
-            organizationUuid = fromServer.getId();
-        }
+        assertEquals(organizationName, fromServer.getName());
+        organizationUuid = fromServer.getId();
 
     }
 
     @Test
-    public void test030GetList() throws Exception {
+    public void test030GetList() {
+
+        Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
+                .path("resources/organization")
+                .request(MediaType.APPLICATION_JSON);
+
         SignatureToken token = getToken(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
 
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/organization").toExternalForm()));
+        CollectionDto<OrganizationDto> collectionDto = request
+                .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
+                .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
+                        signRequest(request, token, HttpMethod.GET, null))
+                .get(new GenericType<CollectionDto<OrganizationDto>>() {});
 
-        List<OrganizationDto> list = signRequest(token, target
-                        .request(MediaType.APPLICATION_JSON)
-                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                HttpMethod.GET, null
-                ).get(new GenericType<List<OrganizationDto>>() {
-        });
-
-        assertThat(list, iterableWithSize(1));
-        assertThat(list, everyItem(new IdentifiableDtoHrefMatcher<>()));
+        assertThat(collectionDto.getItems(), iterableWithSize(1));
+        assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoHrefMatcher<>()));
     }
 
     @Test
-    public void test040GrantBusinessRole() throws MalformedURLException {
+    public void test040GrantBusinessRole() {
 
         SignatureToken token = getToken(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
 
-        OrganizationDto organizationDto = OrganizationHelper.createOrganization(token, organizationUuid);
+        OrganizationDto organizationDto = OrganizationHelper.getOrganization(token, organizationUuid);
 
         //grant business role
         organizationDto = OrganizationHelper.grantBusinessRoles(token, organizationDto,
@@ -154,7 +147,7 @@ public class OrganizationResourceIT {
     }
 
     @AfterClass
-    public static void after() throws MalformedURLException {
+    public static void after() {
 
         SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 

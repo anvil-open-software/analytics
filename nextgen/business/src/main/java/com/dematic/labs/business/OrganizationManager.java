@@ -1,5 +1,6 @@
 package com.dematic.labs.business;
 
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
 import com.dematic.labs.business.dto.OrganizationDto;
 import com.dematic.labs.persistence.entities.*;
@@ -9,6 +10,7 @@ import org.picketlink.authorization.annotations.RolesAllowed;
 import javax.annotation.Nonnull;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,12 +34,16 @@ public class OrganizationManager {
     }
 
     @RolesAllowed(ApplicationRole.VIEW_ORGANIZATIONS)
-    public List<OrganizationDto> getOrganizations() {
+    public CollectionDto<OrganizationDto> getOrganizations(@Valid Pagination pagination) {
 
         QOrganization qOrganization = QOrganization.organization;
         JPQLQuery query = crudService.createQuery(qOrganization);
 
-        return query.list(qOrganization).stream().map(new OrganizationConverter()).collect(Collectors.toList());
+        query.offset(pagination.getOffset()).limit(pagination.getLimit());
+        List<OrganizationDto> organizationDtoList = query.list(qOrganization)
+                .stream().map(new OrganizationConverter()).collect(Collectors.toList());
+
+        return new CollectionDto<>(organizationDtoList, pagination);
     }
 
     @RolesAllowed(ApplicationRole.CREATE_ORGANIZATIONS)

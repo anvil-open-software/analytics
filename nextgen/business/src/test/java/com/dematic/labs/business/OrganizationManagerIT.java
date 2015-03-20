@@ -1,5 +1,6 @@
 package com.dematic.labs.business;
 
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
 import com.dematic.labs.business.dto.OrganizationDto;
 import com.dematic.labs.business.matchers.OrganizationBusinessRoleDtoMatcher;
@@ -16,11 +17,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
 import javax.inject.Inject;
-import java.util.List;
 import java.util.UUID;
 
-import static com.dematic.labs.business.SecurityFixture.TENANT_A;
-import static com.dematic.labs.business.SecurityFixture.TENANT_B;
+import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.Assert.*;
@@ -73,8 +72,8 @@ public class OrganizationManagerIT {
     @Test
     public void test020CreateWithAuthenticationAndAuthorization() throws Exception {
 
-        securityFixture.login(TENANT_A, SecurityFixture.TENANT_A_USER_USERNAME,
-                SecurityFixture.TENANT_A_USER_PASSWORD);
+        securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME,
+                TENANT_A_USER_PASSWORD);
 
         OrganizationDto organizationDto = new OrganizationDto();
         organizationDto.setName("ACME");
@@ -100,8 +99,8 @@ public class OrganizationManagerIT {
     @Test
     public void test040TenantOrgNameUniqueness() throws Exception {
 
-        securityFixture.login(TENANT_B, SecurityFixture.TENANT_B_USER_USERNAME,
-                SecurityFixture.TENANT_B_USER_PASSWORD);
+        securityFixture.login(TENANT_B, TENANT_B_USER_USERNAME,
+                TENANT_B_USER_PASSWORD);
 
         OrganizationDto organizationDto = new OrganizationDto();
         organizationDto.setName("ACME");
@@ -122,8 +121,8 @@ public class OrganizationManagerIT {
     @Test
     public void test060GetWithAuthenticationAndAuthorization() throws Exception {
 
-        securityFixture.login(TENANT_A, SecurityFixture.TENANT_A_USER_USERNAME,
-                SecurityFixture.TENANT_A_USER_PASSWORD);
+        securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME,
+                TENANT_A_USER_PASSWORD);
 
         OrganizationDto organizationDto = organizationManager.getOrganization(organizationId);
         assertNotNull(organizationDto);
@@ -143,17 +142,29 @@ public class OrganizationManagerIT {
     public void test080ListWithoutAuthentication() throws Exception {
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        organizationManager.getOrganizations();
+        organizationManager.getOrganizations(Pagination.DEFAULT);
     }
 
     @Test
     public void test090ListWithAuthenticationAndAuthorization() throws Exception {
 
-        securityFixture.login(TENANT_A, SecurityFixture.TENANT_A_USER_USERNAME,
-                SecurityFixture.TENANT_A_USER_PASSWORD);
+        securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME,
+                TENANT_A_USER_PASSWORD);
 
-       List<OrganizationDto> organizationDtoList = organizationManager.getOrganizations();
-       assertEquals(1, organizationDtoList.size());
+        CollectionDto<OrganizationDto> collectionDto = organizationManager.getOrganizations(Pagination.DEFAULT);
+        assertEquals(1, collectionDto.getItems().size());
+
+    }
+
+    @Test
+    public void test095ListWithPaginationOffsetOvershoot() throws Exception {
+
+        securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME,
+                TENANT_A_USER_PASSWORD);
+
+        CollectionDto<OrganizationDto> collectionDto = organizationManager.getOrganizations(new Pagination(10, 5));
+        //pagination beyond collection yields empty results
+        assertEquals(0, collectionDto.getItems().size());
 
     }
 
@@ -162,7 +173,7 @@ public class OrganizationManagerIT {
 
         securityFixture.login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
         exception.expectMessage(AccessDeniedException.class.getName());
-        organizationManager.getOrganizations();
+        organizationManager.getOrganizations(Pagination.DEFAULT);
     }
 
     @Test
@@ -175,8 +186,8 @@ public class OrganizationManagerIT {
     @Test
     public void test120GrantBusinessRoleWithAuthenticationAndAuthorization() throws Exception {
 
-        securityFixture.login(TENANT_A, SecurityFixture.TENANT_A_USER_USERNAME,
-                SecurityFixture.TENANT_A_USER_PASSWORD);
+        securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME,
+                TENANT_A_USER_PASSWORD);
 
         //grant business roles
         OrganizationDto organizationDto;
