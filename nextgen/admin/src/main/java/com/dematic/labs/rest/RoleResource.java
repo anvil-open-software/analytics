@@ -5,7 +5,7 @@ import com.dematic.labs.persistence.entities.Pagination;
 import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.RoleDto;
-import com.dematic.labs.rest.dto.HrefDecorator;
+import com.dematic.labs.rest.dto.UriDecorator;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
 import javax.ejb.EJB;
@@ -37,7 +37,7 @@ public class RoleResource {
 
         CollectionDto<RoleDto> collectionDto = securityManager.getRoles(new Pagination(offset, limit));
         collectionDto.getItems().stream()
-                .map(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath()))
+                .map(new UriDecorator<>(uriInfo.getAbsolutePath().getPath()))
                 .collect(Collectors.toList());
 
         return collectionDto;
@@ -50,7 +50,7 @@ public class RoleResource {
     public Response create(RoleDto userDto) {
         RoleDto returnedRoleDto = securityManager.createRole(userDto);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(returnedRoleDto.getId()).build())
-                .entity(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath()).apply(returnedRoleDto)).build();
+                .entity(new UriDecorator<>(uriInfo.getAbsolutePath().getPath()).apply(returnedRoleDto)).build();
     }
 
     @DELETE

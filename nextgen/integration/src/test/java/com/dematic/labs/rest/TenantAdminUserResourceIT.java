@@ -8,7 +8,7 @@ import com.dematic.labs.business.matchers.UserDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.dto.RestError;
-import com.dematic.labs.rest.matchers.UserDtoHrefMatcher;
+import com.dematic.labs.rest.matchers.UserDtoUriMatcher;
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.hamcrest.core.StringStartsWith;
 import org.junit.AfterClass;
@@ -106,7 +106,7 @@ public class TenantAdminUserResourceIT {
                 .get(new GenericType<CollectionDto<UserDto>>() {});
 
         assertThat(collectionDto.getItems(), iterableWithSize(1));
-        assertThat(collectionDto.getItems(), everyItem(new UserDtoHrefMatcher()));
+        assertThat(collectionDto.getItems(), everyItem(new UserDtoUriMatcher()));
     }
 
     @Test
@@ -128,7 +128,7 @@ public class TenantAdminUserResourceIT {
                 .get(new GenericType<CollectionDto<UserDto>>() {});
 
         assertThat(collectionDto.getItems(), iterableWithSize(4));
-        assertThat(collectionDto.getItems(), everyItem(new UserDtoHrefMatcher()));
+        assertThat(collectionDto.getItems(), everyItem(new UserDtoUriMatcher()));
         assertThat(collectionDto.getItems(), IsIterableContainingInOrder.contains(
                 new UserDtoMatcher(TENANT_B_ADMIN_USERNAME, TENANT_B),
                 new UserDtoMatcher("last"+TENANT_B_ADMIN_USERNAME, TENANT_B),

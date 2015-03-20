@@ -9,7 +9,7 @@ import com.dematic.labs.business.matchers.NamedDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.persistence.entities.BusinessRole;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
-import com.dematic.labs.rest.matchers.IdentifiableDtoHrefMatcher;
+import com.dematic.labs.rest.matchers.IdentifiableDtoUriMatcher;
 import org.hamcrest.Matcher;
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.hamcrest.core.IsEqual;
@@ -113,7 +113,7 @@ public class OrganizationResourceIT {
                 .get(new GenericType<CollectionDto<OrganizationDto>>() {});
 
         assertThat(collectionDto.getItems(), iterableWithSize(3));
-        assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoHrefMatcher<>()));
+        assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoUriMatcher<>()));
         //noinspection unchecked
         assertThat(collectionDto.getItems(), IsIterableContainingInOrder.contains(
                 new NamedDtoMatcher<>("ZEBRA"),

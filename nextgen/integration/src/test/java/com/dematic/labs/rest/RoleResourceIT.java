@@ -7,7 +7,7 @@ import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.matchers.CreatedResponseMatcher;
-import com.dematic.labs.rest.matchers.IdentifiableDtoHrefMatcher;
+import com.dematic.labs.rest.matchers.IdentifiableDtoUriMatcher;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -68,7 +68,7 @@ public class RoleResourceIT {
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         RoleDto fromServer = response.readEntity(RoleDto.class);
 
-        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoHrefMatcher<>()));
+        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoUriMatcher<>()));
 
         assertEquals(SecurityManagerIT.CUSTOM_TENANT_ROLE, fromServer.getName());
 

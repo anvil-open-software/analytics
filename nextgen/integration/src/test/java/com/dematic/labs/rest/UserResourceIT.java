@@ -4,7 +4,7 @@ import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.UserDto;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
-import com.dematic.labs.rest.matchers.UserDtoHrefMatcher;
+import com.dematic.labs.rest.matchers.UserDtoUriMatcher;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -69,7 +69,7 @@ public class UserResourceIT {
                 .get(new GenericType<CollectionDto<UserDto>>() {});
 
         assertThat(collectionDto.getItems(), iterableWithSize(2));
-        assertThat(collectionDto.getItems(), everyItem(new UserDtoHrefMatcher()));
+        assertThat(collectionDto.getItems(), everyItem(new UserDtoUriMatcher()));
     }
 
     @AfterClass

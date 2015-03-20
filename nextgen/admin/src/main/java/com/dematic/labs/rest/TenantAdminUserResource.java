@@ -4,7 +4,7 @@ import com.dematic.labs.persistence.entities.Pagination;
 import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.UserDto;
-import com.dematic.labs.rest.dto.UserDtoHrefDecorator;
+import com.dematic.labs.rest.dto.UserDtoUriDecorator;
 import com.dematic.labs.rest.helpers.OrderByQueryParameterConverter;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
@@ -39,7 +39,7 @@ public class TenantAdminUserResource {
         CollectionDto<UserDto> collectionDto = securityManager.getTenantsAdminUsers(new Pagination(offset, limit, orderBy));
         collectionDto.getItems()
                 .stream()
-                .map(new UserDtoHrefDecorator(uriInfo.getAbsolutePath().getPath()))
+                .map(new UserDtoUriDecorator(uriInfo.getAbsolutePath().getPath()))
                 .collect(Collectors.toList());
         return collectionDto;
     }
@@ -52,7 +52,7 @@ public class TenantAdminUserResource {
     public Response create(UserDto userDto) {
         UserDto returnedTenantDto = securityManager.createTenantAdmin(userDto);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(returnedTenantDto.getId()).build())
-                .entity(new UserDtoHrefDecorator(uriInfo.getAbsolutePath().getPath()).apply(returnedTenantDto)).build();
+                .entity(new UserDtoUriDecorator(uriInfo.getAbsolutePath().getPath()).apply(returnedTenantDto)).build();
     }
 
 

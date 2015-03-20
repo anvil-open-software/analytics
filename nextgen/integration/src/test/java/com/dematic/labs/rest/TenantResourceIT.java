@@ -5,7 +5,7 @@ import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.dto.RestError;
-import com.dematic.labs.rest.matchers.IdentifiableDtoHrefMatcher;
+import com.dematic.labs.rest.matchers.IdentifiableDtoUriMatcher;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -59,7 +59,7 @@ public class TenantResourceIT {
                 .get(new GenericType<CollectionDto<TenantDto>>() {});
 
         assertThat(collectionDto.getItems(), not(empty()));
-        assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoHrefMatcher<>()));
+        assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoUriMatcher<>()));
     }
 
     @Test

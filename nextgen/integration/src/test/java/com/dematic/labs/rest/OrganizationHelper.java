@@ -6,7 +6,7 @@ import com.dematic.labs.business.matchers.OrganizationBusinessRoleDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.matchers.CreatedResponseMatcher;
-import com.dematic.labs.rest.matchers.IdentifiableDtoHrefMatcher;
+import com.dematic.labs.rest.matchers.IdentifiableDtoUriMatcher;
 import org.hamcrest.Matcher;
 
 import javax.ws.rs.HttpMethod;
@@ -47,7 +47,7 @@ public class OrganizationHelper {
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         OrganizationDto fromServer = response.readEntity(OrganizationDto.class);
 
-        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoHrefMatcher<>()));
+        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoUriMatcher<>()));
 
         assertEquals(name, fromServer.getName());
         return fromServer;
@@ -66,7 +66,7 @@ public class OrganizationHelper {
                         signRequest(request, token, HttpMethod.GET, null))
                 .get(OrganizationDto.class);
 
-        assertThat(fromServer, new IdentifiableDtoHrefMatcher<>());
+        assertThat(fromServer, new IdentifiableDtoUriMatcher<>());
         return fromServer;
     }
 
@@ -92,7 +92,7 @@ public class OrganizationHelper {
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         OrganizationDto fromServer = response.readEntity(OrganizationDto.class);
 
-        assertThat(fromServer, new IdentifiableDtoHrefMatcher<>());
+        assertThat(fromServer, new IdentifiableDtoUriMatcher<>());
         assertThat(fromServer.getBusinessRoles(), iterableWithSize(rolesToGrantList.size()));
 
         List<Matcher<? super OrganizationBusinessRoleDto>> businessRoleNameMatcherList =
