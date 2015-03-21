@@ -41,6 +41,9 @@ X virtual framebuffer, hereon referred to as _**Xvfb**_, is a display server imp
 ## Application under test
 There are no additiounal installation requirements for the purpose of testing it.
 
+## Node
+The _**ngClient**_ development environment depends heavily on [Node.JS](https://nodejs.org/). If you have not done so, please navigate to the [Node.JS](https://nodejs.org/) and install it on your workstation. For additional details, please refer to [TN-007  Nextgen Client Side Development Framework](http://sdrn034d/confluence/display/DLAB/TN-007+Nextgen+Client+Side+Development+Framework)
+
 ## Tests
 There are no additiounal installation requirements for the purpose of running the tests.
 
