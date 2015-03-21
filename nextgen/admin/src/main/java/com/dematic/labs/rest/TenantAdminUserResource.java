@@ -1,6 +1,6 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.UserDto;
@@ -32,11 +32,11 @@ public class TenantAdminUserResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerTenants")
     public CollectionDto<UserDto> getList(@DefaultValue("0") @QueryParam("offset") int offset,
-                                          @DefaultValue(Pagination.DEFAULT_LIMIT_AS_STRING) @QueryParam("limit") int limit,
+                                          @DefaultValue(QueryParameters.DEFAULT_LIMIT_AS_STRING) @QueryParam("limit") int limit,
                                           @QueryParam("orderBy") String orderByClause) {
-        List<Pagination.ColumnSort> orderBy = OrderByQueryParameterConverter.convert(orderByClause);
+        List<QueryParameters.ColumnSort> orderBy = OrderByQueryParameterConverter.convert(orderByClause);
 
-        CollectionDto<UserDto> collectionDto = securityManager.getTenantsAdminUsers(new Pagination(offset, limit, orderBy));
+        CollectionDto<UserDto> collectionDto = securityManager.getTenantsAdminUsers(new QueryParameters(offset, limit, orderBy));
         collectionDto.getItems()
                 .stream()
                 .map(new UserDtoUriDecorator(uriInfo.getAbsolutePath().getPath()))

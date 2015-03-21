@@ -3,9 +3,9 @@ package com.dematic.labs.business;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
 import com.dematic.labs.business.dto.OrganizationDto;
-import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.persistence.entities.*;
-import com.dematic.labs.persistence.query.PaginationHelper;
+import com.dematic.labs.persistence.query.QueryParametersHelper;
 import com.mysema.query.jpa.JPQLQuery;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
@@ -36,18 +36,18 @@ public class OrganizationManager {
     }
 
     @RolesAllowed(ApplicationRole.VIEW_ORGANIZATIONS)
-    public CollectionDto<OrganizationDto> getOrganizations(@Valid Pagination pagination) {
+    public CollectionDto<OrganizationDto> getOrganizations(@Valid QueryParameters queryParameters) {
 
         QOrganization qOrganization = QOrganization.organization;
 
-        PaginationHelper.convertPropertyStringsToQueryPaths(pagination, qOrganization);
-        JPQLQuery query = crudService.createQuery(pagination, qOrganization);
+        QueryParametersHelper.convertPropertyStringsToQueryPaths(queryParameters, qOrganization);
+        JPQLQuery query = crudService.createQuery(queryParameters, qOrganization);
 
         //QBean
         List<OrganizationDto> organizationDtoList = query.list(qOrganization)
                 .stream().map(new OrganizationConverter()).collect(Collectors.toList());
 
-        return new CollectionDto<>(organizationDtoList, pagination);
+        return new CollectionDto<>(organizationDtoList, queryParameters);
     }
 
     @RolesAllowed(ApplicationRole.CREATE_ORGANIZATIONS)

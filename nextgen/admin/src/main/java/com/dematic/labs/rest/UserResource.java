@@ -1,6 +1,6 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.UserDto;
@@ -34,7 +34,7 @@ public class UserResource {
     public CollectionDto<UserDto> getList(@DefaultValue("0") @QueryParam("offset") int offset,
                                  @DefaultValue("25") @QueryParam("limit") int limit) {
 
-        CollectionDto<UserDto> collectionDto = securityManager.getUsers(new Pagination(offset, limit));
+        CollectionDto<UserDto> collectionDto = securityManager.getUsers(new QueryParameters(offset, limit));
         collectionDto.getItems().stream()
                 .map(new UserDtoUriDecorator(uriInfo.getAbsolutePath().getPath()))
                 .collect(Collectors.toList());

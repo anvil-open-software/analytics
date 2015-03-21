@@ -1,6 +1,6 @@
 package com.dematic.labs.business.dto;
 
-import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.persistence.entities.SortDirection;
 import org.joda.time.LocalDate;
 import org.junit.Rule;
@@ -48,57 +48,57 @@ public class CollectionDtoTest {
 
     @Test
     public void testPreProcessedConstructor() {
-        Pagination pagination = new Pagination(0, 10);
-        CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, pagination);
+        QueryParameters queryParameters = new QueryParameters(0, 10);
+        CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, queryParameters);
 
-        assertEquals(pagination.getOffset(), collectionDto.getOffset());
-        assertEquals(pagination.getLimit(), collectionDto.getLimit());
+        assertEquals(queryParameters.getOffset(), collectionDto.getOffset());
+        assertEquals(queryParameters.getLimit(), collectionDto.getLimit());
         assertEquals(items.size(), collectionDto.getSize());
         assertEquals(items, collectionDto.getItems());
     }
 
     @Test
     public void testNonPreprocessedConstructor() {
-        Pagination pagination = new Pagination(0, 10);
-        CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, pagination, true);
+        QueryParameters queryParameters = new QueryParameters(0, 10);
+        CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, queryParameters, true);
 
-        assertEquals(pagination.getOffset(), collectionDto.getOffset());
-        assertEquals(pagination.getLimit(), collectionDto.getLimit());
-        assertEquals(pagination.getLimit(), collectionDto.getSize());
-        assertEquals(items.subList(pagination.getOffset(), pagination.getLimit()), collectionDto.getItems());
+        assertEquals(queryParameters.getOffset(), collectionDto.getOffset());
+        assertEquals(queryParameters.getLimit(), collectionDto.getLimit());
+        assertEquals(queryParameters.getLimit(), collectionDto.getSize());
+        assertEquals(items.subList(queryParameters.getOffset(), queryParameters.getLimit()), collectionDto.getItems());
     }
 
     @Test
     public void testWithLimitOvershoot() {
-        Pagination pagination = new Pagination(25, 10);
-        CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, pagination, true);
+        QueryParameters queryParameters = new QueryParameters(25, 10);
+        CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, queryParameters, true);
 
-        assertEquals(pagination.getOffset(), collectionDto.getOffset());
-        assertEquals(pagination.getLimit(), collectionDto.getLimit());
-        assertEquals(pagination.getOffset() + pagination.getLimit() - items.size(), collectionDto.getSize());
-        assertEquals(items.subList(pagination.getOffset(), items.size()), collectionDto.getItems());
+        assertEquals(queryParameters.getOffset(), collectionDto.getOffset());
+        assertEquals(queryParameters.getLimit(), collectionDto.getLimit());
+        assertEquals(queryParameters.getOffset() + queryParameters.getLimit() - items.size(), collectionDto.getSize());
+        assertEquals(items.subList(queryParameters.getOffset(), items.size()), collectionDto.getItems());
     }
 
     @Test
     public void testWithOffsetOvershoot() {
-        Pagination pagination = new Pagination(35, 10);
+        QueryParameters queryParameters = new QueryParameters(35, 10);
 
         expectedException.expect(IllegalStateException.class);
         expectedException.expectMessage(String.format("Offset [%d] exceeds size of collection [%d]",
-                pagination.getOffset(), items.size()));
-        new CollectionDto<>(items, pagination, true);
+                queryParameters.getOffset(), items.size()));
+        new CollectionDto<>(items, queryParameters, true);
 
     }
 
     @Test
     public void testWithSort() {
-        List<Pagination.ColumnSort> orderBy = new ArrayList<>();
+        List<QueryParameters.ColumnSort> orderBy = new ArrayList<>();
 
-        orderBy.add(new Pagination.ColumnSort("birthday", SortDirection.ASC));
-        orderBy.add(new Pagination.ColumnSort("name", SortDirection.DESC));
-        Pagination pagination = new Pagination(0, items.size(), orderBy);
+        orderBy.add(new QueryParameters.ColumnSort("birthday", SortDirection.ASC));
+        orderBy.add(new QueryParameters.ColumnSort("name", SortDirection.DESC));
+        QueryParameters queryParameters = new QueryParameters(0, items.size(), orderBy);
 
-        CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, pagination, true);
+        CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, queryParameters, true);
 
         List<SortingPaginationDto> sortedItems = items.stream().sorted(new Comparator<SortingPaginationDto>() {
             @Override
@@ -120,15 +120,15 @@ public class CollectionDtoTest {
     @Test
     public void testWithSortUnknownColumn() {
 
-        List<Pagination.ColumnSort> orderBy = new ArrayList<>();
-        orderBy.add(new Pagination.ColumnSort("unknown", SortDirection.ASC));
+        List<QueryParameters.ColumnSort> orderBy = new ArrayList<>();
+        orderBy.add(new QueryParameters.ColumnSort("unknown", SortDirection.ASC));
 
-        Pagination pagination = new Pagination(0, items.size(), orderBy);
+        QueryParameters queryParameters = new QueryParameters(0, items.size(), orderBy);
 
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("Unknown property 'unknown' on class 'class com.dematic.labs.business.dto.SortingPaginationDto'");
 
-        new CollectionDto<>(items, pagination, true);
+        new CollectionDto<>(items, queryParameters, true);
 
     }
 }

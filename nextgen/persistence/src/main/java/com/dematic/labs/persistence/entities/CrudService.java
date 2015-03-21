@@ -1,5 +1,6 @@
 package com.dematic.labs.persistence.entities;
 
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.picketlink.RealmSelector;
 import com.mysema.query.jpa.JPQLQuery;
 import com.mysema.query.jpa.impl.JPAQuery;
@@ -77,7 +78,7 @@ public class CrudService {
     // inspections want @SafeVarargs and final on method which interferes with stateless bean
     @SuppressWarnings("unchecked")
     @Nonnull
-    public <T extends OwnedAssetEntity> JPQLQuery createQuery(Pagination pagination, EntityPath<T>... sources) {
+    public <T extends OwnedAssetEntity> JPQLQuery createQuery(QueryParameters queryParameters, EntityPath<T>... sources) {
         JPQLQuery rtnValue = new JPAQuery(entityManager);
 
         rtnValue.from(sources);
@@ -87,8 +88,8 @@ public class CrudService {
             rtnValue.where(Expressions.predicate(Ops.EQ, tenantIdField, tenantIdValue));
         }
 
-        if (!pagination.getOrderBy().isEmpty()) {
-            List<OrderSpecifier<? extends Comparable>> orderSpecifierList = pagination.getOrderBy()
+        if (!queryParameters.getOrderBy().isEmpty()) {
+            List<OrderSpecifier<? extends Comparable>> orderSpecifierList = queryParameters.getOrderBy()
                     .stream()
                     .map(columnSort -> new OrderSpecifier<>(
                             columnSort.getOrder(), columnSort.getPath()))
@@ -97,7 +98,7 @@ public class CrudService {
 
             rtnValue.orderBy(orderSpecifierList.toArray(new OrderSpecifier<?>[orderSpecifierList.size()]));
         }
-        rtnValue.offset(pagination.getOffset()).limit(pagination.getLimit());
+        rtnValue.offset(queryParameters.getOffset()).limit(queryParameters.getLimit());
 
         return rtnValue;
     }

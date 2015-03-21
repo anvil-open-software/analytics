@@ -1,6 +1,6 @@
 package com.dematic.labs.business.dto;
 
-import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.persistence.entities.SortDirection;
 import org.apache.commons.beanutils.BeanComparator;
 import org.apache.commons.collections4.comparators.ComparatorChain;
@@ -25,19 +25,19 @@ public class CollectionDto<T extends IdentifiableDto> {
     public CollectionDto() {
     }
 
-    public CollectionDto(@Nonnull List<T> items, @Nonnull Pagination pagination) {
-        this(items, pagination, false);
+    public CollectionDto(@Nonnull List<T> items, @Nonnull QueryParameters queryParameters) {
+        this(items, queryParameters, false);
     }
 
-    public CollectionDto(@Nonnull List<T> items, @Nonnull Pagination pagination, boolean listNeedsProcessing) {
+    public CollectionDto(@Nonnull List<T> items, @Nonnull QueryParameters queryParameters, boolean listNeedsProcessing) {
         List<T> cookedItems = items;
-        int cookedLimit = pagination.getLimit();
+        int cookedLimit = queryParameters.getLimit();
         if (listNeedsProcessing) {
             List<T> sortedItems = items;
-            if (!pagination.getOrderBy().isEmpty()) {
+            if (!queryParameters.getOrderBy().isEmpty()) {
                 ComparatorChain<T> comparatorChain = new ComparatorChain<>();
 
-                for (Pagination.ColumnSort columnSort : pagination.getOrderBy()) {
+                for (QueryParameters.ColumnSort columnSort : queryParameters.getOrderBy()) {
                     BeanComparator<T> beanComparator = new BeanComparator<>(columnSort.getPropertyName());
                     comparatorChain.addComparator(beanComparator,
                             columnSort.getSortDirection().equals(SortDirection.DESC));
@@ -54,19 +54,19 @@ public class CollectionDto<T extends IdentifiableDto> {
                 }
             }
 
-            if ((pagination.getOffset() + pagination.getLimit()) > sortedItems.size()) {
-                if (pagination.getOffset() > sortedItems.size()) {
+            if ((queryParameters.getOffset() + queryParameters.getLimit()) > sortedItems.size()) {
+                if (queryParameters.getOffset() > sortedItems.size()) {
                     throw new IllegalStateException(
                             String.format("Offset [%d] exceeds size of collection [%d]",
-                                    pagination.getOffset(), sortedItems.size()));
+                                    queryParameters.getOffset(), sortedItems.size()));
                 }
-                cookedLimit = sortedItems.size() - pagination.getOffset();
+                cookedLimit = sortedItems.size() - queryParameters.getOffset();
             }
-            cookedItems = sortedItems.subList(pagination.getOffset(), pagination.getOffset() + cookedLimit);
+            cookedItems = sortedItems.subList(queryParameters.getOffset(), queryParameters.getOffset() + cookedLimit);
         }
 
-        this.offset = pagination.getOffset();
-        this.limit = pagination.getLimit();
+        this.offset = queryParameters.getOffset();
+        this.limit = queryParameters.getLimit();
         this.size = cookedItems.size();
         this.items = cookedItems;
     }

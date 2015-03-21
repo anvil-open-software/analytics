@@ -3,7 +3,7 @@ package com.dematic.labs.business;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
 import com.dematic.labs.business.dto.OrganizationDto;
-import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.business.matchers.OrganizationBusinessRoleDtoMatcher;
 import com.dematic.labs.persistence.entities.*;
 import org.apache.deltaspike.security.api.authorization.AccessDeniedException;
@@ -143,7 +143,7 @@ public class OrganizationManagerIT {
     public void test080ListWithoutAuthentication() throws Exception {
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        organizationManager.getOrganizations(Pagination.DEFAULT);
+        organizationManager.getOrganizations(QueryParameters.DEFAULT);
     }
 
     @Test
@@ -152,7 +152,7 @@ public class OrganizationManagerIT {
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME,
                 TENANT_A_USER_PASSWORD);
 
-        CollectionDto<OrganizationDto> collectionDto = organizationManager.getOrganizations(Pagination.DEFAULT);
+        CollectionDto<OrganizationDto> collectionDto = organizationManager.getOrganizations(QueryParameters.DEFAULT);
         assertEquals(1, collectionDto.getItems().size());
 
     }
@@ -162,7 +162,7 @@ public class OrganizationManagerIT {
 
         securityFixture.login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
         exception.expectMessage(AccessDeniedException.class.getName());
-        organizationManager.getOrganizations(Pagination.DEFAULT);
+        organizationManager.getOrganizations(QueryParameters.DEFAULT);
     }
 
     @Test

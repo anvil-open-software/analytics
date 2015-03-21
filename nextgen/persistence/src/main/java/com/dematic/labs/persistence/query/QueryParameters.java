@@ -1,5 +1,6 @@
-package com.dematic.labs.persistence.entities;
+package com.dematic.labs.persistence.query;
 
+import com.dematic.labs.persistence.entities.SortDirection;
 import com.mysema.query.types.Order;
 import com.mysema.query.types.Path;
 
@@ -13,14 +14,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Pagination {
+public class QueryParameters {
 
     public static final int DEFAULT_LIMIT = 25;
     //needed for default values in rest layer (must be true constant)
     public static final String DEFAULT_LIMIT_AS_STRING = "25";
     public static final int MAX_LIMIT = 100;
 
-    public static final Pagination DEFAULT = new Pagination(0, DEFAULT_LIMIT);
+    public static final QueryParameters DEFAULT = new QueryParameters(0, DEFAULT_LIMIT);
 
     @Min(value = 0, message = "Pagination offset must be positive")
     private final int offset;
@@ -32,13 +33,13 @@ public class Pagination {
     @Valid
     private final List<ColumnSort> orderBy = new ArrayList<>();
 
-    public Pagination(int offset, int limit) {
+    public QueryParameters(int offset, int limit) {
 
         this.offset = offset;
         this.limit = limit;
     }
 
-    public Pagination(int offset, int limit, @Nonnull List<ColumnSort> orderBy) {
+    public QueryParameters(int offset, int limit, @Nonnull List<ColumnSort> orderBy) {
 
         this(offset, limit);
         this.orderBy.addAll(orderBy);

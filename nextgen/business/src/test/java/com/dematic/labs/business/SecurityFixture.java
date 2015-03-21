@@ -2,9 +2,9 @@ package com.dematic.labs.business;
 
 import com.dematic.labs.business.dto.*;
 import com.dematic.labs.matchers.ConstraintViolationMatcher;
-import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.persistence.entities.SortDirection;
-import com.dematic.labs.persistence.query.PaginationHelper;
+import com.dematic.labs.persistence.query.QueryParametersHelper;
 import com.dematic.labs.picketlink.AbstractSecurityInitializer;
 import com.dematic.labs.picketlink.RealmSelector;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -77,8 +77,8 @@ public class SecurityFixture {
                         RoleDto.class,
                         NamedDto.class,
                         IdentifiableDto.class,
-                        Pagination.class,
-                        PaginationHelper.class,
+                        QueryParameters.class,
+                        QueryParametersHelper.class,
                         SortDirection.class,
                         CollectionDto.class,
                         ConstraintViolationMatcher.class,

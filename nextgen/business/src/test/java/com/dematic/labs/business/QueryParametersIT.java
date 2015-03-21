@@ -7,6 +7,7 @@ import com.dematic.labs.business.dto.OrganizationDto;
 import com.dematic.labs.business.matchers.NamedDtoMatcher;
 import com.dematic.labs.business.matchers.OrganizationBusinessRoleDtoMatcher;
 import com.dematic.labs.persistence.entities.*;
+import com.dematic.labs.persistence.query.QueryParameters;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -82,7 +83,7 @@ public class QueryParametersIT {
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME,
                 TENANT_A_USER_PASSWORD);
 
-        CollectionDto<OrganizationDto> collectionDto = organizationManager.getOrganizations(new Pagination(0, 3));
+        CollectionDto<OrganizationDto> collectionDto = organizationManager.getOrganizations(new QueryParameters(0, 3));
         assertThat(collectionDto.getItems(), Matchers.iterableWithSize(3));
 
     }
@@ -93,7 +94,7 @@ public class QueryParametersIT {
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME,
                 TENANT_A_USER_PASSWORD);
 
-        CollectionDto<OrganizationDto> collectionDto = organizationManager.getOrganizations(new Pagination(10, 5));
+        CollectionDto<OrganizationDto> collectionDto = organizationManager.getOrganizations(new QueryParameters(10, 5));
         //pagination beyond collection yields empty results
         assertThat(collectionDto.getItems(), Matchers.iterableWithSize(0));
 
@@ -102,14 +103,14 @@ public class QueryParametersIT {
     @Test
     public void test030Sorting() {
 
-        List<Pagination.ColumnSort> orderBy = new ArrayList<>();
-        orderBy.add(new Pagination.ColumnSort("name", SortDirection.DESC));
+        List<QueryParameters.ColumnSort> orderBy = new ArrayList<>();
+        orderBy.add(new QueryParameters.ColumnSort("name", SortDirection.DESC));
 
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME,
                 TENANT_A_USER_PASSWORD);
 
         CollectionDto<OrganizationDto> collectionDto = organizationManager.getOrganizations(
-                new Pagination(0, 3, orderBy));
+                new QueryParameters(0, 3, orderBy));
         assertThat(collectionDto.getItems(), Matchers.iterableWithSize(3));
 
         //known issue with generics and varargs
@@ -124,30 +125,30 @@ public class QueryParametersIT {
     @Test
     public void test040SortingUnknownColumn() {
 
-        List<Pagination.ColumnSort> orderBy = new ArrayList<>();
-        orderBy.add(new Pagination.ColumnSort("bad", SortDirection.DESC));
+        List<QueryParameters.ColumnSort> orderBy = new ArrayList<>();
+        orderBy.add(new QueryParameters.ColumnSort("bad", SortDirection.DESC));
 
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME,
                 TENANT_A_USER_PASSWORD);
 
         exception.expectCause(Matchers.any(IllegalArgumentException.class));
         exception.expectMessage("Unknown Property name");
-        organizationManager.getOrganizations(new Pagination(0, 3, orderBy));
+        organizationManager.getOrganizations(new QueryParameters(0, 3, orderBy));
 
     }
 
     @Test
     public void test050SortingNonComparableColumn() {
 
-        List<Pagination.ColumnSort> orderBy = new ArrayList<>();
-        orderBy.add(new Pagination.ColumnSort("businessRoles", SortDirection.DESC));
+        List<QueryParameters.ColumnSort> orderBy = new ArrayList<>();
+        orderBy.add(new QueryParameters.ColumnSort("businessRoles", SortDirection.DESC));
 
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME,
                 TENANT_A_USER_PASSWORD);
 
         exception.expectCause(Matchers.any(IllegalArgumentException.class));
         exception.expectMessage("isn't valid for sorting (doesn't implement Comparable)");
-        organizationManager.getOrganizations(new Pagination(0, 3, orderBy));
+        organizationManager.getOrganizations(new QueryParameters(0, 3, orderBy));
 
     }
 

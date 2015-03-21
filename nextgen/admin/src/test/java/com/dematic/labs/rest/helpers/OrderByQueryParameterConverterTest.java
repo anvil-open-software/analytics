@@ -1,6 +1,6 @@
 package com.dematic.labs.rest.helpers;
 
-import com.dematic.labs.persistence.entities.Pagination;
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.persistence.entities.SortDirection;
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.Rule;
@@ -19,7 +19,7 @@ public class OrderByQueryParameterConverterTest {
 
     @Test
     public void testNullClause() {
-        List<Pagination.ColumnSort> orderBy = OrderByQueryParameterConverter.convert(null);
+        List<QueryParameters.ColumnSort> orderBy = OrderByQueryParameterConverter.convert(null);
         assertThat(orderBy, empty());
     }
 
@@ -32,14 +32,14 @@ public class OrderByQueryParameterConverterTest {
 
     @Test
     public void testOrderStatementWithJustColumn() {
-        List<Pagination.ColumnSort> orderBy = OrderByQueryParameterConverter.convert("column1");
+        List<QueryParameters.ColumnSort> orderBy = OrderByQueryParameterConverter.convert("column1");
         assertThat(orderBy, iterableWithSize(1));
         assertThat(orderBy, contains(new ColumnSortMatcher("column1", SortDirection.ASC)));
     }
 
     @Test
     public void testOrderStatementWithColumnAndSortDirection() {
-        List<Pagination.ColumnSort> orderBy = OrderByQueryParameterConverter.convert("column1 dEsC");
+        List<QueryParameters.ColumnSort> orderBy = OrderByQueryParameterConverter.convert("column1 dEsC");
         assertThat(orderBy, iterableWithSize(1));
         assertThat(orderBy, contains(new ColumnSortMatcher("column1", SortDirection.DESC)));
     }
@@ -53,7 +53,7 @@ public class OrderByQueryParameterConverterTest {
 
     @Test
     public void testOrderStatementWithMultipleOrderStatements() {
-        List<Pagination.ColumnSort> orderBy = OrderByQueryParameterConverter.convert("column1 dEsC,column2");
+        List<QueryParameters.ColumnSort> orderBy = OrderByQueryParameterConverter.convert("column1 dEsC,column2");
         assertThat(orderBy, iterableWithSize(2));
         assertThat(orderBy, IsIterableContainingInOrder.contains(new ColumnSortMatcher("column1", SortDirection.DESC),
                 new ColumnSortMatcher("column2", SortDirection.ASC)));
@@ -62,7 +62,7 @@ public class OrderByQueryParameterConverterTest {
 
     @Test
     public void testOrderStatementWithExcessWhitespace() {
-        List<Pagination.ColumnSort> orderBy = OrderByQueryParameterConverter.convert(" column1  dEsC, column2");
+        List<QueryParameters.ColumnSort> orderBy = OrderByQueryParameterConverter.convert(" column1  dEsC, column2");
         assertThat(orderBy, iterableWithSize(2));
         assertThat(orderBy, IsIterableContainingInOrder.contains(new ColumnSortMatcher("column1", SortDirection.DESC),
                 new ColumnSortMatcher("column2", SortDirection.ASC)));

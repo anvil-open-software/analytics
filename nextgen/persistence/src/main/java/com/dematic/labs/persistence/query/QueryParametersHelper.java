@@ -1,6 +1,5 @@
 package com.dematic.labs.persistence.query;
 
-import com.dematic.labs.persistence.entities.Pagination;
 import com.dematic.labs.persistence.entities.SortDirection;
 import com.mysema.query.types.Order;
 import com.mysema.query.types.Path;
@@ -11,12 +10,12 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 
-public class PaginationHelper {
-    public static void convertPropertyStringsToQueryPaths(@Nonnull Pagination pagination,
+public class QueryParametersHelper {
+    public static void convertPropertyStringsToQueryPaths(@Nonnull QueryParameters queryParameters,
                                                           EntityPathBase<?> entityPathBase) {
 
         Class<?> entityPathBaseClass = entityPathBase.getClass();
-        for (Pagination.ColumnSort columnSort : pagination.getOrderBy()) {
+        for (QueryParameters.ColumnSort columnSort : queryParameters.getOrderBy()) {
 
             Path<? extends Comparable> propertyField = null;
             for (Field field : entityPathBaseClass.getDeclaredFields()) {
