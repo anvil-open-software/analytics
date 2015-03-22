@@ -12,6 +12,7 @@
         <module>persistence</module>
         <module>producers</module>
         <module>admin</module>
+        <module>ngclient</module>
         <module>integration</module>
     </modules>
     <packaging>pom</packaging>
@@ -311,6 +312,11 @@
                         <regionName>${regionName}</regionName>
                         <!--suppress MavenModelInspection -->
                         <kinesisInputStream>${kinesisInputStream}</kinesisInputStream>
+                        <!--suppress MavenModelInspection -->
+                        <webdriver.chrome.driver>${webdriver.chrome.driver}</webdriver.chrome.driver>
+                        <!--suppress MavenModelInspection -->
+                        <webdriver.chrome.logfile>${webdriver.chrome.logfile}</webdriver.chrome.logfile>
+                        <DISPLAY>0:0</DISPLAY>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>
