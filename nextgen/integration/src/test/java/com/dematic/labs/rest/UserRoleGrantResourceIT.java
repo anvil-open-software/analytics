@@ -14,15 +14,11 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import javax.ws.rs.HttpMethod;
-import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -43,11 +39,11 @@ public class UserRoleGrantResourceIT {
     private static List<RoleDto> roles;
     private static UserDto tenantUserDto;
 
-    public UserRoleGrantResourceIT() throws MalformedURLException {
+    public UserRoleGrantResourceIT() {
     }
 
     @BeforeClass
-    public static void before() throws MalformedURLException {
+    public static void before() {
 
         {
             SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
@@ -64,20 +60,20 @@ public class UserRoleGrantResourceIT {
             tenantUserDto = IdentityManagementHelper.createTenantUser(token, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
 
             //get roles
-            roles = IdentityManagementHelper.getRoles(token);
+            roles = IdentityManagementHelper.getRoles(token).getItems();
             assertThat(roles, iterableWithSize(ApplicationRole.getTenantRoles().size()));
         }
     }
 
     @Test
-    public void test010Grant() throws MalformedURLException {
+    public void test010Grant() {
+
+        Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
+                .path("resources/user/{id}/grant")
+                .resolveTemplate("id", tenantUserDto.getId())
+                .request(MediaType.APPLICATION_JSON_TYPE);
 
         SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
-
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(
-                URI.create(
-                        new URL(getBase(), "resources/user/" + tenantUserDto.getId() + "/grant").toExternalForm()));
 
         assertEquals(0, tenantUserDto.getGrantedRoles().size());
 
@@ -87,11 +83,11 @@ public class UserRoleGrantResourceIT {
                 .collect(Collectors.toSet());
         tenantUserDto.setGrantedRoles(grantedRoles);
 
-        Response response = signRequest(token, target.request()
-                        .accept(MediaType.APPLICATION_JSON_TYPE)
-                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                HttpMethod.PUT, MediaType.APPLICATION_JSON
-        ).put(Entity.entity(tenantUserDto, MediaType.APPLICATION_JSON_TYPE));
+        Response response = request
+                .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
+                .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
+                        signRequest(request, token, HttpMethod.PUT, MediaType.APPLICATION_JSON))
+                .put(Entity.entity(tenantUserDto, MediaType.APPLICATION_JSON_TYPE));
 
         assertNotNull(response);
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
@@ -104,7 +100,7 @@ public class UserRoleGrantResourceIT {
     }
 
     @AfterClass
-    public static void after() throws MalformedURLException {
+    public static void after() {
 
         SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 

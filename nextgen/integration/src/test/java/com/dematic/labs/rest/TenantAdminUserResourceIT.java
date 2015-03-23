@@ -1,6 +1,7 @@
 package com.dematic.labs.rest;
 
 import com.dematic.labs.business.SecurityFixture;
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
@@ -15,24 +16,17 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import javax.ws.rs.HttpMethod;
-import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 import java.time.Instant;
-import java.util.List;
 
 import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
-import static com.dematic.labs.rest.SecuredEndpointHelper.getBase;
-import static com.dematic.labs.rest.SecuredEndpointHelper.getToken;
-import static com.dematic.labs.rest.SecuredEndpointHelper.signRequest;
+import static com.dematic.labs.rest.SecuredEndpointHelper.*;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.junit.Assert.*;
@@ -43,11 +37,11 @@ public class TenantAdminUserResourceIT {
     private static SignatureToken token;
     private static String uuid;
 
-    public TenantAdminUserResourceIT() throws MalformedURLException {
+    public TenantAdminUserResourceIT() {
     }
 
     @BeforeClass
-    public static void before() throws MalformedURLException {
+    public static void before() {
 
         token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
 
@@ -55,18 +49,19 @@ public class TenantAdminUserResourceIT {
     }
 
     @Test
-    public void test01Create() throws MalformedURLException {
+    public void test01Create() {
 
         IdentityManagementHelper.createTenantAdmin(token, TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
     }
 
     @Test
-    public void test02CreateDuplicate() throws MalformedURLException {
+    public void test02CreateDuplicate() {
 
         {
-            Client client = ClientBuilder.newClient();
-            WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenantAdminUser").toExternalForm()));
+            Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
+                    .path("resources/tenantAdminUser")
+                    .request(MediaType.APPLICATION_JSON);
 
             UserDto userDto = new UserDto();
             TenantDto tenantDto = new TenantDto();
@@ -76,11 +71,11 @@ public class TenantAdminUserResourceIT {
             userDto.setPassword(SecurityFixture.TENANT_A_ADMIN_PASSWORD);
             assertNull(userDto.getId());
 
-            Response response = signRequest(token, target.request()
-                            .accept(MediaType.APPLICATION_JSON_TYPE)
-                            .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                    HttpMethod.POST, MediaType.APPLICATION_JSON
-            ).post(Entity.entity(userDto, MediaType.APPLICATION_JSON_TYPE));
+            Response response = request
+                    .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
+                    .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
+                            signRequest(request, token, HttpMethod.POST, MediaType.APPLICATION_JSON))
+                    .post(Entity.entity(userDto, MediaType.APPLICATION_JSON_TYPE));
 
             assertNotNull(response);
             assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
@@ -95,21 +90,22 @@ public class TenantAdminUserResourceIT {
 
     @Test
     public void test03GetList() throws Exception {
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target(URI.create(new URL(getBase(), "resources/tenantAdminUser").toExternalForm()));
+        Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
+                .path("resources/tenantAdminUser")
+                .request(MediaType.APPLICATION_JSON);
 
-        List<UserDto> list = signRequest(token, target
-                        .request(MediaType.APPLICATION_JSON)
-                        .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString()),
-                HttpMethod.GET, null
-        ).get(new GenericType<List<UserDto>>() {});
+        CollectionDto<UserDto> collectionDto = request
+                .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
+                .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
+                        signRequest(request, token, HttpMethod.GET, null))
+                .get(new GenericType<CollectionDto<UserDto>>() {});
 
-        assertThat(list, iterableWithSize(1));
-        assertThat(list, everyItem(new UserDtoHrefMatcher()));
+        assertThat(collectionDto.getItems(), iterableWithSize(1));
+        assertThat(collectionDto.getItems(), everyItem(new UserDtoHrefMatcher()));
     }
 
     @AfterClass
-    public static void after() throws MalformedURLException {
+    public static void after() {
 
         IdentityManagementHelper.deleteTenant(token, uuid);
 

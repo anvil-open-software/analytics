@@ -1,14 +1,18 @@
 package com.dematic.labs.business;
 
+import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
 import com.google.common.collect.Sets;
+import org.picketlink.Identity;
+import org.picketlink.authorization.annotations.LoggedIn;
 import org.picketlink.authorization.annotations.RolesAllowed;
 import org.picketlink.idm.IdentityManager;
 import org.picketlink.idm.PartitionManager;
 import org.picketlink.idm.RelationshipManager;
 import org.picketlink.idm.credential.Password;
+import org.picketlink.idm.model.Account;
 import org.picketlink.idm.model.IdentityType;
 import org.picketlink.idm.model.Partition;
 import org.picketlink.idm.model.basic.*;
@@ -20,6 +24,7 @@ import javax.ejb.Stateless;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.function.Function;
@@ -45,6 +50,9 @@ public class SecurityManager {
     @Inject
     protected IdentityManager identityManager;
 
+    @Inject
+    private Identity identity;
+
     @Produces
     @Named("supportedRealms")
     public List<String> supportedRealms() {
@@ -53,9 +61,11 @@ public class SecurityManager {
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
-    public List<TenantDto> getTenants() {
-        return this.partitionManager
-                .getPartitions(Realm.class).stream().map(new PartitionConverter()).collect(Collectors.toList());
+    public CollectionDto<TenantDto> getTenants(@Valid Pagination pagination) {
+
+        List<TenantDto> partitions = partitionManager.getPartitions(Realm.class)
+                .stream().map(new PartitionConverter()).collect(Collectors.toList());
+        return new CollectionDto<>(partitions, pagination, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
@@ -110,11 +120,11 @@ public class SecurityManager {
         }
 
 
-        return new UserConverter().apply(user);
+        return new AgentConverter().apply(user);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
-    public List<UserDto> getTenantsAdminUsers() {
+    public CollectionDto<UserDto> getTenantsAdminUsers(@Valid Pagination pagination) {
         List<User> tenantsAdminUsers = new ArrayList<>();
 
         for (Partition partition : partitionManager.getPartitions(Realm.class)) {
@@ -132,17 +142,20 @@ public class SecurityManager {
                     }
                 }
             }
-
         }
-        return tenantsAdminUsers.stream().map(new UserConverter()).collect(Collectors.toList());
+        return new CollectionDto<>(tenantsAdminUsers.stream().map(new AgentConverter()).collect(Collectors.toList()),
+                pagination, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
-    public List<UserDto> getUsers() {
+    public CollectionDto<UserDto> getUsers(Pagination pagination) {
         IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
         //noinspection unchecked
         Collection<User> users = queryBuilder.createIdentityQuery(User.class).getResultList();
-        return users.stream().map(new UserConverter()).collect(Collectors.toList());
+        List<UserDto> userDtoList = users.stream()
+                .map(new AgentConverter())
+                .collect(Collectors.toList());
+        return new CollectionDto<>(userDtoList, pagination, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
@@ -153,15 +166,18 @@ public class SecurityManager {
         identityManager.add(user);
         identityManager.updateCredential(user, new Password(userDto.getPassword()));
 
-        return new UserConverter().apply(user);
+        return new AgentConverter().apply(user);
     }
 
     @RolesAllowed({ApplicationRole.ADMINISTER_USERS, ApplicationRole.ADMINISTER_ROLES})
-    public List<RoleDto> getRoles() {
+    public CollectionDto<RoleDto> getRoles(Pagination pagination) {
         IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
         //noinspection unchecked
         List<Role> roles = queryBuilder.createIdentityQuery(Role.class).getResultList();
-        return roles.stream().map(new RoleConverter()).collect(Collectors.toList());
+        List<RoleDto> roleDtoList = roles.stream()
+                .map(new RoleConverter())
+                .collect(Collectors.toList());
+        return new CollectionDto<>(roleDtoList, pagination, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_ROLES)
@@ -200,7 +216,7 @@ public class SecurityManager {
 
         Sets.difference(requestedGrants, existingGrants).forEach(relationshipManager::add);
 
-        return new UserConverter().apply(user);
+        return new AgentConverter().apply(user);
     }
 
     private <T extends IdentityType> T getExistingById(Class<T> clazz, String id) {
@@ -215,17 +231,22 @@ public class SecurityManager {
         return rtnValue;
     }
 
-    private List<Grant> getGrants(@Nonnull User user) {
+    private List<Grant> getGrants(@Nonnull Account account) {
 
         RelationshipQuery<Grant> query = relationshipManager.createRelationshipQuery(Grant.class);
 
-        query.setParameter(Grant.ASSIGNEE, user);
+        query.setParameter(Grant.ASSIGNEE, account);
         //noinspection unchecked
         return query.getResultList();
     }
 
     private Set<RoleDto> getGrantedRoles(List<Grant> grants) {
         return grants.stream().map(Grant::getRole).map(new RoleConverter()).collect(Collectors.toSet());
+    }
+
+    @LoggedIn
+    public UserDto getAuthenticatedUser() {
+        return new AgentConverter().apply((Agent) identity.getAccount());
     }
 
     private class RoleConverter implements Function<Role, RoleDto> {
@@ -240,10 +261,10 @@ public class SecurityManager {
         }
     }
 
-    private class UserConverter implements Function<User, UserDto> {
+    private class AgentConverter implements Function<Agent, UserDto> {
 
         @Override
-        public UserDto apply(User user) {
+        public UserDto apply(Agent user) {
             UserDto userDto = new UserDto();
             userDto.setId(user.getId());
             userDto.setLoginName(user.getLoginName());

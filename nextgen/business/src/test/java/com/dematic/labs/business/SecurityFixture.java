@@ -1,9 +1,7 @@
 package com.dematic.labs.business;
 
-import com.dematic.labs.business.dto.IdentifiableDto;
-import com.dematic.labs.business.dto.RoleDto;
-import com.dematic.labs.business.dto.TenantDto;
-import com.dematic.labs.business.dto.UserDto;
+import com.dematic.labs.business.dto.*;
+import com.dematic.labs.matchers.ConstraintViolationMatcher;
 import com.dematic.labs.picketlink.AbstractSecurityInitializer;
 import com.dematic.labs.picketlink.RealmSelector;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -67,6 +65,9 @@ public class SecurityFixture {
                         UserDto.class,
                         RoleDto.class,
                         IdentifiableDto.class,
+                        Pagination.class,
+                        CollectionDto.class,
+                        ConstraintViolationMatcher.class,
                         ApplicationRole.class,
                         securityInitializer,
                         RealmSelector.class,
