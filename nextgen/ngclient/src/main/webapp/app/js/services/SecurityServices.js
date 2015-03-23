@@ -2,104 +2,92 @@
  * Security Services
  */
 angular.module("SecurityServices")
-.factory('SecurityToken',
+    .factory('SecurityToken',
     function() {
-         var securityToken = {};
+        var securityToken = {};
         return {
             set: function (loginData) {
                 angular.copy(loginData, securityToken);
                 return;
             },
             getRealm: function () {
-            	return securityToken.hasOwnProperty('realm') ? securityToken.realm : null;
+                return securityToken.hasOwnProperty('realm') ? securityToken.realm : null;
             },
             getToken: function () {
-            	return securityToken.hasOwnProperty('token') ? securityToken.token : null;
+                return securityToken.hasOwnProperty('token') ? securityToken.token : null;
             },
             getSignature: function () {
-            	return securityToken.hasOwnProperty('signatureKey') ? securityToken.signatureKey : null;
+                return securityToken.hasOwnProperty('signatureKey') ? securityToken.signatureKey : null;
             }
         };
     }
 )
-.factory('StringToSign',
+    .factory('StringToSign',
     function() {
-        var httpVerb,
-            cannonicalHeaders,
-            dlabHeaders,
-            uri,
-            queryParameters,
-            service = {
-    			setHttpVerb: function (config) {
-                   	httpVerb = config.hasOwnProperty('method')  ? config['method']+'\n'  : ''+'\n';
-                },
-                getHttpVerb: function () {
-                	return httpVerb;
-                },
-                setCannonicalHeaders: function(config) {
-     				// Canonical Headers are: Content-MD5, Content-Type, Date
-     				// The value is "" if the header is not present.
-     				// If the header "x-dlabs-date" is present, it's value is output for "Date"
-    				cannonicalHeaders = '';
-     				if (config.hasOwnProperty('headers')) {
-    	 				cannonicalHeaders += config['headers'].hasOwnProperty('Content-MD5')  ? config['headers']['Content-MD5']  : '';
-    	 				cannonicalHeaders += '\n';
-    	  				cannonicalHeaders += config['headers'].hasOwnProperty('Content-Type') ? config['headers']['Content-Type'] : '';
-    	 				cannonicalHeaders += '\n';
-    	  				if (config['headers'].hasOwnProperty('x-dlabs-date'))  {
-    	   					cannonicalHeaders += config['headers']['x-dlabs-date'];
-    	 				}
-    	 				else {
-    	  					cannonicalHeaders += config['headers'].hasOwnProperty('Date') ? config['headers']['Date'] : '';
-    					}
-     	 				cannonicalHeaders += '\n';
-    				}
+        var service = {
+                getHttpVerb: function (config) {
+                    var httpVerb = '';
+
+                    httpVerb = config.hasOwnProperty('method')  ? config['method']+'\n'  : ''+'\n';
+                    return httpVerb;
                 },
                 getCannonicalHeaders: function (config) {
-                    //service.setCannonicalHeaders(config);
+                    var cannonicalHeaders = '';
+                    // Canonical Headers are: Content-MD5, Content-Type, Date
+                    // The value is "" if the header is not present.
+                    // If the header "x-dlabs-date" is present, it's value is output for "Date"
+                    if (config.hasOwnProperty('headers')) {
+                        cannonicalHeaders += config['headers'].hasOwnProperty('Content-MD5')  ? config['headers']['Content-MD5']  : '';
+                        cannonicalHeaders += '\n';
+                        cannonicalHeaders += config['headers'].hasOwnProperty('Content-Type') ? config['headers']['Content-Type'] : '';
+                        cannonicalHeaders += '\n';
+                        if (config['headers'].hasOwnProperty('x-dlabs-date'))  {
+                            cannonicalHeaders += config['headers']['x-dlabs-date'];
+                        }
+                        else {
+                            cannonicalHeaders += config['headers'].hasOwnProperty('Date') ? config['headers']['Date'] : '';
+                        }
+                        cannonicalHeaders += '\n';
+                    }
                     return cannonicalHeaders;
                 },
-                setDlabHeaders: function(config) {
-     	       		dlabHeaders = '';
-     				if (config.hasOwnProperty('headers')) {
-     					var headersLen = 0,
-     						keys;
-     
-     					// - dlabHeaders are the name value pairs, separated by a ":", 
-     					// in lexical order by name, of headers begining with  "x-dlabs", 
-     					// excluding "x-dlabs-date"
-     					keys = Object.keys(config['headers']).sort();
-     					headersLen = keys.length;
-    					dlabHeaders = '';
-     					for (var i = 0; i < headersLen; i++)
-    					{
-    					    if (keys[i].startsWith('x-dlabs', 0) && keys[i] !== 'x-dlabs-date') {
-    					    	dlabHeaders += keys[i];
-    					    	dlabHeaders += ':';
-    					    	dlabHeaders += config['headers'][keys[i]];
-    	 						dlabHeaders += '\n';
-    					    }
-    					}
-     				}
-                },
                 getDlabHeaders: function(config) {
-                    //service.setDlabHeaders(config);
+                    var dlabHeaders = '';
+                    if (config.hasOwnProperty('headers')) {
+                        var headersLen = 0,
+                            keys;
+
+                        // - dlabHeaders are the name value pairs, separated by a ":", 
+                        // in lexical order by name, of headers begining with  "x-dlabs", 
+                        // excluding "x-dlabs-date"
+                        keys = Object.keys(config['headers']).sort();
+                        headersLen = keys.length;
+                        dlabHeaders = '';
+                        for (var i = 0; i < headersLen; i++)
+                        {
+                            if (keys[i].startsWith('x-dlabs', 0) && keys[i] !== 'x-dlabs-date') {
+                                dlabHeaders += keys[i];
+                                dlabHeaders += ':';
+                                dlabHeaders += config['headers'][keys[i]];
+                                dlabHeaders += '\n';
+                            }
+                        }
+                    }
                     return dlabHeaders;
                 },
-                setUri: function(config) {
-                    uri = '';
-     	           	uri += config.hasOwnProperty('url')  ? config['url']  : '';
+                getUri: function (config){
+                    var uri = '';
+
+                    uri += config.hasOwnProperty('url')  ? config['url']  : '';
                     uri += '\n';
+                    return uri;
                 },
-                getUri: function (){
-                	return uri;
-                },
-                setQueryParameters: function(config) {
-                    queryParameters = '';
+                getQueryParameters: function(config) {
+                    var queryParameters = '';
                     if (config.hasOwnProperty('params')) {
                         var len = 0,
                             keys;
-     
+
                         // queryParameters are the name value pairs, separated by 
                         // a ":", in lexical order by name, of the query parameters
                         keys = Object.keys(config['params']).sort();
@@ -112,34 +100,27 @@ angular.module("SecurityServices")
                             queryParameters += '\n';
                         }
                     }
-                },
-                getQueryParameters: function() {
-                	return queryParameters;
+                    return queryParameters;
                 },
                 buildStringToSign: function(config) {
-                    var stringTosign ='';
+                    var stringToSign ='';
 
-                    service.setHttpVerb(config);
-                    stringTosign += service.getHttpVerb(config);
-                    stringTosign += '\n';
+                    stringToSign += service.getHttpVerb(config);
+                    stringToSign += '\n';
 
-                    service.setCannonicalHeaders(config);
-                    stringTosign += service.getCannonicalHeaders(config);
-                    stringTosign += '\n';
+                    stringToSign += service.getCannonicalHeaders(config);
+                    stringToSign += '\n';
 
-                    service.setDlabHeaders(config);
-                    stringTosign += service.getDlabHeaders(config);
-                    stringTosign += '\n';
+                    stringToSign += service.getDlabHeaders(config);
+                    stringToSign += '\n';
 
-                    service.setUri(config);
-                    stringTosign += service.getUri(config);
-                    stringTosign += '\n';
+                    stringToSign += service.getUri(config);
+                    stringToSign += '\n';
 
-                    service.setQueryParameters(config);
-                    stringTosign += service.getQueryParameters(config);
-                    stringTosign += '\n';
+                    stringToSign += service.getQueryParameters(config);
+                    stringToSign += '\n';
 
-                	return stringTosign;
+                    return stringToSign;
                 }
             };
         return service;
