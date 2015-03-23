@@ -5,6 +5,7 @@ import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.rest.dto.UriDecorator;
+import com.dematic.labs.rest.helpers.OrderByQueryParameterConverter;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
 import javax.ejb.EJB;
@@ -33,8 +34,11 @@ public class TenantResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerTenants")
     public CollectionDto<TenantDto> getList(@DefaultValue("0") @QueryParam("offset") int offset,
-                                            @DefaultValue(QueryParameters.DEFAULT_LIMIT_AS_STRING) @QueryParam("limit") int limit) {
-        CollectionDto<TenantDto> collectionDto = securityManager.getTenants(new QueryParameters(offset, limit));
+                                            @DefaultValue(QueryParameters.DEFAULT_LIMIT_AS_STRING) @QueryParam("limit") int limit,
+                                            @QueryParam("orderBy") String orderByClause) {
+        CollectionDto<TenantDto> collectionDto = securityManager.getTenants(
+                new QueryParameters(offset, limit,
+                        OrderByQueryParameterConverter.convert(orderByClause)));
         collectionDto.getItems().stream()
                 .map(new UriDecorator<>(uriInfo.getAbsolutePath().getPath()))
                 .collect(Collectors.toList());

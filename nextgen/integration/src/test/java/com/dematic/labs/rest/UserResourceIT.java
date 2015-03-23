@@ -2,9 +2,11 @@ package com.dematic.labs.rest;
 
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.UserDto;
+import com.dematic.labs.business.matchers.UserDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.matchers.UserDtoUriMatcher;
+import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -17,6 +19,7 @@ import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import java.time.Instant;
+import java.util.Arrays;
 
 import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
@@ -57,10 +60,10 @@ public class UserResourceIT {
 
         Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
                 .path("resources/user")
+                .queryParam("orderBy", "loginName DESC".replace(" ", "%20"))
                 .request(MediaType.APPLICATION_JSON);
 
         SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
-
 
         CollectionDto<UserDto> collectionDto = request
                 .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
@@ -70,6 +73,9 @@ public class UserResourceIT {
 
         assertThat(collectionDto.getItems(), iterableWithSize(2));
         assertThat(collectionDto.getItems(), everyItem(new UserDtoUriMatcher()));
+        assertThat(collectionDto.getItems(), new IsIterableContainingInOrder<>(Arrays.asList(
+                new UserDtoMatcher(TENANT_A_USER_USERNAME, TENANT_A),
+                new UserDtoMatcher(TENANT_A_ADMIN_USERNAME, TENANT_A))));
     }
 
     @AfterClass

@@ -5,6 +5,7 @@ import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.UserDto;
 import com.dematic.labs.rest.dto.UserDtoUriDecorator;
+import com.dematic.labs.rest.helpers.OrderByQueryParameterConverter;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
 import javax.ejb.EJB;
@@ -32,9 +33,11 @@ public class UserResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerUsers")
     public CollectionDto<UserDto> getList(@DefaultValue("0") @QueryParam("offset") int offset,
-                                 @DefaultValue("25") @QueryParam("limit") int limit) {
+                                          @DefaultValue(QueryParameters.DEFAULT_LIMIT_AS_STRING) @QueryParam("limit") int limit,
+                                          @QueryParam("orderBy") String orderByClause) {
 
-        CollectionDto<UserDto> collectionDto = securityManager.getUsers(new QueryParameters(offset, limit));
+        CollectionDto<UserDto> collectionDto = securityManager.getUsers(new QueryParameters(offset, limit,
+                OrderByQueryParameterConverter.convert(orderByClause)));
         collectionDto.getItems().stream()
                 .map(new UserDtoUriDecorator(uriInfo.getAbsolutePath().getPath()))
                 .collect(Collectors.toList());

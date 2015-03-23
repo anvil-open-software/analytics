@@ -114,11 +114,10 @@ public class OrganizationResourceIT {
 
         assertThat(collectionDto.getItems(), iterableWithSize(collectionDto.getQueryParameters().getLimit()));
         assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoUriMatcher<>()));
-        //noinspection unchecked
-        assertThat(collectionDto.getItems(), IsIterableContainingInOrder.contains(
+        assertThat(collectionDto.getItems(), new IsIterableContainingInOrder<>(Arrays.asList(
                 new NamedDtoMatcher<>("ZEBRA"),
                 new NamedDtoMatcher<>("SPAM"),
-                new NamedDtoMatcher<>("NAVIS")));
+                new NamedDtoMatcher<>("NAVIS"))));
     }
 
     @Test

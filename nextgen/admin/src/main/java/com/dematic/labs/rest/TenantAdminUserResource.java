@@ -36,7 +36,8 @@ public class TenantAdminUserResource {
                                           @QueryParam("orderBy") String orderByClause) {
         List<QueryParameters.ColumnSort> orderBy = OrderByQueryParameterConverter.convert(orderByClause);
 
-        CollectionDto<UserDto> collectionDto = securityManager.getTenantsAdminUsers(new QueryParameters(offset, limit, orderBy));
+        CollectionDto<UserDto> collectionDto = securityManager.getTenantsAdminUsers(
+                new QueryParameters(offset, limit, orderBy));
         collectionDto.getItems()
                 .stream()
                 .map(new UserDtoUriDecorator(uriInfo.getAbsolutePath().getPath()))
