@@ -1,7 +1,7 @@
 package com.dematic.labs.business.dto;
 
-import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.persistence.entities.SortDirection;
+import com.dematic.labs.persistence.query.QueryParameters;
 import org.apache.commons.beanutils.BeanComparator;
 import org.apache.commons.collections4.comparators.ComparatorChain;
 
@@ -15,10 +15,7 @@ public class CollectionDto<T extends IdentifiableDto> {
 
     private static final String NO_SUCH_METHOD_EXCEPTION_TEXT = NoSuchMethodException.class.getSimpleName() + ":";
 
-    private int offset;
-    private int limit;
-    private int size;
-
+    private QueryParameters queryParameters;
     private List<T> items;
 
     @SuppressWarnings("UnusedDeclaration") //needed for jackson
@@ -65,9 +62,7 @@ public class CollectionDto<T extends IdentifiableDto> {
             cookedItems = sortedItems.subList(queryParameters.getOffset(), queryParameters.getOffset() + cookedLimit);
         }
 
-        this.offset = queryParameters.getOffset();
-        this.limit = queryParameters.getLimit();
-        this.size = cookedItems.size();
+        this.queryParameters = queryParameters;
         this.items = cookedItems;
     }
 
@@ -77,35 +72,24 @@ public class CollectionDto<T extends IdentifiableDto> {
     }
 
     public int getSize() {
-        return size;
+        return items.size();
     }
 
-    public int getOffset() {
-        return offset;
+    public QueryParameters getQueryParameters() {
+        return queryParameters;
     }
 
-    public int getLimit() {
-        return limit;
-    }
-
-    @SuppressWarnings("UnusedDeclaration") //needed for jackson
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
-    @SuppressWarnings("UnusedDeclaration") //needed for jackson
-    public void setLimit(int limit) {
-        this.limit = limit;
-    }
-
-    @SuppressWarnings("UnusedDeclaration") //needed for jackson
-    public void setSize(int size) {
-        this.size = size;
-    }
-
-    @SuppressWarnings("UnusedDeclaration") //needed for jackson
+    @SuppressWarnings("UnusedDeclaration") //needed by jackson
     public void setItems(List<T> items) {
         this.items = items;
+    }
+
+    public void setSize(@SuppressWarnings("UnusedParameters") int size) { //needed by jackson
+    }
+
+    @SuppressWarnings("UnusedDeclaration") //needed by jackson
+    public void setQueryParameters(QueryParameters queryParameters) {
+        this.queryParameters = queryParameters;
     }
 
 }

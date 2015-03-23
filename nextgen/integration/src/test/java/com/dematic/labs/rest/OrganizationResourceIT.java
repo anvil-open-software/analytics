@@ -112,7 +112,7 @@ public class OrganizationResourceIT {
                         signRequest(request, token, HttpMethod.GET, null))
                 .get(new GenericType<CollectionDto<OrganizationDto>>() {});
 
-        assertThat(collectionDto.getItems(), iterableWithSize(3));
+        assertThat(collectionDto.getItems(), iterableWithSize(collectionDto.getQueryParameters().getLimit()));
         assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoUriMatcher<>()));
         //noinspection unchecked
         assertThat(collectionDto.getItems(), IsIterableContainingInOrder.contains(

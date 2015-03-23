@@ -1,7 +1,12 @@
 package com.dematic.labs.business.dto;
 
-import com.dematic.labs.persistence.query.QueryParameters;
+import com.dematic.labs.business.matchers.CollectionDtoMatcher;
+import com.dematic.labs.business.matchers.SortingPaginationDtoMatcher;
 import com.dematic.labs.persistence.entities.SortDirection;
+import com.dematic.labs.persistence.query.QueryParameters;
+import org.hamcrest.Matcher;
+import org.hamcrest.collection.IsIterableContainingInAnyOrder;
+import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.joda.time.LocalDate;
 import org.junit.Rule;
 import org.junit.Test;
@@ -13,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 public class CollectionDtoTest {
 
@@ -51,10 +56,13 @@ public class CollectionDtoTest {
         QueryParameters queryParameters = new QueryParameters(0, 10);
         CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, queryParameters);
 
-        assertEquals(queryParameters.getOffset(), collectionDto.getOffset());
-        assertEquals(queryParameters.getLimit(), collectionDto.getLimit());
-        assertEquals(items.size(), collectionDto.getSize());
-        assertEquals(items, collectionDto.getItems());
+        assertThat(collectionDto, new CollectionDtoMatcher<>(queryParameters, items.size()));
+
+        List<Matcher<? super SortingPaginationDto>> itemMatcherList = items.stream()
+                .map(SortingPaginationDtoMatcher::new)
+                .collect(Collectors.toList());
+
+        assertThat(collectionDto.getItems(), IsIterableContainingInAnyOrder.containsInAnyOrder(itemMatcherList));
     }
 
     @Test
@@ -62,10 +70,14 @@ public class CollectionDtoTest {
         QueryParameters queryParameters = new QueryParameters(0, 10);
         CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, queryParameters, true);
 
-        assertEquals(queryParameters.getOffset(), collectionDto.getOffset());
-        assertEquals(queryParameters.getLimit(), collectionDto.getLimit());
-        assertEquals(queryParameters.getLimit(), collectionDto.getSize());
-        assertEquals(items.subList(queryParameters.getOffset(), queryParameters.getLimit()), collectionDto.getItems());
+        assertThat(collectionDto, new CollectionDtoMatcher<>(queryParameters, queryParameters.getLimit()));
+
+        List<Matcher<? super SortingPaginationDto>> itemMatcherList =
+                items.subList(queryParameters.getOffset(), queryParameters.getLimit()).stream()
+                .map(SortingPaginationDtoMatcher::new)
+                .collect(Collectors.toList());
+
+        assertThat(collectionDto.getItems(), IsIterableContainingInAnyOrder.containsInAnyOrder(itemMatcherList));
     }
 
     @Test
@@ -73,10 +85,15 @@ public class CollectionDtoTest {
         QueryParameters queryParameters = new QueryParameters(25, 10);
         CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, queryParameters, true);
 
-        assertEquals(queryParameters.getOffset(), collectionDto.getOffset());
-        assertEquals(queryParameters.getLimit(), collectionDto.getLimit());
-        assertEquals(queryParameters.getOffset() + queryParameters.getLimit() - items.size(), collectionDto.getSize());
-        assertEquals(items.subList(queryParameters.getOffset(), items.size()), collectionDto.getItems());
+        assertThat(collectionDto, new CollectionDtoMatcher<>(queryParameters,
+                queryParameters.getOffset() + queryParameters.getLimit() - items.size()));
+
+        List<Matcher<? super SortingPaginationDto>> itemMatcherList =
+                items.subList(queryParameters.getOffset(), items.size()).stream()
+                        .map(SortingPaginationDtoMatcher::new)
+                        .collect(Collectors.toList());
+
+        assertThat(collectionDto.getItems(), IsIterableContainingInAnyOrder.containsInAnyOrder(itemMatcherList));
     }
 
     @Test
@@ -100,20 +117,22 @@ public class CollectionDtoTest {
 
         CollectionDto<SortingPaginationDto> collectionDto = new CollectionDto<>(items, queryParameters, true);
 
-        List<SortingPaginationDto> sortedItems = items.stream().sorted(new Comparator<SortingPaginationDto>() {
-            @Override
-            public int compare(SortingPaginationDto o1, SortingPaginationDto o2) {
-                if (o1.getBirthday().compareTo(o2.getBirthday()) != 0) {
-                    return o1.getBirthday().compareTo(o2.getBirthday());
-                }
-                if (o2.getName().compareTo(o1.getName()) != 0) {
-                    return o2.getName().compareTo(o1.getName());
-                }
-                return 0;
-            }
-        }).collect(Collectors.toList());
+        List<Matcher<? super SortingPaginationDto>> itemMatcherList =
+                items.stream().sorted(new Comparator<SortingPaginationDto>() {
+                    @Override
+                    public int compare(SortingPaginationDto o1, SortingPaginationDto o2) {
+                        if (o1.getBirthday().compareTo(o2.getBirthday()) != 0) {
+                            return o1.getBirthday().compareTo(o2.getBirthday());
+                        }
+                        if (o2.getName().compareTo(o1.getName()) != 0) {
+                            return o2.getName().compareTo(o1.getName());
+                        }
+                        return 0;
+                    }
+                }).map(SortingPaginationDtoMatcher::new)
+                        .collect(Collectors.toList());
 
-        assertEquals(sortedItems, collectionDto.getItems());
+        assertThat(collectionDto.getItems(), IsIterableContainingInOrder.contains(itemMatcherList));
 
     }
 
