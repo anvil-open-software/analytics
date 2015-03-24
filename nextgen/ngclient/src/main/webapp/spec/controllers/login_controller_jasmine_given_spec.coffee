@@ -1,4 +1,4 @@
-describe "controller: LoginController ($httpBackend.when().respond, jasmine-given, coffeescript)", ->
+xdescribe "controller: LoginController ($httpBackend.when().respond, jasmine-given, coffeescript)", ->
 
   Given -> module("app")
 

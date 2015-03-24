@@ -1,4 +1,4 @@
-describe("directive: shows-message-when-hovered (vanilla jasmine, coffeescript)", function() {
+xdescribe("directive: shows-message-when-hovered (vanilla jasmine, coffeescript)", function() {
 
   beforeEach(function() {
     module("app");

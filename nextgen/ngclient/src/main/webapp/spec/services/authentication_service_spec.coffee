@@ -1,4 +1,4 @@
-describe "service: AuthenticationService", ->
+xdescribe "service: AuthenticationService", ->
 
   Given -> module("app")
 

@@ -1,4 +1,4 @@
-describe("controller: LoginController ($httpBackend.expect().respond, vanilla jasmine, javascript)", function() {
+xdescribe("controller: LoginController ($httpBackend.expect().respond, vanilla jasmine, javascript)", function() {
 
   beforeEach(function() {
     module("app");
