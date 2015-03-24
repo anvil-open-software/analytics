@@ -1,6 +1,5 @@
 package com.dematic.labs.persistence.query;
 
-import com.dematic.labs.persistence.entities.SortDirection;
 import com.mysema.query.types.Order;
 import com.mysema.query.types.Path;
 import com.mysema.query.types.path.EntityPathBase;
