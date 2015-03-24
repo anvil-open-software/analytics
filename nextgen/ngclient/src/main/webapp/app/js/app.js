@@ -1,10 +1,12 @@
 angular.module('Authentication', []);
+angular.module('SecurityServices', []);
 
 angular.module("app",
 	[
-		'Authentication',
-		'ngResource', 
-		'ngRoute'
+		'ngResource',
+		'ngRoute',
+        'Authentication',
+        'SecurityServices'
 	]
 ).run(function($rootScope) {
   // adds some basic utilities to the $rootScope for debugging purposes
