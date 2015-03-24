@@ -2,7 +2,7 @@ FROM sequenceiq/hadoop-docker:2.6.0
 
 MAINTAINER michael.mitchell@dematic.com
 
-ENV REFRESHED_AT 2015-03-13
+ENV REFRESHED_AT 2015-03-24
 
 # Install java 8 and make default
 RUN mkdir -p /usr/java/default && \
@@ -24,6 +24,10 @@ RUN $BOOTSTRAP && $HADOOP_PREFIX/bin/hadoop dfsadmin -safemode leave && $HADOOP_
 ENV YARN_CONF_DIR $HADOOP_PREFIX/etc/hadoop
 ENV SPARK_JAR hdfs:///spark/spark-assembly-1.2.1-hadoop2.6.0.jar
 ENV PATH $PATH:$SPARK_HOME/bin:$HADOOP_PREFIX/bin
+
+# copy yarn env script
+COPY yarn-env.sh /usr/local/hadoop/etc/hadoop/yarn-env.sh
+
 # update boot script
 COPY bootstrap.sh /etc/bootstrap.sh
 RUN chown root.root /etc/bootstrap.sh
