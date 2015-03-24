@@ -22,7 +22,7 @@ import static com.dematic.labs.analytics.ingestion.sparks.Bootstrap.*;
 import static org.junit.Assert.assertEquals;
 import static samples.utils.DynamoDBUtils.deleteTable;
 
-public final class EventProcessingWorkflowTest {
+public final class EventProcessingWorkflow {
     private static final int EVENT_COUNT = 10;
     private static final int SHARD_COUNT = 1;
     private int shardCounter = 1;
