@@ -2,7 +2,7 @@ FROM dematic/spark:1.2.1
 
 MAINTAINER Michael Mitchell "michael.mitchell@dematic.com"
 
-ENV REFRESHED_AT 2015-03-23
+ENV REFRESHED_AT 2015-03-24
 
 # install supervisor
 RUN mkdir /var/log/supervisor
