@@ -2,7 +2,7 @@
  * Security Services
  */
 angular.module("SecurityServices")
-    .factory('SecurityToken',
+.factory('SecurityToken',
     function() {
         var securityToken = {};
         return {
@@ -22,7 +22,7 @@ angular.module("SecurityServices")
         };
     }
 )
-    .factory('StringToSign',
+.factory('StringToSign',
     function() {
         var service = {
                 getHttpVerb: function (config) {
@@ -125,4 +125,66 @@ angular.module("SecurityServices")
             };
         return service;
     }
-);
+)
+.factory('SignRequestInterceptor', ['DlabsDate',
+    function(DlabsDate) {
+        var signRequestInterceptor = {
+            request: function(config) {
+                console.log('Intercepted request');
+
+                // Add the x-dlab-date custom header
+                if (!config.hasOwnProperty('headers')) {
+                    config['headers'] = {};
+                }
+                config['headers']['x-dlabs-date'] = DlabsDate.toUTC(new Date());
+
+                return config;
+            },
+            response: function(config) {
+                return config;
+            }
+        };
+        return signRequestInterceptor;
+    }
+])
+.factory('DlabsDate',
+    function() {
+        return {
+            toUTC: function(date) {
+                var utcDate = '';
+
+                utcDate += date.getUTCFullYear();
+                utcDate += '-';
+                utcDate += date.getUTCMonth() < 10 ? '0'+ date.getUTCMonth() : date.getUTCMonth();
+                utcDate += '-';
+                utcDate += date.getUTCDate()  < 10 ? '0'+ date.getUTCDate() : date.getUTCDate();
+                utcDate += 'T';
+                utcDate += date.getUTCHours() < 10 ? '0'+ date.getUTCHours() : date.getUTCHours();
+                utcDate += ':';
+                utcDate += date.getUTCMinutes() < 10 ? '0'+ date.getUTCMinutes() : date.getUTCMinutes();
+                utcDate += ':';
+                utcDate += date.getUTCSeconds() < 10 ? '0'+ date.getUTCSeconds() : date.getUTCSeconds();
+                utcDate += '.';
+                if (date.getUTCMilliseconds() < 10) {
+                    utcDate += '00' + date.getUTCMilliseconds();
+                }
+                else {
+                    if (date.getUTCMilliseconds() < 100) {
+                        utcDate += '0' + date.getUTCMilliseconds();
+                    }
+                    else {
+                        utcDate += date.getUTCMilliseconds();
+                    }
+                }
+                utcDate += 'Z';
+
+                return utcDate;
+            }
+        };
+    }
+)
+.config(['$httpProvider',
+    function($httpProvider) {
+        $httpProvider.interceptors.push('SignRequestInterceptor');
+    }
+]);
