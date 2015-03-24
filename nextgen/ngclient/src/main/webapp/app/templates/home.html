@@ -4,6 +4,13 @@
         <h3 id="welcome">Welcome to the {{ title }} page!</h3>
         <div class="alert-box">{{ message }}</div>
 
+        <div>
+            <a href="#" ng-click="showDetails = ! showDetails">Show Tenants</a>
+            <ul ng-show="showDetails">
+                <li ng-repeat="tenant in tenants">{{tenant.name}}</li>
+            </ul>
+        </div>
+
         <ul class="small-block-grid-2">
             <li>
                 <img class="th" src="img/pic_1.png" shows-message-when-hovered message="Im the Dematic Log.">

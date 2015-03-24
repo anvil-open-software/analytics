@@ -9,6 +9,7 @@ angular.module('Authentication')
         $scope.title = "Home";
         $scope.message = "Mouse Over these images to see a directive at work";
         $scope.authenticatedUser = AuthenticatedUser.getAuthenticatedUser();
+        $scope.tenants = [{name: 'Dematic'}, {name: 'Safeway'}, {name: 'Wallmart'}, {name: 'UPS'}];
 
         var onLogoutSuccess = function (response) {
             $location.path('/login');
