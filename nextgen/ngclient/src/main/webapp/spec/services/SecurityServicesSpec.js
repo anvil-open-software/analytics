@@ -66,6 +66,7 @@ describe('Unit: Testing SecurityServices Module', function() {
                 expect(StringToSign.getQueryParameters).not.toBe(null);
 
                 expect(StringToSign.buildStringToSign).not.toBe(null);
+                expect(StringToSign.buildStringToSignParameters).not.toBe(null);
             }])
         );
         it('should set up the httpverb',
@@ -245,6 +246,61 @@ describe('Unit: Testing SecurityServices Module', function() {
                 );
             }])
         });
+    })
+    describe('DlabsDate Service', function() {
+        it('should be defined',
+            inject(['DlabsDate', function(DlabsDate) {
+                expect(DlabsDate).not.toBe(null);
+            }])
+        );
+        it('should have all methods',
+            inject(['DlabsDate', function(DlabsDate) {
+                expect(DlabsDate.toUTC).not.toBe(null);
+            }])
+        );
+        it('should fail when handling a non-date object',
+            inject (['DlabsDate', function (DlabsDate) {
+                expect(DlabsDate.toUTC(123)).toBeNull();
+                expect(DlabsDate.toUTC('abcd')).toBeNull();
+                expect(DlabsDate.toUTC({'a': 1, 'b': 2})).toBeNull();
+            }])
+        );
+        it('should convert 2015-1-1T1:0:3.333 correctly',
+            inject(['DlabsDate', function(DlabsDate) {
+                var localDate = new Date(2015, 1, 1, 1, 0, 3, 333),
+                    utcDate = '',
+                    aux;
+
+                //convert it to the desired UTC method
+                utcDate += localDate.getUTCFullYear();
+                utcDate += '-';
+                aux = localDate.getUTCMonth() + 1;
+                utcDate += aux < 10 ? '0'+ aux : aux;
+                utcDate += '-';
+                utcDate += localDate.getUTCDate()  < 10 ? '0'+ localDate.getUTCDate() : localDate.getUTCDate();
+                utcDate += 'T';
+                utcDate += localDate.getUTCHours() < 10 ? '0'+ localDate.getUTCHours() : localDate.getUTCHours();
+                utcDate += ':';
+                utcDate += localDate.getUTCMinutes() < 10 ? '0'+ localDate.getUTCMinutes() : localDate.getUTCMinutes();
+                utcDate += ':';
+                utcDate += localDate.getUTCSeconds() < 10 ? '0'+ localDate.getUTCSeconds() : localDate.getUTCSeconds();
+                utcDate += '.';
+                if (localDate.getUTCMilliseconds() < 10) {
+                    utcDate += '00' + localDate.getUTCMilliseconds();
+                }
+                else {
+                    if (localDate.getUTCMilliseconds() < 100) {
+                        utcDate += '0' + localDate.getUTCMilliseconds();
+                    }
+                    else {
+                        utcDate += localDate.getUTCMilliseconds();
+                    }
+                }
+                utcDate += 'Z';
+
+                expect(DlabsDate.toUTC(localDate)).toBe(utcDate);
+            }])
+        );
     })
 });
 

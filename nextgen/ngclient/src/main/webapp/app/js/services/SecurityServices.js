@@ -198,6 +198,8 @@ angular.module("SecurityServices")
                 var utcDate = '',
                     aux;
 
+                if (Object.prototype.toString.call(date) !== '[object Date]') {return null;}
+
                 utcDate += date.getUTCFullYear();
                 utcDate += '-';
                 aux = date.getUTCMonth() + 1;
