@@ -5,7 +5,8 @@
         <div class="alert-box">{{ message }}</div>
 
         <div>
-            <a href="#" ng-click="showDetails = ! showDetails">Show Tenants</a>
+            <!--a href="#" ng-click="showDetails = ! showDetails">Show Tenants</a-->
+            <a href="#" ng-click="showTenants($event)">Show Tenants</a>
             <ul ng-show="showDetails">
                 <li ng-repeat="tenant in tenants">{{tenant.name}}</li>
             </ul>
