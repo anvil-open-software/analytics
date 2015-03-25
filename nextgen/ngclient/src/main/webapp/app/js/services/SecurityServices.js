@@ -154,7 +154,7 @@ angular.module("SecurityServices")
                     config['headers'] = {};
                 }
                 config['headers']['x-dlabs-date'] = DLabsDate.toUTC(new Date());
-                console.log('DateUTC: ' + config['headers']['x-dlabs-date']);
+                //console.log('DateUTC: ' + config['headers']['x-dlabs-date']);
 
                 // Get the string to sign
                 stringToSign = StringToSign.buildStringToSignParameters(
@@ -167,10 +167,10 @@ angular.module("SecurityServices")
                 // Compute the request signature
                 authenticationKey = SecurityToken.getSignature();
                 hash = CryptoJS.HmacSHA1(stringToSign, authenticationKey);
-                requestSignature = hash.toString(CryptoJS.enc.Base64); // See DLabsAuthenticationScheme.sign#244
-                console.log('Authentication Key: ' + authenticationKey);
-                console.log('String to sign on: ' + stringToSign);
-                console.log('requestSignature: ' + requestSignature);
+                requestSignature = CryptoJS.enc.Base64.stringify(hash);
+                //console.log('Authentication Key: ' + authenticationKey);
+                //console.log('String to sign on: ' + stringToSign);
+                //console.log('requestSignature: ' + requestSignature);
 
                 // Insert the Authorization request
                 config['headers']['Authorization'] = '';
@@ -180,7 +180,7 @@ angular.module("SecurityServices")
                 config['headers']['Authorization'] += SecurityToken.getToken();
                 config['headers']['Authorization'] += ':';
                 config['headers']['Authorization'] += requestSignature;
-                console.log("config['headers']['Authorization']: " + config['headers']['Authorization']);
+                //console.log("config['headers']['Authorization']: " + config['headers']['Authorization']);
 
                 return config;
             },
