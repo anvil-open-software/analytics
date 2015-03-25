@@ -19,7 +19,7 @@ angular.module('Authentication')
 
         $scope.showTenants = function(event) {
             $scope.showDetails = !$scope.showDetails;
-            $scope.tenants = $scope.showDetails ? TenantResourceSrvc.query() : [];
+            $scope.tenants = $scope.showDetails ? TenantResourceSrvc.get() : [];
         };
 
         $scope.logout = function () {
