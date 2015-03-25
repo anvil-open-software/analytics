@@ -247,26 +247,26 @@ describe('Unit: Testing SecurityServices Module', function() {
             }])
         });
     })
-    describe('DlabsDate Service', function() {
+    describe('DLabsDate Service', function() {
         it('should be defined',
-            inject(['DlabsDate', function(DlabsDate) {
-                expect(DlabsDate).not.toBe(null);
+            inject(['DLabsDate', function(DLabsDate) {
+                expect(DLabsDate).not.toBe(null);
             }])
         );
         it('should have all methods',
-            inject(['DlabsDate', function(DlabsDate) {
-                expect(DlabsDate.toUTC).not.toBe(null);
+            inject(['DLabsDate', function(DLabsDate) {
+                expect(DLabsDate.toUTC).not.toBe(null);
             }])
         );
         it('should fail when handling a non-date object',
-            inject (['DlabsDate', function (DlabsDate) {
-                expect(DlabsDate.toUTC(123)).toBeNull();
-                expect(DlabsDate.toUTC('abcd')).toBeNull();
-                expect(DlabsDate.toUTC({'a': 1, 'b': 2})).toBeNull();
+            inject (['DLabsDate', function (DLabsDate) {
+                expect(DLabsDate.toUTC(123)).toBeNull();
+                expect(DLabsDate.toUTC('abcd')).toBeNull();
+                expect(DLabsDate.toUTC({'a': 1, 'b': 2})).toBeNull();
             }])
         );
         it('should convert 2015-1-1T1:0:3.333 correctly',
-            inject(['DlabsDate', function(DlabsDate) {
+            inject(['DLabsDate', function(DLabsDate) {
                 var localDate = new Date(2015, 1, 1, 1, 0, 3, 333),
                     utcDate = '',
                     aux;
@@ -298,7 +298,7 @@ describe('Unit: Testing SecurityServices Module', function() {
                 }
                 utcDate += 'Z';
 
-                expect(DlabsDate.toUTC(localDate)).toBe(utcDate);
+                expect(DLabsDate.toUTC(localDate)).toBe(utcDate);
             }])
         );
     })

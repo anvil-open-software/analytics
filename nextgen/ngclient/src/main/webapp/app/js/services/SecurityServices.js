@@ -128,8 +128,8 @@ angular.module("SecurityServices")
         return service;
     }
 )
-.factory('SignRequestInterceptor', ['$location', 'StringToSign', 'SecurityToken', 'DlabsDate',
-    function($location, StringToSign, SecurityToken, DlabsDate) {
+.factory('SignRequestInterceptor', ['$location', 'StringToSign', 'SecurityToken', 'DLabsDate',
+    function($location, StringToSign, SecurityToken, DLabsDate) {
         var signRequestInterceptor = {
             request: function(config) {
                 var stringToSign,
@@ -153,7 +153,7 @@ angular.module("SecurityServices")
                 if (!config.hasOwnProperty('headers')) {
                     config['headers'] = {};
                 }
-                config['headers']['x-dlabs-date'] = DlabsDate.toUTC(new Date());
+                config['headers']['x-dlabs-date'] = DLabsDate.toUTC(new Date());
                 console.log('DateUTC: ' + config['headers']['x-dlabs-date']);
 
                 // Get the string to sign
@@ -191,7 +191,7 @@ angular.module("SecurityServices")
         return signRequestInterceptor;
     }
 ])
-.factory('DlabsDate',
+.factory('DLabsDate',
     function() {
         return {
             toUTC: function(date) {
