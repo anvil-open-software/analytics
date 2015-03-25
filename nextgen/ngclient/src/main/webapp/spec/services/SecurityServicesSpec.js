@@ -193,7 +193,7 @@ describe('Unit: Testing SecurityServices Module', function() {
                 expect(expected).toBe(StringToSign.getQueryParameters(config));
             }])
         });
-        it('should set up the string to sign', function() {
+        it('should set up the string to sign using config', function() {
             inject(['StringToSign', function(StringToSign){
                 var expected = '',
                     stringToSign;
@@ -208,21 +208,41 @@ describe('Unit: Testing SecurityServices Module', function() {
                 config['params']['param2'] = 'BBBBB';
 
                 expected += StringToSign.getHttpVerb(config);
-                expected += '\n';
-
                 expected += StringToSign.getCannonicalHeaders(config);
-                expected += '\n';
-
                 expected += StringToSign.getDlabHeaders(config);
-                expected += '\n';
-
                 expected += StringToSign.getUri(config);
-                expected += '\n';
-
                 expected += StringToSign.getQueryParameters(config);
-                expected += '\n';
-
                 expect(expected).toBe(StringToSign.buildStringToSign(config));
+            }])
+        });
+        it('should set up the string to sign using parameters instead of config', function() {
+            inject(['StringToSign', function(StringToSign){
+                var expected = '',
+                    stringToSign;
+
+                config['headers']['x-dlabs-value3'] = 'CCCCC';
+                config['headers']['x-dlabs-date'] = '2015-02-20T01:03:29.407Z';
+                config['headers']['x-dlabs-value1'] = 'AAAAA';
+                config['headers']['x-dlabs-value2'] = 'BBBBB';
+                config['params'] = {};
+                config['params']['param3'] = 'CCCCC';
+                config['params']['param1'] = 'AAAAA';
+                config['params']['param2'] = 'BBBBB';
+
+                expected += StringToSign.getHttpVerb(config);
+                expected += StringToSign.getCannonicalHeaders(config);
+                expected += StringToSign.getDlabHeaders(config);
+                expected += StringToSign.getUri(config);
+                expected += StringToSign.getQueryParameters(config);
+
+                expect(expected).toBe(StringToSign.buildStringToSignParameters(
+                        StringToSign.getHttpVerb(config),
+                        StringToSign.getCannonicalHeaders(config),
+                        StringToSign.getDlabHeaders(config),
+                        StringToSign.getUri(config),
+                        StringToSign.getQueryParameters(config)
+                    )
+                );
             }])
         });
     })

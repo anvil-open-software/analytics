@@ -85,7 +85,7 @@ angular.module("SecurityServices")
                 getQueryParameters: function(config) {
                     var queryParameters = '';
                     if (config.hasOwnProperty('params')) {
-                        var len = 0,
+                        var len,
                             keys;
 
                         // queryParameters are the name value pairs, separated by 
@@ -106,37 +106,81 @@ angular.module("SecurityServices")
                     var stringToSign ='';
 
                     stringToSign += service.getHttpVerb(config);
-                    stringToSign += '\n';
-
                     stringToSign += service.getCannonicalHeaders(config);
-                    stringToSign += '\n';
-
                     stringToSign += service.getDlabHeaders(config);
-                    stringToSign += '\n';
-
                     stringToSign += service.getUri(config);
-                    stringToSign += '\n';
-
                     stringToSign += service.getQueryParameters(config);
-                    stringToSign += '\n';
+
+                    return stringToSign;
+                },
+                buildStringToSignParameters: function(httpVerb,cannonicalHeaders, dlabHeaders, uri, queryParameters) {
+                    var stringToSign ='';
+
+                    stringToSign += httpVerb;
+                    stringToSign += cannonicalHeaders;
+                    stringToSign += dlabHeaders;
+                    stringToSign += uri;
+                    stringToSign += queryParameters;
 
                     return stringToSign;
                 }
-            };
+        };
         return service;
     }
 )
-.factory('SignRequestInterceptor', ['DlabsDate',
-    function(DlabsDate) {
+.factory('SignRequestInterceptor', ['$location', 'StringToSign', 'SecurityToken', 'DlabsDate',
+    function($location, StringToSign, SecurityToken, DlabsDate) {
         var signRequestInterceptor = {
             request: function(config) {
-                console.log('Intercepted request');
+                var stringToSign,
+                    requestSignature,
+                    authenticationKey,
+                    hash;
 
-                // Add the x-dlab-date custom header
+                // Only sign REST requests that config
+                // - is defined
+                // - is an object
+                // - has a url property
+                // - the url property starts with resource
+                // - the url is not a resource/token request
+                if (typeof config === null || typeof config !== 'object') {return config;}
+                if (!config.hasOwnProperty('url')) {return config;}
+                if (config['url'].indexOf('resources') !== 0) {return config;}
+                if (config['url'].indexOf('resources/token') === 0) {return config;}
+
+                // Add the x-dlabs-date custom header. This is being done to ensure
+                // that the date is formatted as specified in DLABS-84
                 if (!config.hasOwnProperty('headers')) {
                     config['headers'] = {};
                 }
                 config['headers']['x-dlabs-date'] = DlabsDate.toUTC(new Date());
+                console.log('DateUTC: ' + config['headers']['x-dlabs-date']);
+
+                // Get the string to sign
+                stringToSign = StringToSign.buildStringToSignParameters(
+                    StringToSign.getHttpVerb(config),
+                    StringToSign.getCannonicalHeaders(config),
+                    StringToSign.getDlabHeaders(config),
+                    '/ngclient/' + StringToSign.getUri(config),
+                    StringToSign.getQueryParameters(config));
+
+                // Compute the request signature
+                authenticationKey = SecurityToken.getSignature();
+                hash = CryptoJS.HmacSHA1(stringToSign, authenticationKey);
+                requestSignature = hash.toString(CryptoJS.enc.Base64); // See DLabsAuthenticationScheme.sign#244
+                console.log('Authentication Key: ' + authenticationKey);
+                console.log('String to sign on: ' + stringToSign);
+                console.log('requestSignature: ' + requestSignature);
+
+                // Insert the Authorization request
+                config['headers']['Authorization'] = '';
+                config['headers']['Authorization'] += 'DLabsT ';
+                config['headers']['Authorization'] += SecurityToken.getRealm();
+                config['headers']['Authorization'] += ':';
+                config['headers']['Authorization'] += SecurityToken.getToken();
+                config['headers']['Authorization'] += ':';
+                config['headers']['Authorization'] += requestSignature;
+                console.log("config['headers']['Authorization']: " + config['headers']['Authorization']);
 
                 return config;
             },
@@ -151,11 +195,13 @@ angular.module("SecurityServices")
     function() {
         return {
             toUTC: function(date) {
-                var utcDate = '';
+                var utcDate = '',
+                    aux;
 
                 utcDate += date.getUTCFullYear();
                 utcDate += '-';
-                utcDate += date.getUTCMonth() < 10 ? '0'+ date.getUTCMonth() : date.getUTCMonth();
+                aux = date.getUTCMonth() + 1;
+                utcDate += aux < 10 ? '0'+ aux : aux;
                 utcDate += '-';
                 utcDate += date.getUTCDate()  < 10 ? '0'+ date.getUTCDate() : date.getUTCDate();
                 utcDate += 'T';
