@@ -1,10 +1,12 @@
 angular.module('Authentication', []);
+angular.module('ResourceServices', []);
 angular.module('SecurityServices', []);
 
 angular.module("app",
 	[
 		'ngResource',
 		'ngRoute',
+        'ResourceServices',
         'Authentication',
         'SecurityServices'
 	]
