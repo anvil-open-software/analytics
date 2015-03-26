@@ -5,7 +5,8 @@ import javax.annotation.Nonnull;
 public abstract class IdentifiableDto {
 
     private String id;
-    private String href;
+
+    private String uri;
 
     public String getId() {
         return id;
@@ -15,12 +16,12 @@ public abstract class IdentifiableDto {
         this.id = id;
     }
 
-    public String getHref() {
-        return href;
+    public String getUri() {
+        return uri;
     }
 
-    public void setHref(@Nonnull String href) {
-        this.href = href;
+    public void setUri(@Nonnull String uri) {
+        this.uri = uri;
     }
 
 }

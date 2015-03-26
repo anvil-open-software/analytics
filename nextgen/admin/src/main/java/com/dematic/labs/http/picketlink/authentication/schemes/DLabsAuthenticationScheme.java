@@ -23,6 +23,8 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.HttpMethod;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.time.Instant;
 import java.util.Enumeration;
 import java.util.SortedMap;
@@ -176,6 +178,11 @@ public class DLabsAuthenticationScheme implements HttpAuthenticationScheme<Basic
 
         String queryString = request.getQueryString();
         if (queryString != null) {
+            try {
+                queryString = URLDecoder.decode(queryString, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
             for (String nameValuePair : queryString.split("&")) {
                 String[] parts = nameValuePair.split("=");
                 queryParameters.put(parts[0], parts[1]);

@@ -4,17 +4,17 @@ import com.dematic.labs.business.dto.IdentifiableDto;
 
 import java.util.function.Function;
 
-public class HrefDecorator<T extends IdentifiableDto> implements Function<T, T> {
+public class UriDecorator<T extends IdentifiableDto> implements Function<T, T> {
 
     private final String baseUri;
-    public HrefDecorator(String baseUri) {
+    public UriDecorator(String baseUri) {
 
         this.baseUri = baseUri;
     }
 
     @Override
     public T apply(T identifiableDto) {
-        identifiableDto.setHref(baseUri + "/" + identifiableDto.getId());
+        identifiableDto.setUri(baseUri + "/" + identifiableDto.getId());
 
         return identifiableDto;
     }

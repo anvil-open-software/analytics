@@ -1,10 +1,9 @@
 package com.dematic.labs.business;
 
-import com.dematic.labs.business.dto.CollectionDto;
-import com.dematic.labs.business.dto.RoleDto;
-import com.dematic.labs.business.dto.TenantDto;
-import com.dematic.labs.business.dto.UserDto;
+import com.dematic.labs.business.dto.*;
 import com.dematic.labs.matchers.ConstraintViolationMatcher;
+import com.dematic.labs.persistence.query.QueryParameters;
+import com.dematic.labs.persistence.entities.SortDirection;
 import org.apache.deltaspike.security.api.authorization.AccessDeniedException;
 import org.hamcrest.collection.IsEmptyIterable;
 import org.hamcrest.core.IsNot;
@@ -19,7 +18,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -55,14 +56,14 @@ public class SecurityManagerIT {
     public void test000GetTenantsWithoutAuthentication() throws Exception {
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getTenants(Pagination.DEFAULT);
+        securityManager.getTenants(QueryParameters.DEFAULT);
     }
 
     @Test
     public void test010GetTenantsWithAuthenticationAndAuthorization() throws Exception {
 
         securityFixture.login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
-        CollectionDto<TenantDto> collectionDto = securityManager.getTenants(Pagination.DEFAULT);
+        CollectionDto<TenantDto> collectionDto = securityManager.getTenants(QueryParameters.DEFAULT);
 
         assertThat(collectionDto.getItems(), iterableWithSize(collectionDto.getSize()));
     }
@@ -73,7 +74,17 @@ public class SecurityManagerIT {
         securityFixture.login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
         exception.expectCause(new ConstraintViolationMatcher("Pagination offset must be positive",
                 "Pagination limit must be positive"));
-        securityManager.getTenants(new Pagination(-1, -1));
+        securityManager.getTenants(new QueryParameters(-1, -1));
+    }
+
+    @Test
+    public void test017GetTenantsWithInvalidSort() throws Exception {
+
+        securityFixture.login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
+        exception.expectCause(new ConstraintViolationMatcher("Sort Column name may not be empty"));
+        List<QueryParameters.ColumnSort> orderBy = new ArrayList<>();
+        orderBy.add(new QueryParameters.ColumnSort("", SortDirection.ASC));
+        securityManager.getTenants(new QueryParameters(0, QueryParameters.DEFAULT_LIMIT, orderBy));
     }
 
     @Test
@@ -82,7 +93,7 @@ public class SecurityManagerIT {
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getTenants(Pagination.DEFAULT);
+        securityManager.getTenants(QueryParameters.DEFAULT);
     }
 
     @Test
@@ -208,14 +219,14 @@ public class SecurityManagerIT {
     public void test130GetTenantAdminsWithoutAuthentication() throws Exception {
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getTenantsAdminUsers(Pagination.DEFAULT);
+        securityManager.getTenantsAdminUsers(QueryParameters.DEFAULT);
     }
 
     @Test
     public void test140GetTenantAdminsWithAuthenticationAndAuthorization() throws Exception {
 
         securityFixture.login(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
-        CollectionDto<UserDto> tenantAdminUsers = securityManager.getTenantsAdminUsers(Pagination.DEFAULT);
+        CollectionDto<UserDto> tenantAdminUsers = securityManager.getTenantsAdminUsers(QueryParameters.DEFAULT);
 
         assertNotNull(tenantAdminUsers);
         assertThat(tenantAdminUsers.getItems(), new IsNot<>(new IsEmptyIterable<>()));
@@ -227,7 +238,7 @@ public class SecurityManagerIT {
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getTenantsAdminUsers(Pagination.DEFAULT);
+        securityManager.getTenantsAdminUsers(QueryParameters.DEFAULT);
     }
 
     @Test
@@ -287,14 +298,14 @@ public class SecurityManagerIT {
     public void test210GetRolesWithoutAuthentication() throws Exception {
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getRoles(Pagination.DEFAULT);
+        securityManager.getRoles(QueryParameters.DEFAULT);
     }
 
     @Test
     public void test220GetRolesWithAuthenticationAndAuthorization() throws Exception {
 
         securityFixture.login(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
-        CollectionDto<RoleDto> roles = securityManager.getRoles(Pagination.DEFAULT);
+        CollectionDto<RoleDto> roles = securityManager.getRoles(QueryParameters.DEFAULT);
 
         assertNotNull(roles);
         assertThat(roles.getItems(), new IsNot<>(new IsEmptyIterable<>()));
@@ -306,7 +317,7 @@ public class SecurityManagerIT {
         securityFixture.login(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
         exception.expectMessage(AccessDeniedException.class.getName());
-        securityManager.getRoles(Pagination.DEFAULT);
+        securityManager.getRoles(QueryParameters.DEFAULT);
     }
 
     @Test
@@ -377,7 +388,7 @@ public class SecurityManagerIT {
 
         securityFixture.login(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
-        CollectionDto<RoleDto> roleDtos = securityManager.getRoles(Pagination.DEFAULT);
+        CollectionDto<RoleDto> roleDtos = securityManager.getRoles(QueryParameters.DEFAULT);
 
         RoleDto roleToDelete = null;
 
@@ -397,7 +408,7 @@ public class SecurityManagerIT {
 
         securityFixture.login(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
-        CollectionDto<RoleDto> roleDtoCollection = securityManager.getRoles(Pagination.DEFAULT);
+        CollectionDto<RoleDto> roleDtoCollection = securityManager.getRoles(QueryParameters.DEFAULT);
 
         RoleDto roleToDelete = null;
 
@@ -444,7 +455,7 @@ public class SecurityManagerIT {
         securityFixture.login(TENANT_B, TENANT_B_ADMIN_USERNAME, TENANT_B_ADMIN_PASSWORD);
 
         UserDto userDto = null;
-        for (UserDto item : securityManager.getUsers(Pagination.DEFAULT).getItems()) {
+        for (UserDto item : securityManager.getUsers(QueryParameters.DEFAULT).getItems()) {
             if (item.getGrantedRoles().size() == 0) {
                 //found previously created user w/o roles
                 userDto = item;
@@ -453,7 +464,7 @@ public class SecurityManagerIT {
         }
         assertNotNull(userDto);
 
-        CollectionDto<RoleDto> roles = securityManager.getRoles(Pagination.DEFAULT);
+        CollectionDto<RoleDto> roles = securityManager.getRoles(QueryParameters.DEFAULT);
 
         //simple grant
         {
