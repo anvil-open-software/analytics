@@ -9,8 +9,7 @@ angular.module('Authentication')
         $scope.title = "Home";
         $scope.message = "Mouse Over these images to see a directive at work";
         $scope.authenticatedUser = AuthenticatedUser.getAuthenticatedUser();
-        //$scope.tenants = [{name: 'Dematic'}, {name: 'Safeway'}, {name: 'Wallmart'}, {name: 'UPS'}];
-        $scope.tenants = [];
+        $scope.tenants = {};
         $scope.showDetails = false;
 
         var onLogoutSuccess = function (response) {
@@ -18,8 +17,16 @@ angular.module('Authentication')
         };
 
         $scope.showTenants = function(event) {
-            $scope.showDetails = !$scope.showDetails;
-            $scope.tenants = $scope.showDetails ? TenantResourceSrvc.get() : [];
+            if (!$scope.showDetails) {
+                TenantResourceSrvc.get().$promise.then(function(tenants){
+                    $scope.tenants = tenants;
+                    $scope.showDetails = !$scope.showDetails;
+                });
+            }
+            else {
+                $scope.showDetails = !$scope.showDetails;
+                $scope.tenants = {};
+            }
         };
 
         $scope.logout = function () {
