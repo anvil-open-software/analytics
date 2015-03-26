@@ -28,7 +28,7 @@ public class NgClientIT {
     }
 
     @Test
-    public void test000GetLandingPage ()  throws MalformedURLException {
+    public void test0000GetLandingPage ()  throws MalformedURLException {
         // Little change to force a build ...
         driver.get(homePage);
         String title = driver.getTitle();
@@ -36,7 +36,7 @@ public class NgClientIT {
     }
 
     @Test
-    public void test100Login ()  throws MalformedURLException {
+    public void test0100Login ()  throws MalformedURLException {
         WebElement username;
         WebElement password;
         WebElement login;
@@ -54,7 +54,9 @@ public class NgClientIT {
         password = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.name("password")));
         login    = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.id("log-in")));
 
+        username.clear();
         username.sendKeys("superuser");
+        password.clear();
         password.sendKeys("abcd1234");
         login.submit();
 
@@ -65,6 +67,21 @@ public class NgClientIT {
         wait = new WebDriverWait(driver, 40);
         welcome = wait.until(ExpectedConditions.elementToBeClickable(By.id("welcome")));
         Assert.assertEquals(welcome.getText().compareTo("Welcome to the Home page!"), 0);
+    }
+
+    @Test
+    public void test0200AuthenticateValidRequest ()  throws MalformedURLException {
+        WebElement tenantClick;
+        WebElement tenants;
+        String tenants_class;
+
+        tenantClick = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.id("tenant-click")));
+        tenantClick.click();
+
+        tenants = (new WebDriverWait(driver, 2)).until(ExpectedConditions.visibilityOfElementLocated(By.id("tenants")));
+        tenants_class = tenants.getAttribute("class");
+        Assert.assertNotNull(tenants_class);
+        Assert.assertEquals(tenants_class.contains("ng-hide"), false);
     }
 
     @AfterClass
