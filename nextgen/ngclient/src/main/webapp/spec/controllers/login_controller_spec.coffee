@@ -1,4 +1,4 @@
-describe "controller: LoginController ($httpBackend.expect().respond, vanilla jasmine, coffeescript)", ->
+xdescribe "controller: LoginController ($httpBackend.expect().respond, vanilla jasmine, coffeescript)", ->
 
   beforeEach -> module("app")
 

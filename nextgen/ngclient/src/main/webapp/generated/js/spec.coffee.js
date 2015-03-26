@@ -1,5 +1,5 @@
 (function() {
-  describe("controller: LoginController ($httpBackend.when().respond, jasmine-given, coffeescript)", function() {
+  xdescribe("controller: LoginController ($httpBackend.when().respond, jasmine-given, coffeescript)", function() {
     Given(function() {
       return module("app");
     });
@@ -36,7 +36,7 @@
 }).call(this);
 
 (function() {
-  describe("controller: LoginController ($httpBackend.expect().respond, vanilla jasmine, coffeescript)", function() {
+  xdescribe("controller: LoginController ($httpBackend.expect().respond, vanilla jasmine, coffeescript)", function() {
     beforeEach(function() {
       return module("app");
     });
@@ -68,7 +68,7 @@
 }).call(this);
 
 (function() {
-  describe("directive: shows-message-when-hovered (jasmine-given, coffeescript)", function() {
+  xdescribe("directive: shows-message-when-hovered (jasmine-given, coffeescript)", function() {
     Given(function() {
       return module("app");
     });
@@ -100,7 +100,7 @@
 }).call(this);
 
 (function() {
-  describe("service: AuthenticationService", function() {
+  xdescribe("service: AuthenticationService", function() {
     Given(function() {
       return module("app");
     });
