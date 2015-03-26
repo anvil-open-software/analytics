@@ -1,4 +1,4 @@
-describe "directive: shows-message-when-hovered (jasmine-given, coffeescript)", ->
+xdescribe "directive: shows-message-when-hovered (jasmine-given, coffeescript)", ->
 
   Given -> module("app")
 
