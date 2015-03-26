@@ -3,10 +3,10 @@ package com.dematic.labs.rest;
 import com.dematic.labs.business.ApplicationRole;
 import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.UserDto;
-import com.dematic.labs.business.matchers.RoleDtoMatcher;
+import com.dematic.labs.business.matchers.NamedDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
-import com.dematic.labs.rest.matchers.UserDtoHrefMatcher;
+import com.dematic.labs.rest.matchers.UserDtoUriMatcher;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -93,9 +93,9 @@ public class UserRoleGrantResourceIT {
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         UserDto fromServer = response.readEntity(UserDto.class);
 
-        assertThat(fromServer, new UserDtoHrefMatcher());
+        assertThat(fromServer, new UserDtoUriMatcher());
         assertThat(fromServer.getGrantedRoles(), iterableWithSize(grantedRolesNames.size()));
-        assertThat(fromServer.getGrantedRoles(), contains(new RoleDtoMatcher(ApplicationRole.VIEW_ORGANIZATIONS)));
+        assertThat(fromServer.getGrantedRoles(), contains(new NamedDtoMatcher<>(ApplicationRole.VIEW_ORGANIZATIONS)));
 
     }
 

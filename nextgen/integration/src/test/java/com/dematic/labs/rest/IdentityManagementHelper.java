@@ -4,12 +4,12 @@ import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.RoleDto;
 import com.dematic.labs.business.dto.TenantDto;
 import com.dematic.labs.business.dto.UserDto;
-import com.dematic.labs.business.matchers.RoleDtoMatcher;
+import com.dematic.labs.business.matchers.NamedDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.matchers.CreatedResponseMatcher;
-import com.dematic.labs.rest.matchers.IdentifiableDtoHrefMatcher;
-import com.dematic.labs.rest.matchers.UserDtoHrefMatcher;
+import com.dematic.labs.rest.matchers.IdentifiableDtoUriMatcher;
+import com.dematic.labs.rest.matchers.UserDtoUriMatcher;
 import org.hamcrest.Matcher;
 
 import javax.annotation.Nonnull;
@@ -51,7 +51,7 @@ public class IdentityManagementHelper {
 
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         TenantDto fromServer = response.readEntity(TenantDto.class);
-        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoHrefMatcher<>()));
+        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoUriMatcher<>()));
 
         assertEquals(tenantName, fromServer.getName());
 
@@ -95,7 +95,7 @@ public class IdentityManagementHelper {
 
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         UserDto fromServer = response.readEntity(UserDto.class);
-        assertThat(response, new CreatedResponseMatcher<>(fromServer, new UserDtoHrefMatcher()));
+        assertThat(response, new CreatedResponseMatcher<>(fromServer, new UserDtoUriMatcher()));
 
         assertEquals(username, fromServer.getLoginName());
         return fromServer;
@@ -121,7 +121,7 @@ public class IdentityManagementHelper {
 
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         UserDto fromServer = response.readEntity(UserDto.class);
-        assertThat(response, new CreatedResponseMatcher<>(fromServer, new UserDtoHrefMatcher()));
+        assertThat(response, new CreatedResponseMatcher<>(fromServer, new UserDtoUriMatcher()));
 
         assertEquals(username, fromServer.getLoginName());
         return fromServer;
@@ -140,7 +140,7 @@ public class IdentityManagementHelper {
                 .get(new GenericType<CollectionDto<RoleDto>>() {});
 
         assertThat(roles.getItems(), not(empty()));
-        assertThat(roles.getItems(), everyItem(new IdentifiableDtoHrefMatcher<>()));
+        assertThat(roles.getItems(), everyItem(new IdentifiableDtoUriMatcher<>()));
         return roles;
     }
 
@@ -167,13 +167,14 @@ public class IdentityManagementHelper {
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         UserDto fromServer = response.readEntity(UserDto.class);
 
-        assertThat(fromServer, new UserDtoHrefMatcher());
+        assertThat(fromServer, new UserDtoUriMatcher());
         assertThat(fromServer.getGrantedRoles(), iterableWithSize(roleNameList.size()));
 
-        assertThat(fromServer.getGrantedRoles(), everyItem(new IdentifiableDtoHrefMatcher<>()));
+        assertThat(fromServer.getGrantedRoles(), everyItem(new IdentifiableDtoUriMatcher<>()));
 
+        //noinspection RedundantTypeArguments
         List<Matcher<? super RoleDto>> matcherList = roleNameList.stream()
-                .map(RoleDtoMatcher::new).collect(Collectors.toList());
+                .map(NamedDtoMatcher<RoleDto>::new).collect(Collectors.toList());
         assertThat(fromServer.getGrantedRoles(), containsInAnyOrder(matcherList));
 
         return fromServer;

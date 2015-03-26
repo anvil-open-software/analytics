@@ -1,9 +1,7 @@
 package com.dematic.labs.business;
 
-import com.dematic.labs.business.dto.CollectionDto;
-import com.dematic.labs.business.dto.RoleDto;
-import com.dematic.labs.business.dto.TenantDto;
-import com.dematic.labs.business.dto.UserDto;
+import com.dematic.labs.business.dto.*;
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.google.common.collect.Sets;
 import org.picketlink.Identity;
 import org.picketlink.authorization.annotations.LoggedIn;
@@ -61,11 +59,11 @@ public class SecurityManager {
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
-    public CollectionDto<TenantDto> getTenants(@Valid Pagination pagination) {
+    public CollectionDto<TenantDto> getTenants(@Valid QueryParameters queryParameters) {
 
         List<TenantDto> partitions = partitionManager.getPartitions(Realm.class)
                 .stream().map(new PartitionConverter()).collect(Collectors.toList());
-        return new CollectionDto<>(partitions, pagination, true);
+        return new CollectionDto<>(partitions, queryParameters, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
@@ -124,7 +122,7 @@ public class SecurityManager {
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_TENANTS)
-    public CollectionDto<UserDto> getTenantsAdminUsers(@Valid Pagination pagination) {
+    public CollectionDto<UserDto> getTenantsAdminUsers(@Valid QueryParameters queryParameters) {
         List<User> tenantsAdminUsers = new ArrayList<>();
 
         for (Partition partition : partitionManager.getPartitions(Realm.class)) {
@@ -144,18 +142,18 @@ public class SecurityManager {
             }
         }
         return new CollectionDto<>(tenantsAdminUsers.stream().map(new AgentConverter()).collect(Collectors.toList()),
-                pagination, true);
+                queryParameters, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
-    public CollectionDto<UserDto> getUsers(Pagination pagination) {
+    public CollectionDto<UserDto> getUsers(QueryParameters queryParameters) {
         IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
         //noinspection unchecked
         Collection<User> users = queryBuilder.createIdentityQuery(User.class).getResultList();
         List<UserDto> userDtoList = users.stream()
                 .map(new AgentConverter())
                 .collect(Collectors.toList());
-        return new CollectionDto<>(userDtoList, pagination, true);
+        return new CollectionDto<>(userDtoList, queryParameters, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_USERS)
@@ -170,14 +168,14 @@ public class SecurityManager {
     }
 
     @RolesAllowed({ApplicationRole.ADMINISTER_USERS, ApplicationRole.ADMINISTER_ROLES})
-    public CollectionDto<RoleDto> getRoles(Pagination pagination) {
+    public CollectionDto<RoleDto> getRoles(QueryParameters queryParameters) {
         IdentityQueryBuilder queryBuilder = identityManager.getQueryBuilder();
         //noinspection unchecked
         List<Role> roles = queryBuilder.createIdentityQuery(Role.class).getResultList();
         List<RoleDto> roleDtoList = roles.stream()
                 .map(new RoleConverter())
                 .collect(Collectors.toList());
-        return new CollectionDto<>(roleDtoList, pagination, true);
+        return new CollectionDto<>(roleDtoList, queryParameters, true);
     }
 
     @RolesAllowed(ApplicationRole.ADMINISTER_ROLES)

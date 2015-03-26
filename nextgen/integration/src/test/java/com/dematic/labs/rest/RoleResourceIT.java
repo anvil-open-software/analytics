@@ -4,10 +4,13 @@ import com.dematic.labs.business.ApplicationRole;
 import com.dematic.labs.business.SecurityManagerIT;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.RoleDto;
+import com.dematic.labs.business.matchers.NamedDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.matchers.CreatedResponseMatcher;
-import com.dematic.labs.rest.matchers.IdentifiableDtoHrefMatcher;
+import com.dematic.labs.rest.matchers.IdentifiableDtoUriMatcher;
+import org.hamcrest.Matcher;
+import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -18,13 +21,19 @@ import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
+import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
 import static com.dematic.labs.rest.SecuredEndpointHelper.*;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.junit.Assert.*;
 
@@ -68,7 +77,7 @@ public class RoleResourceIT {
         assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
         RoleDto fromServer = response.readEntity(RoleDto.class);
 
-        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoHrefMatcher<>()));
+        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoUriMatcher<>()));
 
         assertEquals(SecurityManagerIT.CUSTOM_TENANT_ROLE, fromServer.getName());
 
@@ -79,11 +88,34 @@ public class RoleResourceIT {
     @Test
     public void test02GetList() throws Exception {
 
+        Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
+                .path("resources/role")
+                .queryParam("orderBy", "name DESC".replace(" ", "%20"))
+                .request(MediaType.APPLICATION_JSON_TYPE);
+
         SignatureToken token = getToken(TENANT_A, TENANT_A_ADMIN_USERNAME, TENANT_A_ADMIN_PASSWORD);
 
-        CollectionDto<RoleDto> collectionDto = IdentityManagementHelper.getRoles(token);
+        CollectionDto<RoleDto> roles = request
+                .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
+                .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
+                        signRequest(request, token, HttpMethod.GET, null))
+                .get(new GenericType<CollectionDto<RoleDto>>() {});
 
-        assertThat(collectionDto.getItems(), iterableWithSize(ApplicationRole.getTenantRoles().size() + 1));
+        assertThat(roles.getItems(), iterableWithSize(ApplicationRole.getTenantRoles().size() + 1));
+        assertThat(roles.getItems(), everyItem(new IdentifiableDtoUriMatcher<>()));
+
+        List<String> roleNames = new ArrayList<>(ApplicationRole.getTenantRoles());
+        roleNames.add(SecurityManagerIT.CUSTOM_TENANT_ROLE);
+
+        //TypeArgument needed to guide collector
+        //noinspection RedundantTypeArguments
+        List<Matcher<? super RoleDto>> roleDtoMatcherList = roleNames.stream()
+                .sorted(Comparator.<String>reverseOrder())
+                .map(NamedDtoMatcher<RoleDto>::new)
+                .collect(Collectors.toList());
+
+        assertThat(roles.getItems(), IsIterableContainingInOrder.contains(roleDtoMatcherList));
+
     }
 
     @Test

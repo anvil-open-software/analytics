@@ -2,15 +2,19 @@ package com.dematic.labs.rest;
 
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.TenantDto;
+import com.dematic.labs.business.matchers.NamedDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
+import com.dematic.labs.picketlink.SecurityInitializer;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
 import com.dematic.labs.rest.dto.RestError;
-import com.dematic.labs.rest.matchers.IdentifiableDtoHrefMatcher;
+import com.dematic.labs.rest.matchers.IdentifiableDtoUriMatcher;
+import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.picketlink.idm.model.basic.Realm;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.client.*;
@@ -18,6 +22,7 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.Arrays;
 
 import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
@@ -48,6 +53,7 @@ public class TenantResourceIT {
 
         Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
                 .path("resources/tenant")
+                .queryParam("orderBy", "name DESC".replace(" ", "%20"))
                 .request(MediaType.APPLICATION_JSON);
 
         SignatureToken token = getToken(INSTANCE_TENANT_NAME, INSTANCE_ADMIN_USERNAME, INSTANCE_ADMIN_PASSWORD);
@@ -59,7 +65,11 @@ public class TenantResourceIT {
                 .get(new GenericType<CollectionDto<TenantDto>>() {});
 
         assertThat(collectionDto.getItems(), not(empty()));
-        assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoHrefMatcher<>()));
+        assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoUriMatcher<>()));
+        assertThat(collectionDto.getItems(), IsIterableContainingInOrder.contains(Arrays.asList(
+                new NamedDtoMatcher<>(Realm.DEFAULT_REALM), //lowercase
+                new NamedDtoMatcher<>(TENANT_A),
+                new NamedDtoMatcher<>(SecurityInitializer.INSTANCE_TENANT_NAME))));
     }
 
     @Test

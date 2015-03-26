@@ -1,10 +1,11 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.business.Pagination;
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.UserDto;
-import com.dematic.labs.rest.dto.UserDtoHrefDecorator;
+import com.dematic.labs.rest.dto.UserDtoUriDecorator;
+import com.dematic.labs.rest.helpers.OrderByQueryParameterConverter;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
 import javax.ejb.EJB;
@@ -32,11 +33,13 @@ public class UserResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerUsers")
     public CollectionDto<UserDto> getList(@DefaultValue("0") @QueryParam("offset") int offset,
-                                 @DefaultValue("25") @QueryParam("limit") int limit) {
+                                          @DefaultValue(QueryParameters.DEFAULT_LIMIT_AS_STRING) @QueryParam("limit") int limit,
+                                          @QueryParam("orderBy") String orderByClause) {
 
-        CollectionDto<UserDto> collectionDto = securityManager.getUsers(new Pagination(offset, limit));
+        CollectionDto<UserDto> collectionDto = securityManager.getUsers(new QueryParameters(offset, limit,
+                OrderByQueryParameterConverter.convert(orderByClause)));
         collectionDto.getItems().stream()
-                .map(new UserDtoHrefDecorator(uriInfo.getAbsolutePath().getPath()))
+                .map(new UserDtoUriDecorator(uriInfo.getAbsolutePath().getPath()))
                 .collect(Collectors.toList());
 
         return collectionDto;
@@ -50,7 +53,7 @@ public class UserResource {
 
         UserDto returnedTenantDto = securityManager.createTenantUser(userDto);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(returnedTenantDto.getId()).build())
-                .entity(new UserDtoHrefDecorator(uriInfo.getAbsolutePath().getPath()).apply(returnedTenantDto)).build();
+                .entity(new UserDtoUriDecorator(uriInfo.getAbsolutePath().getPath()).apply(returnedTenantDto)).build();
     }
 
     @PUT
@@ -61,7 +64,7 @@ public class UserResource {
     public Response grant(@PathParam("id") String id, UserDto userDto) {
         String rawPath = uriInfo.getAbsolutePath().getPath();
         String cookedPath = rawPath.substring(0, rawPath.indexOf(id)-1);
-        return Response.ok(new UserDtoHrefDecorator(cookedPath).apply(securityManager.grantRevokeUserRole(userDto))).build();
+        return Response.ok(new UserDtoUriDecorator(cookedPath).apply(securityManager.grantRevokeUserRole(userDto))).build();
     }
 
 }

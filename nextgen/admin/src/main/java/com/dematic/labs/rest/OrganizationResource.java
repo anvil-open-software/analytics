@@ -2,10 +2,11 @@ package com.dematic.labs.rest;
 
 import com.dematic.labs.business.ApplicationRole;
 import com.dematic.labs.business.OrganizationManager;
-import com.dematic.labs.business.Pagination;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.OrganizationDto;
-import com.dematic.labs.rest.dto.HrefDecorator;
+import com.dematic.labs.persistence.query.QueryParameters;
+import com.dematic.labs.rest.dto.UriDecorator;
+import com.dematic.labs.rest.helpers.OrderByQueryParameterConverter;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
 import javax.ejb.EJB;
@@ -37,7 +38,7 @@ public class OrganizationResource {
     public Response create(OrganizationDto organizationDto) {
         OrganizationDto returnedOrganizationDto = organizationManager.create(organizationDto);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(returnedOrganizationDto.getId()).build())
-                .entity(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath()).apply(returnedOrganizationDto)).build();
+                .entity(new UriDecorator<>(uriInfo.getAbsolutePath().getPath()).apply(returnedOrganizationDto)).build();
     }
 
     @GET
@@ -49,7 +50,7 @@ public class OrganizationResource {
             throw new IllegalArgumentException("Must supply id when getting a single organization");
         }
         OrganizationDto returnedOrganizationDto = organizationManager.getOrganization(UUID.fromString(id));
-        return Response.ok(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath()).apply(returnedOrganizationDto))
+        return Response.ok(new UriDecorator<>(uriInfo.getAbsolutePath().getPath()).apply(returnedOrganizationDto))
                 .build();
     }
 
@@ -57,12 +58,14 @@ public class OrganizationResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed(ApplicationRole.VIEW_ORGANIZATIONS)
     public CollectionDto<OrganizationDto> getList(@DefaultValue("0") @QueryParam("offset") int offset,
-                                                  @DefaultValue("25") @QueryParam("limit") int limit) {
+                                                  @DefaultValue(QueryParameters.DEFAULT_LIMIT_AS_STRING) @QueryParam("limit") int limit,
+                                                  @QueryParam("orderBy") String orderByClause) {
 
         CollectionDto<OrganizationDto> collectionDto = organizationManager
-                .getOrganizations(new Pagination(offset, limit));
+                .getOrganizations(new QueryParameters(offset, limit,
+                        OrderByQueryParameterConverter.convert(orderByClause)));
         collectionDto.getItems().stream()
-                .map(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath()))
+                .map(new UriDecorator<>(uriInfo.getAbsolutePath().getPath()))
                 .collect(Collectors.toList());
         return collectionDto;
     }
@@ -76,7 +79,7 @@ public class OrganizationResource {
         String rawPath = uriInfo.getAbsolutePath().getPath();
         String cookedPath = rawPath.substring(0, rawPath.indexOf(id)-1);
         OrganizationDto returnedOrganizationDto = organizationManager.grantRevokeBusinessRole(organizationDto);
-        return Response.ok(new HrefDecorator<>(cookedPath).apply(returnedOrganizationDto)).build();
+        return Response.ok(new UriDecorator<>(cookedPath).apply(returnedOrganizationDto)).build();
     }
 
 }

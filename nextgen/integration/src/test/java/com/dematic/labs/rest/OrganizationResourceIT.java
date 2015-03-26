@@ -1,13 +1,17 @@
 package com.dematic.labs.rest;
 
 import com.dematic.labs.business.ApplicationRole;
-import com.dematic.labs.business.dto.*;
+import com.dematic.labs.business.dto.CollectionDto;
+import com.dematic.labs.business.dto.OrganizationBusinessRoleDto;
+import com.dematic.labs.business.dto.OrganizationDto;
+import com.dematic.labs.business.dto.UserDto;
+import com.dematic.labs.business.matchers.NamedDtoMatcher;
 import com.dematic.labs.http.picketlink.authentication.schemes.DLabsAuthenticationScheme;
 import com.dematic.labs.persistence.entities.BusinessRole;
 import com.dematic.labs.picketlink.idm.credential.SignatureToken;
-import com.dematic.labs.rest.matchers.CreatedResponseMatcher;
-import com.dematic.labs.rest.matchers.IdentifiableDtoHrefMatcher;
+import com.dematic.labs.rest.matchers.IdentifiableDtoUriMatcher;
 import org.hamcrest.Matcher;
+import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.hamcrest.core.IsEqual;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -16,10 +20,10 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import javax.ws.rs.HttpMethod;
-import javax.ws.rs.client.*;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -29,7 +33,6 @@ import static com.dematic.labs.business.SecurityFixture.*;
 import static com.dematic.labs.picketlink.SecurityInitializer.*;
 import static com.dematic.labs.rest.SecuredEndpointHelper.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -83,41 +86,25 @@ public class OrganizationResourceIT {
     @Test
     public void test020Post() {
 
-        String organizationName = "ACME";
-
-        Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
-                .path("resources/organization")
-                .request(MediaType.APPLICATION_JSON);
-
-        OrganizationDto organizationDto = new OrganizationDto();
-        organizationDto.setName(organizationName);
-
         SignatureToken token = getToken(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
-
-        Response response = request
-                .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
-                .header(DLabsAuthenticationScheme.AUTHORIZATION_HEADER_NAME,
-                        signRequest(request, token, HttpMethod.POST, MediaType.APPLICATION_JSON))
-                .post(Entity.entity(organizationDto, MediaType.APPLICATION_JSON));
-
-        assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
-        OrganizationDto fromServer = response.readEntity(OrganizationDto.class);
-
-        assertThat(response, new CreatedResponseMatcher<>(fromServer, new IdentifiableDtoHrefMatcher<>()));
-
-        assertEquals(organizationName, fromServer.getName());
-        organizationUuid = fromServer.getId();
+        organizationUuid = OrganizationHelper.createOrganization(token, "ACME").getId();
 
     }
 
     @Test
     public void test030GetList() {
 
+        SignatureToken token = getToken(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
+
+        OrganizationHelper.createOrganization(token, "ZEBRA");
+        OrganizationHelper.createOrganization(token, "SPAM");
+        OrganizationHelper.createOrganization(token, "NAVIS");
+
         Invocation.Builder request = ClientBuilder.newClient().target(BASE_URL)
                 .path("resources/organization")
+                .queryParam("limit", "3")
+                .queryParam("orderBy", "name DESC".replace(" ", "%20"))
                 .request(MediaType.APPLICATION_JSON);
-
-        SignatureToken token = getToken(TENANT_A, TENANT_A_USER_USERNAME, TENANT_A_USER_PASSWORD);
 
         CollectionDto<OrganizationDto> collectionDto = request
                 .header(DLabsAuthenticationScheme.D_LABS_DATE_HEADER_NAME, Instant.now().toString())
@@ -125,8 +112,12 @@ public class OrganizationResourceIT {
                         signRequest(request, token, HttpMethod.GET, null))
                 .get(new GenericType<CollectionDto<OrganizationDto>>() {});
 
-        assertThat(collectionDto.getItems(), iterableWithSize(1));
-        assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoHrefMatcher<>()));
+        assertThat(collectionDto.getItems(), iterableWithSize(collectionDto.getQueryParameters().getLimit()));
+        assertThat(collectionDto.getItems(), everyItem(new IdentifiableDtoUriMatcher<>()));
+        assertThat(collectionDto.getItems(), new IsIterableContainingInOrder<>(Arrays.asList(
+                new NamedDtoMatcher<>("ZEBRA"),
+                new NamedDtoMatcher<>("SPAM"),
+                new NamedDtoMatcher<>("NAVIS"))));
     }
 
     @Test

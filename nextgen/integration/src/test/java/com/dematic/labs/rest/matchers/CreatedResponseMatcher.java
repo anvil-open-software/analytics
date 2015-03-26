@@ -11,9 +11,9 @@ public class CreatedResponseMatcher<T extends IdentifiableDto> extends TypeSafeD
 
     private final Response.Status status;
     private final T identifiableDto;
-    private final IdentifiableDtoHrefMatcher<T> matcher;
+    private final IdentifiableDtoUriMatcher<T> matcher;
 
-    public CreatedResponseMatcher(@Nonnull T dto, IdentifiableDtoHrefMatcher<T> matcher) {
+    public CreatedResponseMatcher(@Nonnull T dto, IdentifiableDtoUriMatcher<T> matcher) {
         this.status = Response.Status.CREATED;
         this.identifiableDto = dto;
         this.matcher = matcher;

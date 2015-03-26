@@ -1,10 +1,11 @@
 package com.dematic.labs.rest;
 
-import com.dematic.labs.business.Pagination;
+import com.dematic.labs.persistence.query.QueryParameters;
 import com.dematic.labs.business.SecurityManager;
 import com.dematic.labs.business.dto.CollectionDto;
 import com.dematic.labs.business.dto.TenantDto;
-import com.dematic.labs.rest.dto.HrefDecorator;
+import com.dematic.labs.rest.dto.UriDecorator;
+import com.dematic.labs.rest.helpers.OrderByQueryParameterConverter;
 import org.picketlink.authorization.annotations.RolesAllowed;
 
 import javax.ejb.EJB;
@@ -33,10 +34,13 @@ public class TenantResource {
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @RolesAllowed("administerTenants")
     public CollectionDto<TenantDto> getList(@DefaultValue("0") @QueryParam("offset") int offset,
-                                            @DefaultValue("25") @QueryParam("limit") int limit) {
-        CollectionDto<TenantDto> collectionDto = securityManager.getTenants(new Pagination(offset, limit));
+                                            @DefaultValue(QueryParameters.DEFAULT_LIMIT_AS_STRING) @QueryParam("limit") int limit,
+                                            @QueryParam("orderBy") String orderByClause) {
+        CollectionDto<TenantDto> collectionDto = securityManager.getTenants(
+                new QueryParameters(offset, limit,
+                        OrderByQueryParameterConverter.convert(orderByClause)));
         collectionDto.getItems().stream()
-                .map(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath()))
+                .map(new UriDecorator<>(uriInfo.getAbsolutePath().getPath()))
                 .collect(Collectors.toList());
 
         return collectionDto;
@@ -51,7 +55,7 @@ public class TenantResource {
         TenantDto returnedTenantDto = securityManager.createTenant(tenantDto);
         URI uri = uriInfo.getBaseUriBuilder().path(returnedTenantDto.getId()).build();
         return Response.created(uri)
-                .entity(new HrefDecorator<>(uriInfo.getAbsolutePath().getPath()).apply(returnedTenantDto)).build();
+                .entity(new UriDecorator<>(uriInfo.getAbsolutePath().getPath()).apply(returnedTenantDto)).build();
     }
 
     @DELETE
