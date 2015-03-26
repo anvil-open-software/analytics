@@ -25,6 +25,13 @@
         <jackson.version>2.5.1</jackson.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <jacoco.out.path>${session.executionRootDirectory}/target</jacoco.out.path>
+        <jacoco.out.file>jacoco.exec</jacoco.out.file>
+        <jacoco-it.out.file>jacoco-it.exec</jacoco-it.out.file>
+        <!--use ${env.WORKSPACE} instead of /Users/egglesmd/IdeaProjects/dlab/nextgen when integrated with Jenkins-->
+        <sonar.jacoco.reportPath>/Users/egglesmd/IdeaProjects/dlab/nextgen/target/${jacoco.out.file}</sonar.jacoco.reportPath>
+        <sonar.jacoco.itReportPath>/Users/egglesmd/IdeaProjects/dlab/nextgen/target/${jacoco-it.out.file}</sonar.jacoco.itReportPath>
     </properties>
 
     <dependencyManagement>
@@ -132,6 +139,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>2.0.5-beta</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.arquillian.junit</groupId>
             <artifactId>arquillian-junit-container</artifactId>
             <scope>test</scope>
@@ -203,6 +217,34 @@
                             <goals>
                                 <goal>start</goal>
                             </goals>
+                            <configuration>
+                                <configuration>
+                                    <properties>
+                                        <!--suppress MavenModelInspection -->
+                                        <cargo.jvmargs>
+                                            ${jacoco.agent.arg}
+                                        </cargo.jvmargs>
+                                     </properties>
+                                </configuration>
+                             </configuration>
+                        </execution>
+                        <execution>
+                            <id>default-cli</id>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <!-- We bring this configuration down into the CLI run goal because we need it to apply to the
+                            run goal too. -->
+                            <configuration>
+                                <configuration>
+                                    <properties>
+                                        <!--suppress MavenModelInspection -->
+                                        <cargo.jvmargs>
+                                            ${jacoco.agent.arg}
+                                        </cargo.jvmargs>
+                                     </properties>
+                                </configuration>
+                            </configuration>
                         </execution>
                         <execution>
                             <id>stop-container</id>
@@ -334,11 +376,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <version>2.5</version>
-            </plugin>
         </plugins>
     </build>
 
@@ -393,7 +430,44 @@
                 </testResources>
             </build>
         </profile>
-
+        <profile>
+            <id>jacoco</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>sonar-maven-plugin</artifactId>
+                        <version>2.5</version>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.7.4.201502262128</version>
+                        <executions>
+                            <execution>
+                                <id>default-prepare-agent</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                                <configuration>
+                                    <destFile>${jacoco.out.path}/${jacoco.out.file}</destFile>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>default-prepare-agent-integration</id>
+                                <goals>
+                                    <goal>prepare-agent-integration</goal>
+                                </goals>
+                                <configuration>
+                                    <destFile>${jacoco.out.path}/${jacoco-it.out.file}</destFile>
+                                    <propertyName>jacoco.agent.arg</propertyName>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <distributionManagement>

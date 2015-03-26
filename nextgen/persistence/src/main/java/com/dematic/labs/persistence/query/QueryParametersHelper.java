@@ -24,7 +24,9 @@ public class QueryParametersHelper {
                         propertyField = (Path<? extends Comparable>) field.get(entityPathBase);
                         break;
                     } catch (IllegalAccessException e) {
-                        e.printStackTrace();
+                        throw new IllegalArgumentException(
+                                String.format("Property [%s] isn't accessible.",
+                                columnSort.getPropertyName()));
                     } catch (ClassCastException cce) {
                         throw new IllegalArgumentException("Property isn't a Path");
                     }
