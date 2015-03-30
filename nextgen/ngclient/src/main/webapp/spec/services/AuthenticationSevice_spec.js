@@ -111,5 +111,38 @@ describe('Unit: Testing AuthenticationServices Module Directives', function() {
                 expect(maxLength).toBe('30');
             });
         });
+        describe('As a User I want my password to be', function() {
+            var inputElement,
+                i,
+                inputElementName;
+
+            beforeEach(function() {
+                var inputElements;
+
+                compileDirective('<div dl-signin-prompt></div>');
+                inputElements = element.find('input');
+                for (i=0; i<inputElements.length; i++) {
+                    inputElement = angular.element(inputElements[i]);
+                    inputElementName = inputElement.attr('name');
+                    if (inputElementName === 'password') break;
+                }
+            });
+            it('a password string', function() {
+                expect(i).toBeLessThan(2);
+                expect(inputElementName).toBe('password');
+            });
+            it('with a minimum of 8 characters', function() {
+                var minLength;
+
+                minLength = inputElement.attr('ng-minlength');
+                expect(minLength).toBe('8');
+            });
+            it('no longer than 30 characters', function() {
+                var maxLength;
+
+                maxLength = inputElement.attr('ng-maxlength');
+                expect(maxLength).toBe('30');
+            });
+        });
     });
 });

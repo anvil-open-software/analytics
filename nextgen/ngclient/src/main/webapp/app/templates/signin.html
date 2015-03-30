@@ -21,7 +21,10 @@
                    placeholder="Password"
                    aria-describedby="basic-addon1"
                    ng-model="credentials.password"
-                   name="password"/>
+                   name="password"
+                   required
+                   ng-minlength="8"
+                   ng-maxlength="30"/>
         </div>
     </div>
     <div class="form-group">
