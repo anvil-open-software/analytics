@@ -29,46 +29,87 @@ describe('Unit: Testing AuthenticationServices Module Directives', function() {
             expect(element.find('form').length).toEqual(1);
         });
 
-        it('it has two and only two input elements named username and password', function() {
-            var expectedInputNames = ['username', 'password'].sort(),
-                inputElements,
-                inputElementsNames = [];
+        describe('As a User I want to have access to a Log In prompt', function() {
+            it('with two and only two input elements named username and password', function() {
+                var expectedInputNames = ['username', 'password'].sort(),
+                    inputElements,
+                    inputElementsNames = [];
 
-            // Compile the HTML containing the directive
-            compileDirective('<div dl-signin-prompt></div>');
+                // Compile the HTML containing the directive
+                compileDirective('<div dl-signin-prompt></div>');
 
-            // Check that the compiled element contains input elements
-            inputElements = element.find('input');
-            expect(inputElements.length).toEqual(expectedInputNames.length);
+                // Check that the compiled element contains input elements
+                inputElements = element.find('input');
+                expect(inputElements.length).toEqual(expectedInputNames.length);
 
-            // Collect the name attribute of all input elements. Ensure they math
-            // the expectedInputNames array
-            for (var i=0; i<inputElements.length; i++) {
-                inputElementsNames.push(angular.element(inputElements[i]).attr('name'));
-            }
-            inputElementsNames.sort();
-            expect(inputElementsNames.toString()).toEqual(expectedInputNames.toString());
+                // Collect the name attribute of all input elements. Ensure they math
+                // the expectedInputNames array
+                for (var i=0; i<inputElements.length; i++) {
+                    inputElementsNames.push(angular.element(inputElements[i]).attr('name'));
+                }
+                inputElementsNames.sort();
+                expect(inputElementsNames.toString()).toEqual(expectedInputNames.toString());
+            });
+
+            it('with one and only one button element of type submit', function() {
+                var expectedTypes = ['submit'].sort(),
+                    inputElements,
+                    inputElementsNames = [];
+
+                // Compile the HTML containing the directive
+                compileDirective('<div dl-signin-prompt></div>');
+
+                // Check that the compiled element contains the templated content
+                inputElements = element.find('button');
+                expect(inputElements.length).toEqual(expectedTypes.length);
+
+                // Collect the name attribute of all input elements. Ensure they math
+                // the expectedInputNames array
+                for (var i=0; i<inputElements.length; i++) {
+                    inputElementsNames.push(angular.element(inputElements[i]).attr('type'));
+                }
+                inputElementsNames.sort();
+                expect(inputElementsNames.toString()).toEqual(expectedTypes.toString());
+            });
+
         });
+        describe('As a User I want my user name to be', function() {
+            var inputElement;
 
-        it('it has one and only one button element of type submit', function() {
-            var expectedTypes = ['submit'].sort(),
-                inputElements,
-                inputElementsNames = [];
+            beforeEach(function() {
+                var inputElements,
+                    inputElementName,
+                    i;
 
-            // Compile the HTML containing the directive
-            compileDirective('<div dl-signin-prompt></div>');
+                compileDirective('<div dl-signin-prompt></div>');
+                inputElements = element.find('input');
+                for (i=0; i<inputElements.length; i++) {
+                    inputElement = angular.element(inputElements[i]);
+                    inputElementName = inputElement.attr('name');
+                    if (inputElementName === 'username') break;
+                }
+                expect(i).toBeLessThan(2);
+                expect(inputElementName).toBe('username');
+            });
 
-            // Check that the compiled element contains the templated content
-            inputElements = element.find('button');
-            expect(inputElements.length).toEqual(expectedTypes.length);
+            it('required', function() {
+                var requiredAttribute;
 
-            // Collect the name attribute of all input elements. Ensure they math
-            // the expectedInputNames array
-            for (var i=0; i<inputElements.length; i++) {
-                inputElementsNames.push(angular.element(inputElements[i]).attr('type'));
-            }
-            inputElementsNames.sort();
-            expect(inputElementsNames.toString()).toEqual(expectedTypes.toString());
+                requiredAttribute = inputElement.attr('required');
+                expect(requiredAttribute).not.toBe(null);
+            });
+            it('a valid email address', function() {
+                var type;
+
+                type = inputElement.attr('type');
+                expect(type).toBe('email');
+            });
+            it('no longer than 30 characters', function() {
+                var maxLength;
+
+                maxLength = inputElement.attr('ng-maxlength');
+                expect(maxLength).toBe('30');
+            });
         });
     });
 });
