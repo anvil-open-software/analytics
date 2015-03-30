@@ -10,6 +10,7 @@ import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.joda.time.DateTime;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -22,6 +23,8 @@ import static com.dematic.labs.analytics.ingestion.sparks.Bootstrap.*;
 import static org.junit.Assert.assertEquals;
 import static samples.utils.DynamoDBUtils.deleteTable;
 
+// think about removing this test
+@Ignore
 public final class EventProcessingWorkflowTest {
     private static final int EVENT_COUNT = 10;
     private static final int SHARD_COUNT = 1;
@@ -30,7 +33,8 @@ public final class EventProcessingWorkflowTest {
     @Rule
     public KinesisStreamRule kinesisStreamRule = new KinesisStreamRule();
 
-    @Test
+
+    //@Test
     public void workflow() throws IOException {
         // push events to a Kinesis stream
         for (int i = 1; i <= EVENT_COUNT; i++) {

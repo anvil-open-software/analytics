@@ -37,19 +37,27 @@ public final class EventCount implements Serializable {
         // will credentials from system properties
         final AmazonKinesisClient kinesisClient = new AmazonKinesisClient(Bootstrap.getAWSCredentialsProvider());
         kinesisClient.setEndpoint(endpointUrl);
-        final SparkConf conf = new SparkConf().setAppName(Bootstrap.SPARKS_APP_NAME);
-        final Duration seconds = Durations.seconds(2);
-        // make Duration configurable
-        final JavaStreamingContext streamingContext = Bootstrap.getStreamingContext(conf, seconds);
 
-        // Determine the number of shards from the stream
+
+        // Determine the number of shards from the stream and create 1 Kinesis Worker/Receiver/DStream for each shard
         final int numShards = kinesisClient.describeStream(streamName).getStreamDescription().getShards().size();
+        // Must add 1 more thread than the number of receivers or the output won't show properly from the driver
+        final int numSparkThreads = numShards + 1;
+
+        // Spark config
+        final SparkConf conf = new SparkConf().
+                setAppName(Bootstrap.SPARKS_APP_NAME).setMaster("local[" + numSparkThreads + "]");
+
+        final Duration pullTime = Durations.seconds(2);
+        // make Duration configurable
+        final JavaStreamingContext streamingContext = Bootstrap.getStreamingContext(conf, pullTime);
+
         // create 1 Kinesis Worker/Receiver/DStream for each shard
         final List<JavaDStream<byte[]>> streamsList = new ArrayList<>(numShards);
         for (int i = 0; i < numShards; i++) {
             streamsList.add(
-                    KinesisUtils.createStream(streamingContext, streamName, endpointUrl, seconds,
-                            InitialPositionInStream.LATEST, StorageLevel.MEMORY_AND_DISK_2())
+                    KinesisUtils.createStream(streamingContext, streamName, endpointUrl, pullTime,
+                            InitialPositionInStream.LATEST, StorageLevel.MEMORY_ONLY())
             );
         }
         // Union all the streams if there is more than 1 stream
@@ -61,7 +69,8 @@ public final class EventCount implements Serializable {
             unionStreams = streamsList.get(0);
         }
         // count events
-        new EventCount().countEvents(unionStreams);
+        final EventCount eventCount = new EventCount();
+        eventCount.countEvents(unionStreams);
         // Start the streaming context and await termination
         streamingContext.start();
         streamingContext.awaitTermination();
