@@ -38,4 +38,14 @@ angular.module('Authentication')
                 });
             }
         };
-    }]);
+    }])
+    .directive('dlAuthenticationEvent', function() {
+        return {
+            restrict: 'A',
+            link: function (scope, formElement, attributes, formController) {
+                scope.$on('dl-authentication-failure', function(event, args) {
+                    alert('Authentication Failure');
+                });
+            }
+        };
+    });
