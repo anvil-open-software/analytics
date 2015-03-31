@@ -102,7 +102,8 @@ describe('Unit: Testing AuthenticationServices Module Directives', function() {
                 var type;
 
                 type = inputElement.attr('type');
-                expect(type).toBe('email');
+                //expect(type).toBe('email');
+                expect(type).toBe('text');
             });
             it('no longer than 30 characters', function() {
                 var maxLength;
