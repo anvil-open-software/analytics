@@ -13,4 +13,29 @@ angular.module('Authentication')
             // Note: Lineman automatically creates a templateCache!
             templateUrl: 'signin.html'
         };
-    });
+    })
+    .directive('dlSubmit', ['$parse', function($parse) {
+        /*
+           A simple directive that binds to the form’s submit event, and if the
+           ngFormController is not valid, cancels the event. Otherwise it will
+           execute the defined expression. This is basically a copy of the angular
+           ngSubmit with the addition of a validation check.
+         */
+        return {
+            restrict: 'A',
+            require: 'form',
+            link: function (scope, formElement, attributes, formController) {
+
+                var fn = $parse(attributes['dlSubmit']);
+
+                formElement.bind('submit', function (event) {
+                    // if form is not valid cancel it.
+                    if (!formController.$valid) {return false;}
+
+                    scope.$apply(function() {
+                        fn(scope, {$event:event});
+                    });
+                });
+            }
+        };
+    }]);
