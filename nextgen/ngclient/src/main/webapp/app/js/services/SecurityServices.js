@@ -128,8 +128,8 @@ angular.module("SecurityServices")
         return service;
     }
 )
-.factory('SignRequestInterceptor', ['$location', 'StringToSign', 'SecurityToken', 'DLabsDate',
-    function($location, StringToSign, SecurityToken, DLabsDate) {
+.factory('SignRequestInterceptor', ['$rootScope', '$q', '$location', 'StringToSign', 'SecurityToken', 'DLabsDate',
+    function($rootScope, $q, $location, StringToSign, SecurityToken, DLabsDate) {
         var signRequestInterceptor = {
             request: function(config) {
                 var stringToSign,
@@ -186,6 +186,28 @@ angular.module("SecurityServices")
             },
             response: function(config) {
                 return config;
+            },
+            responseError: function(rejection) {
+                if (rejection.status === 401) {
+                    // Return a new promise. This is a mechanism to offer the user
+                    // the opportunity to login in and have the failed request
+                    // to be resubmitted. This is not supported now
+                    /*
+                    return userService.authenticate().then(function() {
+                        return $injector.get('$http')(rejection.config);
+                    });
+                    */
+
+                    // For now we will issue an dl-authentication-failure event
+                    // and present the login page again
+                    $location.path('/login');
+                    $rootScope.$broadcast('dl-authentication-failure');
+                }
+
+                /* If not a 401, do nothing with this error.
+                 * This is necessary to make a `responseError`
+                 * interceptor a no-op. */
+                return $q.reject(rejection);
             }
         };
         return signRequestInterceptor;
