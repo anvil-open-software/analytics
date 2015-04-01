@@ -433,9 +433,6 @@
         </profile>
         <profile>
             <id>jacoco</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
             <dependencies>
                 <dependency>
                     <groupId>org.codehaus.sonar-plugins.java</groupId>
