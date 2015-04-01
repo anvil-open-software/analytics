@@ -26,12 +26,13 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
+        <!-- session.executionRootDirectory is set by Maven -->
         <jacoco.out.path>${session.executionRootDirectory}/target</jacoco.out.path>
         <jacoco.out.file>jacoco.exec</jacoco.out.file>
         <jacoco-it.out.file>jacoco-it.exec</jacoco-it.out.file>
-        <!--use ${env.WORKSPACE} instead of /Users/egglesmd/IdeaProjects/dlab/nextgen when integrated with Jenkins-->
-        <sonar.jacoco.reportPath>/Users/egglesmd/IdeaProjects/dlab/nextgen/target/${jacoco.out.file}</sonar.jacoco.reportPath>
-        <sonar.jacoco.itReportPath>/Users/egglesmd/IdeaProjects/dlab/nextgen/target/${jacoco-it.out.file}</sonar.jacoco.itReportPath>
+        <!--${env.WORKSPACE} is set by Jenkins -->
+        <sonar.jacoco.reportPath>${env.WORKSPACE}/target/${jacoco.out.file}</sonar.jacoco.reportPath>
+        <sonar.jacoco.itReportPath>${env.WORKSPACE}/target/${jacoco-it.out.file}</sonar.jacoco.itReportPath>
     </properties>
 
     <dependencyManagement>
@@ -222,7 +223,7 @@
                                     <properties>
                                         <!--suppress MavenModelInspection -->
                                         <cargo.jvmargs>
-                                            ${jacoco.agent.arg}
+                                            ${jacoco-it.agent.arg}
                                         </cargo.jvmargs>
                                      </properties>
                                 </configuration>
@@ -240,7 +241,7 @@
                                     <properties>
                                         <!--suppress MavenModelInspection -->
                                         <cargo.jvmargs>
-                                            ${jacoco.agent.arg}
+                                            ${jacoco-it.agent.arg}
                                         </cargo.jvmargs>
                                      </properties>
                                 </configuration>
@@ -432,6 +433,16 @@
         </profile>
         <profile>
             <id>jacoco</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.codehaus.sonar-plugins.java</groupId>
+                    <artifactId>sonar-jacoco-listeners</artifactId>
+                    <version>1.5</version>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -451,6 +462,7 @@
                                 </goals>
                                 <configuration>
                                     <destFile>${jacoco.out.path}/${jacoco.out.file}</destFile>
+                                    <propertyName>jacoco.agent.arg</propertyName>
                                 </configuration>
                             </execution>
                             <execution>
@@ -460,10 +472,41 @@
                                 </goals>
                                 <configuration>
                                     <destFile>${jacoco.out.path}/${jacoco-it.out.file}</destFile>
-                                    <propertyName>jacoco.agent.arg</propertyName>
+                                    <propertyName>jacoco-it.agent.arg</propertyName>
                                 </configuration>
                             </execution>
                         </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!--suppress MavenModelInspection -->
+                            <argLine>${jacoco.agent.arg}</argLine>
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>org.sonar.java.jacoco.JUnitListener</value>
+                                </property>
+                            </properties>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <!--suppress MavenModelInspection -->
+                            <argLine>-Xmx1024m -XX:MaxPermSize=256m ${jacoco-it.agent.arg}</argLine>
+                            <!-- Specific to generate mapping between tests and covered code -->
+                            <properties>
+                                <property>
+                                    <name>listener</name>
+                                    <value>org.sonar.java.jacoco.JUnitListener</value>
+                                </property>
+                            </properties>
+                            <!-- Let's put failsafe reports with surefire to have access to tests failures/success reports in sonar -->
+                            <reportsDirectory>target/surefire-reports</reportsDirectory>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
