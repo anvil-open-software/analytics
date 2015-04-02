@@ -13,7 +13,8 @@
                             name="username"
                             required
                             ng-minlength="5"
-                            ng-maxlength="30"/>
+                            ng-maxlength="30"
+                            dl-unauthorized-event/>
                 </div>
             </div>
             <div class="form-group">
@@ -28,7 +29,7 @@
                            required
                            ng-minlength="8"
                            ng-maxlength="30"
-                           dl-authentication-event/>
+                           dl-unauthorized-event/>
                 </div>
             </div>
             <div class="form-group">
@@ -38,7 +39,8 @@
                             class="btn btn-default button-adjustment" >Sign in</button>
                 </div>
             </div>
-            <div class="error-container error-border" ng-show="(aform.username.$touched || aform.password.$touched) && aform.$invalid">
+            <div class="error-container error-border"
+                 ng-show="(aform.username.$touched || aform.password.$touched) && aform.$invalid">
                 <small class="dl-error" ng-show="aform.username.$error.required">
                     Username is required.<br/>
                 </small>
@@ -58,9 +60,14 @@
                     Password must be longer than 8 characters. <br/>
                 </small>
                 <small class="dl-error" ng-show="aform.password.$error.maxlength">
-                    Password cannot be longer than 30 characters. <br/>a
+                    Password cannot be longer than 30 characters.<br/>
                 </small>
             </div>
+            <div class="error-container error-border-unauthorized" ng-show="unauthorized">
+                <small class="dl-error">
+                    Unauthorized.<br/>
+                </small>
+             </div>
         </form>
     </div>
 </div>
