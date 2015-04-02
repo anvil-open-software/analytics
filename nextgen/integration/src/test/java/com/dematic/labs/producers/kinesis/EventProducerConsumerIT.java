@@ -38,8 +38,7 @@ public final class EventProducerConsumerIT {
         for (int i = 1; i <= 10; i++) {
             final PutRecordRequest putRecordRequest = new PutRecordRequest();
             putRecordRequest.setStreamName(kinesisConnectorConfiguration.KINESIS_INPUT_STREAM);
-            final Event event = new Event(UUID.randomUUID(), String.format("facility_%s", i),
-                    String.format("node_%s", i), DateTime.now(), DateTime.now().plusHours(1));
+            final Event event = new Event(UUID.randomUUID(), i, i, DateTime.now(), 1);
             putRecordRequest.setData(ByteBuffer.wrap(new EventToByteArrayTransformer().fromClass(event)));
             putRecordRequest.setPartitionKey(String.valueOf(kinesisConnectorConfiguration.KINESIS_INPUT_STREAM_SHARD_COUNT));
             client.putRecord(putRecordRequest);
