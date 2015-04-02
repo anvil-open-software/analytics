@@ -30,8 +30,6 @@ module.exports = function(lineman) {
       compile: {
         options: {
           paths: [
-            "vendor/css/bootstrap.css",
-            "vendor/css/bootstrap-theme.css",
             "vendor/css/**/*.css",
             "app/css/**/*.less"
           ]
