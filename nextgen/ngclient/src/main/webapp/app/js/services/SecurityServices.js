@@ -198,10 +198,10 @@ angular.module("SecurityServices")
                     });
                     */
 
-                    // For now we will issue an dl-authentication-failure event
-                    // and present the login page again
-                    $location.path('/login');
-                    $rootScope.$broadcast('dl-authentication-failure');
+                    // For now we will issue an dl-unauthorized-event and preserve
+                    // the login page
+                    //$location.path('/login');
+                    $rootScope.$broadcast('dl-unauthorized-event');
                 }
 
                 /* If not a 401, do nothing with this error.
