@@ -7,6 +7,7 @@ angular.module('Authentication')
     function($scope, $location, AuthenticationService, AuthenticatedUser, SecurityToken) {
         $scope.title = "Landing";
         $scope.credentials = { username: "superuser", password: "abcd1234" };
+        $scope.unauthorized = false;
 
         var onLoginSuccess = function() {
             $location.path('/home');

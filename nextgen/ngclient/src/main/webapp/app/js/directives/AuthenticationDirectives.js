@@ -39,12 +39,22 @@ angular.module('Authentication')
             }
         };
     }])
-    .directive('dlAuthenticationEvent', function() {
+    .directive('dlUnauthorizedEvent', function() {
         return {
             restrict: 'A',
-            link: function (scope, formElement, attributes, formController) {
-                scope.$on('dl-authentication-failure', function(event, args) {
-                    alert('Authentication Failure');
+            link: function (scope, element, attributes, formController) {
+                scope.$on('dl-unauthorized-event', function(event, args) {
+                    element.addClass('dl-unauthorized');
+                    scope.unauthorized = true;
+                });
+                element.bind('focus', function() {
+                    // This is a classical example where good old jQuery shines.
+                    // I need to remove the 'dl-unauthorized' from all DOM elements
+                    // that have it. I could not have been done in a simpler way using
+                    // angular machinery.
+                    $('.dl-unauthorized').removeClass('dl-unauthorized');
+                    scope.unauthorized = false;
+                    scope.$digest();
                 });
             }
         };
