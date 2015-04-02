@@ -14,7 +14,7 @@
                             required
                             ng-minlength="5"
                             ng-maxlength="30"
-                            dl-unauthorized-event/>
+                            dl-signin/>
                 </div>
             </div>
             <div class="form-group">
@@ -29,39 +29,43 @@
                            required
                            ng-minlength="8"
                            ng-maxlength="30"
-                           dl-unauthorized-event/>
+                           dl-signin/>
                 </div>
             </div>
             <div class="form-group">
                 <div class="col-sm-offset-2x">
                     <button type="submit"
                             id="log-in"
-                            class="btn btn-default button-adjustment" >Sign in</button>
+                            class="btn btn-default button-adjustment dl-not-ready" ng-class="ready">Sign in</button>
                 </div>
             </div>
             <div class="error-container error-border"
-                 ng-show="(aform.username.$touched || aform.password.$touched) && aform.$invalid">
-                <small class="dl-error" ng-show="aform.username.$error.required">
-                    Username is required.<br/>
-                </small>
-                <small class="dl-error" ng-show="aform.username.$error.minlength">
-                    Username must be at least 5 characters.<br/>
-                </small>
-                <small class="dl-error" ng-show="aform.username.$error.email">
-                    Username must be your email.<br/>
-                </small>
-                <small class="dl-error" ng-show="aform.username.$error.maxlength">
-                    Username cannot be longer than 30 characters.<br/>
-                </small>
-                <small class="dl-error" ng-show="aform.password.$error.required">
-                    Password is required.<br/>
-                </small>
-                <small class="dl-error" ng-show="aform.password.$error.minlength">
-                    Password must be longer than 8 characters. <br/>
-                </small>
-                <small class="dl-error" ng-show="aform.password.$error.maxlength">
-                    Password cannot be longer than 30 characters.<br/>
-                </small>
+                 ng-show="((aform.username.$touched && aform.username.$invalid)|| (aform.password.$touched && aform.password.$invalid))">
+                <div ng-show="aform.username.$touched">
+                    <small class="dl-error" ng-show="aform.username.$error.required">
+                        Username is required....<br/>
+                    </small>
+                    <small class="dl-error" ng-show="aform.username.$error.minlength">
+                        Username must be at least 5 characters.<br/>
+                    </small>
+                    <small class="dl-error" ng-show="aform.username.$error.email">
+                        Username must be your email.<br/>
+                    </small>
+                    <small class="dl-error" ng-show="aform.username.$error.maxlength">
+                        Username cannot be longer than 30 characters.<br/>
+                    </small>
+                </div>
+                <div ng-show="aform.password.$touched">
+                    <small class="dl-error" ng-show="aform.password.$error.required">
+                        Password is required.<br/>
+                    </small>
+                    <small class="dl-error" ng-show="aform.password.$error.minlength">
+                        Password must be longer than 8 characters. <br/>
+                    </small>
+                    <small class="dl-error" ng-show="aform.password.$error.maxlength">
+                        Password cannot be longer than 30 characters.<br/>
+                    </small>
+                </div>
             </div>
             <div class="error-container error-border-unauthorized" ng-show="unauthorized">
                 <small class="dl-error">

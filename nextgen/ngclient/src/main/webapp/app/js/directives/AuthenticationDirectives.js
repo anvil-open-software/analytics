@@ -39,7 +39,7 @@ angular.module('Authentication')
             }
         };
     }])
-    .directive('dlUnauthorizedEvent', function() {
+    .directive('dlSignin', function() {
         return {
             restrict: 'A',
             link: function (scope, element, attributes, formController) {
@@ -53,8 +53,16 @@ angular.module('Authentication')
                     // that have it. I could not have been done in a simpler way using
                     // angular machinery.
                     $('.dl-unauthorized').removeClass('dl-unauthorized');
+
+                    element.removeClass('dl-blurred');
                     scope.unauthorized = false;
                     scope.$digest();
+                });
+                element.bind('blur', function() {
+                    element.addClass('dl-blurred');
+                    if (element.hasClass('ng-valid')) {
+                       scope.ready='btn-primary';
+                    }
                 });
             }
         };
