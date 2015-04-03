@@ -8,6 +8,7 @@ import com.dematic.labs.business.matchers.NamedDtoMatcher;
 import com.dematic.labs.business.matchers.OrganizationBusinessRoleDtoMatcher;
 import com.dematic.labs.persistence.entities.*;
 import com.dematic.labs.persistence.query.QueryParameters;
+import com.dematic.labs.persistence.query.SortDirection;
 import org.hamcrest.Matchers;
 import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.jboss.arquillian.container.test.api.Deployment;

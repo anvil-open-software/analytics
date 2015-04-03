@@ -1,7 +1,7 @@
 package com.dematic.labs.rest.helpers;
 
 import com.dematic.labs.persistence.query.QueryParameters.ColumnSort;
-import com.dematic.labs.persistence.entities.SortDirection;
+import com.dematic.labs.persistence.query.SortDirection;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
