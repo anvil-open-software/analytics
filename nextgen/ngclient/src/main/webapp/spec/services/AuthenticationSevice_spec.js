@@ -83,7 +83,7 @@ describe('Unit: Testing AuthenticationServices Module Directives', function() {
 
                 compileDirective('<div dl-signin-prompt></div>');
                 inputElements = element.find('input');
-                for (i=0; i<inputElements.length; i++) {
+                for (var i=0; i<inputElements.length; i++) {
                     inputElement = angular.element(inputElements[i]);
                     inputElementName = inputElement.attr('name');
                     if (inputElementName === 'username') break;
@@ -122,7 +122,7 @@ describe('Unit: Testing AuthenticationServices Module Directives', function() {
 
                 compileDirective('<div dl-signin-prompt></div>');
                 inputElements = element.find('input');
-                for (i=0; i<inputElements.length; i++) {
+                for (var i=0; i<inputElements.length; i++) {
                     inputElement = angular.element(inputElements[i]);
                     inputElementName = inputElement.attr('name');
                     if (inputElementName === 'password') break;
