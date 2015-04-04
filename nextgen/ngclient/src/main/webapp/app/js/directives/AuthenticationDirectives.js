@@ -100,4 +100,17 @@ angular.module('Authentication')
                 });
             }
         };
-    }]);
+    }])
+    .directive('dlAuthenticationSpinner', function() {
+        return {
+            restrict: 'A',
+            link: function(scope, element) {
+                scope.$on('dl-authentication-start', function () {
+                    scope.showSpinner=true;
+                });
+                scope.$on('dl-authentication-end', function () {
+                    scope.showSpinner=false;
+                });
+            }
+        };
+    });

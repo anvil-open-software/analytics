@@ -146,7 +146,11 @@ angular.module("SecurityServices")
                 if (typeof config === null || typeof config !== 'object') {return config;}
                 if (!config.hasOwnProperty('url')) {return config;}
                 if (config['url'].indexOf('resources') !== 0) {return config;}
-                if (config['url'].indexOf('resources/token') === 0) {return config;}
+                if (config['url'].indexOf('resources/token') === 0) {
+                    // This is an user authentication request
+                    $rootScope.$broadcast('dl-authentication-start');
+                    return config;
+                }
 
                 // Add the x-dlabs-date custom header. This is being done to ensure
                 // that the date is formatted as specified in DLABS-84
@@ -185,9 +189,11 @@ angular.module("SecurityServices")
                 return config;
             },
             response: function(config) {
+                $rootScope.$broadcast('dl-authentication-end');
                 return config;
             },
             responseError: function(rejection) {
+                $rootScope.$broadcast('dl-authentication-end');
                 if (rejection.status === 401) {
                     // Return a new promise. This is a mechanism to offer the user
                     // the opportunity to login in and have the failed request

@@ -10,6 +10,7 @@ angular.module('Authentication')
         $scope.credentials = { username: "", password: "" };
         $scope.unauthorized = false;
         $scope.ready = 'dl-not-ready';
+        $scope.showSpinner=false;
 
         var onLoginSuccess = function() {
             $location.path('/home');
