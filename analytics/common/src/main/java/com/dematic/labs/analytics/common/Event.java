@@ -1,6 +1,5 @@
 package com.dematic.labs.analytics.common;
 
-import org.joda.time.DateTime;
 import org.joda.time.ReadableInstant;
 
 import java.util.UUID;
@@ -10,75 +9,71 @@ import java.util.UUID;
  */
 @SuppressWarnings("UnusedDeclaration")
 public final class Event {
-    // todo: temporary
-    private  UUID jobId;
-    private  String facilityId;
-    private  String nodeId;
-    private  ReadableInstant startJobTime;
-    private  ReadableInstant endJobTime;
+    private UUID eventId;
+    private int nodeId; // node 1 - 5
+    private int jobId; // job 1 - 9
+    private ReadableInstant timestamp; // time events are generated
+    private double value; // random value
 
     public Event() {
     }
 
-    public Event(final UUID jobId, final String facilityId, final String nodeId,
-                 final ReadableInstant startJobTime, final ReadableInstant endJobTime) {
-        this.jobId = jobId;
-        this.facilityId = facilityId;
+    public Event(final UUID eventId, final int nodeId, final int jobId, final ReadableInstant timestamp, final double value) {
+        this.eventId = eventId;
         this.nodeId = nodeId;
-        this.startJobTime = startJobTime;
-        this.endJobTime = endJobTime;
+        this.jobId = jobId;
+        this.timestamp = timestamp;
+        this.value = value;
     }
 
-    public UUID getJobId() {
-        return jobId;
+    public UUID getEventId() {
+        return eventId;
     }
 
-    public String getFacilityId() {
-        return facilityId;
+    public void setEventId(final UUID eventId) {
+        this.eventId = eventId;
     }
 
-    public String getNodeId() {
+    public int getNodeId() {
         return nodeId;
     }
 
-    //todo: implement serializers...
-
-    public String getStartJobTime() {
-        return startJobTime.toString();
-    }
-
-    public String getEndJobTime() {
-        return endJobTime.toString();
-    }
-
-    public void setJobId(UUID jobId) {
-        this.jobId = jobId;
-    }
-
-    public void setFacilityId(String facilityId) {
-        this.facilityId = facilityId;
-    }
-
-    public void setNodeId(String nodeId) {
+    public void setNodeId(final int nodeId) {
         this.nodeId = nodeId;
     }
 
-    public void setStartJobTime(String startJobTime) {
-        this.startJobTime = new DateTime(startJobTime);
+    public int getJobId() {
+        return jobId;
     }
 
-    public void setEndJobTime(String endJobTime) {
-        this.endJobTime = new DateTime(endJobTime);
+    public void setJobId(final int jobId) {
+        this.jobId = jobId;
+    }
+
+    public ReadableInstant getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(final ReadableInstant timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public double getValue() {
+        return value;
+    }
+
+    public void setValue(final double value) {
+        this.value = value;
     }
 
     @Override
     public String toString() {
         return "Event{" +
-                "jobId=" + jobId +
-                ", facilityId='" + facilityId + '\'' +
-                ", nodeId='" + nodeId + '\'' +
-                ", startJobTime=" + startJobTime +
-                ", endJobTime=" + endJobTime +
+                "eventId=" + eventId +
+                ", nodeId=" + nodeId +
+                ", jobId=" + jobId +
+                ", timestamp=" + timestamp +
+                ", value=" + value +
                 '}';
     }
 }
