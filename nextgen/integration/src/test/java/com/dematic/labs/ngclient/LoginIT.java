@@ -14,12 +14,12 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import static org.junit.Assert.assertEquals;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class NgClientIT {
+public class LoginIT {
 
     private static WebDriver driver;
     private static String homePage = SecuredEndpointHelper.BASE_URL;
 
-    public NgClientIT() { }
+    public LoginIT() { }
 
     @BeforeClass
     public static void beforeClass() {
@@ -28,7 +28,7 @@ public class NgClientIT {
 
     @Test
     public void test0000GetLandingPage ()  {
-        // Little change to force a build
+        // Little change to force a build ...
         driver.get(homePage);
         String title = driver.getTitle();
         assertEquals(title.compareTo(SecuredEndpointHelper.CONTEXT_ROOT), 0);
