@@ -66,4 +66,38 @@ angular.module('Authentication')
                 });
             }
         };
-    });
+    })
+    .directive('dlSigninButton', function() {
+        return {
+            restrict: 'E',
+            templateUrl: 'signinButton.html',
+            link: function(scope, element, attributes, controller) {
+            }
+        };
+    })
+    .directive('dlRemoveHover', ['$compile', function($compile) {
+        return {
+            restrict: 'A',
+            link: function(scope, formElement, attributes, controller) {
+                scope.$on('dl-unauthorized-event', function(event, args) {
+                    // At this point we want to reset the sign-in button to its
+                    // original state. This would be easy, except for ::hover
+                    // attribute which cannot be easily reset. To do so we will
+                    // replace the current sign-in button with the original one.
+                    var signinButton = formElement.find('button');
+                    if (signinButton) {
+                        // Found the darn thing
+                        var parent = angular.element(signinButton).parent();
+                        if (parent) {
+                            // Found the parent. Remove exiting button, insert new one.
+                            scope.ready = 'dl-not-ready';
+                            var signinButtoNnew = angular.element(document.createElement('dl-signin-button'));
+                            $compile( signinButtoNnew )( scope );
+                            signinButton.remove();
+                            parent.append(signinButtoNnew);
+                        }
+                    }
+                });
+            }
+        };
+    }]);
