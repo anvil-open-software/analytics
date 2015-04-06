@@ -29,7 +29,8 @@ public class LoginIT {
     private WebElement username;
     private WebElement password;
     private WebElement login;
-    private WebElement errorbox;
+    private WebElement clientErrorBox;
+    private WebElement serverErrorBox;
     private Pattern rgbaPattern = Pattern.compile("^(.*\\()(\\d+)(,.?)(\\d+)(,.?)(\\d+)(,.?)(\\d+)(\\))$");
 
     private Map<String, String> greyRGB = new HashMap<>();
@@ -51,12 +52,12 @@ public class LoginIT {
     @Before
     public void before() {
         driver.get(homePage);
-        form = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//form[@name=\"aform\"]")));
-        username = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//input[@name=\"username\"]")));
-        password = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//input[@name=\"password\"]")));
-        login    = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//button[@name=\"signin\"]")));
-        errorbox = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[contains (@class, 'error-container')]")));
-
+        form = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//form[@name='aform']")));
+        username = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//input[@name='username']")));
+        password = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//input[@name='password']")));
+        login    = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//button[@name='signin']")));
+        clientErrorBox = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[@name='client-errors']")));
+        serverErrorBox = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[@name='server-errors']")));
         greyRGB.put("red",   "204");
         greyRGB.put("green", "204");
         greyRGB.put("blue",  "204");
@@ -94,10 +95,16 @@ public class LoginIT {
         - a button element named signin
          */
         Assert.assertNotNull(form);
+        Assert.assertTrue(form.isDisplayed());
         Assert.assertNotNull(username);
+        Assert.assertTrue(username.isDisplayed());
         Assert.assertNotNull(password);
         Assert.assertNotNull(login);
-        Assert.assertNotNull(errorbox);
+        Assert.assertTrue(login.isDisplayed());
+        Assert.assertNotNull(clientErrorBox);
+        Assert.assertFalse(clientErrorBox.isDisplayed());
+        Assert.assertNotNull(serverErrorBox);
+        Assert.assertFalse(serverErrorBox.isDisplayed());
     }
     @Test
     public void test0200LoginFormIInputAttributes ()  {
@@ -177,9 +184,35 @@ public class LoginIT {
         - a thick red border when authentication failed
          */
 
+        /* ************************************************************************
+            error box rendered with a thick red border after invalid authentication
+         *  ***********************************************************************/
+        username.click();
+        username.clear();
+        password.click();
+        clunkykWait(1000);
+        Assert.assertTrue(isThickGoldBorder(clientErrorBox));
+        password.click();
+        password.clear();
+        username.click();
+        clunkykWait(1000);
+        Assert.assertTrue(clientErrorBox.isDisplayed());
+        Assert.assertFalse(serverErrorBox.isDisplayed());
+        Assert.assertTrue(isThickGoldBorder(clientErrorBox));
+
         /* ********************************************************************************
             error box rendered with a thick gold border if any of the attributes is invalid
          *  *******************************************************************************/
+        new Actions(driver).moveToElement(username).click().perform();
+        username.sendKeys("superuserr");
+        new Actions(driver).moveToElement(password).click().perform();
+        password.sendKeys("abcd1234");
+        login.click();
+        clunkykWait(1000);
+        //errorbox = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[contains (@class, 'error-container')]")));
+        Assert.assertFalse(clientErrorBox.isDisplayed());
+        Assert.assertTrue(serverErrorBox.isDisplayed());
+        Assert.assertTrue(isThickRedBorder(serverErrorBox));
     }
 
     @AfterClass

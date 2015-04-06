@@ -38,7 +38,8 @@
                 </div>
             </div>
             <div class="error-container error-border"
-                 ng-show="((aform.username.$touched && aform.username.$invalid)|| (aform.password.$touched && aform.password.$invalid))">
+                 ng-show="((aform.username.$touched && aform.username.$invalid)|| (aform.password.$touched && aform.password.$invalid))"
+                 name='client-errors'>
                 <div ng-show="aform.username.$touched">
                     <small class="dl-error" ng-show="aform.username.$error.required">
                         Username is required....<br/>
@@ -65,7 +66,8 @@
                     </small>
                 </div>
             </div>
-            <div class="error-container error-border-unauthorized" ng-show="unauthorized">
+            <div class="error-container error-border-unauthorized" ng-show="unauthorized"
+                 name='server-errors'>
                 <small class="dl-error">
                     Unauthorized.<br/>
                 </small>
