@@ -1,5 +1,39 @@
 package com.dematic.labs.ngclient;
 
+/*
+ Following is a list of all the stories validated in this class
+    As a User I want a the input elements rendered with:
+    - a thin greyRGB border when originally rendered
+    - a thin blue border when focused
+    - a thin greyRGB border when touched and valid
+    - a thick gold border when touched and invalid
+    - a thick red border when touched, valid, but authentication failed
+
+    As a User I want a the input elements rendered with:
+    - a thin greyRGB border when originally rendered
+    - a thin blue border when focused
+    - a thin greyRGB border when touched and valid
+    - a thick gold border when touched and invalid
+    - a thick red border when touched, valid, but authentication failed
+
+    As a User I want a the error box rendered with:
+    - hidden when the form is shown
+    - with a thick gold border if any input element are invalid
+    - a thick red border when authentication failed
+
+    As a User I want to ensure that if click on the Sign In button while any of the input elements is in error, the submission is not accepted.
+
+    As a User I want the Sign In button to:
+    - be enabled when I navigate into the form.
+    - be rendered grey before any of the attributes (user name || password) contains a valid value.
+    - be rendered blue when any of the attributes (user name || password) looses focus having a valid content; remain rendered blue thereon.
+    - be rendered grey when the authentication fails.
+    - during the authentication:
+      - a spinning wheel rendered inside the button, left aligned (not tested)
+    -After authentication
+     - Spinning wheel is removed (not tested)
+ */
+
 import com.dematic.labs.rest.SecuredEndpointHelper;
 import org.junit.*;
 import org.junit.runners.MethodSorters;
