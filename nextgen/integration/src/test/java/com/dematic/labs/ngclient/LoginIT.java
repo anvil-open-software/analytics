@@ -37,6 +37,9 @@ public class LoginIT {
     private Map<String, String> blueRGB  = new HashMap<>();
     private Map<String, String> goldRGB  = new HashMap<>();
     private Map<String, String> redRGB  = new HashMap<>();
+    private Map<String, String> darkGreyRGB  = new HashMap<>();
+    private Map<String, String> darkBlueRGB = new HashMap<>();
+    private Map<String, String> lightGreyRGB = new HashMap<>();
 
     private String thin  = "1px";
     private String thick = "3px";
@@ -76,6 +79,21 @@ public class LoginIT {
         redRGB.put("red",   "255");
         redRGB.put("green", "0");
         redRGB.put("blue",  "0");
+
+        // darkGrey
+        darkGreyRGB.put("red",   "169");
+        darkGreyRGB.put("green", "169");
+        darkGreyRGB.put("blue",  "169");
+
+        // darkBlue
+        darkBlueRGB.put("red",   "51");
+        darkBlueRGB.put("green", "122");
+        darkBlueRGB.put("blue",  "183");
+
+        // lightGrey
+        lightGreyRGB.put("red",   "230");
+        lightGreyRGB.put("green", "230");
+        lightGreyRGB.put("blue",  "230");
     }
 
     @Test
@@ -215,8 +233,6 @@ public class LoginIT {
         Assert.assertTrue(isThickRedBorder(serverErrorBox));
     }
 
-
-
     @Test
     public void test0400LoginWithInvalidAttributes() {
         /*
@@ -291,6 +307,126 @@ public class LoginIT {
         Assert.assertFalse(serverErrorBox.isDisplayed());
     }
 
+    @Test
+    public void test0500LoginSignin() {
+        /*
+        As a User I want the Sign In button to:
+        - be enabled when I navigate into the form.
+        - be rendered grey before any of the attributes (user name || password) contains a valid value.
+        - be rendered blue when any of the attributes (user name || password) looses focus having a valid content; remain rendered blue thereon.
+        - be rendered grey when the authentication fails.
+        - during the authentication:
+          - a spinning wheel rendered inside the button, left aligned
+        -After authentication
+         - Spinning wheel is removed
+         */
+
+        /* ********************************************************************************
+            signin is enabled and grey when I navigate into the form.
+         *  *******************************************************************************/
+        Assert.assertTrue(login.isEnabled());
+        Assert.assertTrue(isButtonBackgroundDarkGrey(login));
+
+        /* ********************************************************************************
+            signin remains dark grey when the username is invalid.
+         *  *******************************************************************************/
+        new Actions(driver).moveToElement(username).click().perform();
+        username.sendKeys("s");
+        new Actions(driver).moveToElement(password).click().perform();
+        clunkykWait(1000);
+        Assert.assertTrue(isButtonBackgroundDarkGrey(login));
+
+        /* ********************************************************************************
+            signin remains dark grey when the password is invalid.
+         *  *******************************************************************************/
+        new Actions(driver).moveToElement(password).click().perform();
+        password.clear();
+        password.sendKeys("s");
+        new Actions(driver).moveToElement(username).click().perform();
+        clunkykWait(1000);
+        Assert.assertTrue(isButtonBackgroundDarkGrey(login));
+
+        /* ********************************************************************************
+            signin remains dark grey when the username and password are invalid.
+         *  *******************************************************************************/
+        new Actions(driver).moveToElement(username).click().perform();
+        username.clear();
+        username.sendKeys("s");
+        new Actions(driver).moveToElement(password).click().perform();
+        password.clear();
+        password.sendKeys("s");
+        new Actions(driver).moveToElement(username).click().perform();
+        clunkykWait(1000);
+        Assert.assertTrue(isButtonBackgroundDarkGrey(login));
+    }
+
+    @Test
+    public void test0600ignBlueUsernameValid() {
+
+        /* ********************************************************************************
+            signin turns dark blue when the username is valid and remains so.
+         *  *******************************************************************************/
+        new Actions(driver).moveToElement(username).click().perform();
+        username.clear();
+        username.sendKeys("superuser");
+        new Actions(driver).moveToElement(password).click().perform();
+        Assert.assertTrue(isButtonBackgroundDarkBlue(login));
+
+        new Actions(driver).moveToElement(password).click().perform();
+        password.clear();
+        password.sendKeys("s");
+        new Actions(driver).moveToElement(username).click().perform();
+        Assert.assertTrue(isButtonBackgroundDarkBlue(login));
+
+        new Actions(driver).moveToElement(username).click().perform();
+        username.clear();
+        username.sendKeys("ss");
+        new Actions(driver).moveToElement(password).click().perform();
+        Assert.assertTrue(isButtonBackgroundDarkBlue(login));
+    }
+
+    @Test
+    public void test0700SigninBluePasswordValid() {
+
+        /* ********************************************************************************
+            signin turns dark blue when the password is valid and remains so.
+         *  *******************************************************************************/
+        new Actions(driver).moveToElement(password).click().perform();
+        password.clear();
+        password.sendKeys("abcd1234");
+        new Actions(driver).moveToElement(username).click().perform();
+        Assert.assertTrue(isButtonBackgroundDarkBlue(login));
+
+        new Actions(driver).moveToElement(username).click().perform();
+        username.clear();
+        username.sendKeys("s");
+        new Actions(driver).moveToElement(password).click().perform();
+        Assert.assertTrue(isButtonBackgroundDarkBlue(login));
+
+        new Actions(driver).moveToElement(password).click().perform();
+        password.clear();
+        password.sendKeys("ss");
+        new Actions(driver).moveToElement(username).click().perform();
+        Assert.assertTrue(isButtonBackgroundDarkBlue(login));
+    }
+
+    @Test
+    public void test0800SignInDarkGreyAutenticationFailure() {
+        /* ********************************************************************************
+            signin turns dark blue after authentication failure.
+         *  *******************************************************************************/
+
+        new Actions(driver).moveToElement(username).click().perform();
+        username.sendKeys("superuserr");
+        new Actions(driver).moveToElement(password).click().perform();
+        password.sendKeys("abcd1234");
+        login.click();
+        moveMouse(username);
+        clunkykWait(1000);
+        login    = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//button[@name='signin']")));
+        Assert.assertTrue(isButtonBackgroundLightGrey(login));
+    }
+
     @AfterClass
     public static void afterClass() {
         driver.close();
@@ -331,6 +467,18 @@ public class LoginIT {
         thickGoldBorder = thickGoldBorder && isThickBorder(element);
 
         return thickGoldBorder;
+    }
+
+    private boolean isButtonBackgroundDarkGrey(WebElement element) {
+        return isRGB(element, "background-color", darkGreyRGB);
+    }
+
+    private boolean isButtonBackgroundDarkBlue(WebElement element) {
+        return isRGB(element, "background-color", darkBlueRGB);
+    }
+
+    private boolean isButtonBackgroundLightGrey(WebElement element) {
+        return isRGB(element, "background-color", lightGreyRGB);
     }
 
     private boolean isColorBorder(WebElement element, Map<String, String> rgb) {
@@ -393,44 +541,8 @@ public class LoginIT {
 
         borderWidth = element.getCssValue(boxSideWidth);
         System.out.println(borderWidth + " width: " + borderWidth);
-        /*
-        Matcher matcher = rgbaPattern.matcher(borderWidth);
-        while(matcher.find()) {
-            //System.out.println("red:   " + matcher.group(2));
-            red = matcher.group(2);
-            widthOK = widthOK && (red.compareTo(widthOK) == 0));
-            //System.out.println("green: " + matcher.group(4));
-            green = matcher.group(4);
-            widthOK = widthOK && (green.compareTo(rgb.get(("green"))) == 0);
-            //System.out.println("blue:  " + matcher.group(6));
-            blue = matcher.group(6);
-            widthOK = widthOK && (blue.compareTo(rgb.get(("blue"))) == 0);
-            //System.out.println("alpha: " + matcher.group(8));
-        }
-        */
+        widthOK  = borderWidth.compareTo(width)==0;
         return widthOK;
-    }
-
-    private boolean isThick(WebElement element, String boxSideWidth, Map<String, String> rgb) {
-        boolean rgbMatch = true;
-        String borderColor, red, green, blue;
-
-        borderColor = element.getCssValue(boxSideWidth);
-        //System.out.println(boxSide + " color: " + borderColor);
-        Matcher matcher = rgbaPattern.matcher(borderColor);
-        while(matcher.find()) {
-            //System.out.println("red:   " + matcher.group(2));
-            red = matcher.group(2);
-            rgbMatch = rgbMatch && (red.compareTo(rgb.get(("red"))) == 0);
-            //System.out.println("green: " + matcher.group(4));
-            green = matcher.group(4);
-            rgbMatch = rgbMatch && (green.compareTo(rgb.get(("green"))) == 0);
-            //System.out.println("blue:  " + matcher.group(6));
-            blue = matcher.group(6);
-            rgbMatch = rgbMatch && (blue.compareTo(rgb.get(("blue"))) == 0);
-            //System.out.println("alpha: " + matcher.group(8));
-        }
-        return rgbMatch;
     }
 
     private void jiggleMouse(String slideHere, String slideBackHere) {
@@ -470,6 +582,21 @@ public class LoginIT {
         }
         coordinates = slideBackHere.getLocation();
         size = slideBackHere.getSize();
+        try {
+            robot = new Robot();
+            robot.mouseMove(coordinates.getX() + size.getWidth()/2, coordinates.getY() + size.getHeight()/2);
+        } catch (AWTException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void moveMouse(WebElement target) {
+        Point coordinates;
+        org.openqa.selenium.Dimension size;
+        Robot robot;
+
+        coordinates = target.getLocation();
+        size = target.getSize();
         try {
             robot = new Robot();
             robot.mouseMove(coordinates.getX() + size.getWidth()/2, coordinates.getY() + size.getHeight()/2);
