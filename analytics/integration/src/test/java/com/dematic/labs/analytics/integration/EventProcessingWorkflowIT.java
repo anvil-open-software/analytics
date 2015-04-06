@@ -3,15 +3,7 @@ package com.dematic.labs.analytics.integration;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
-import com.amazonaws.services.kinesis.model.DescribeStreamResult;
-import com.amazonaws.services.kinesis.model.GetRecordsRequest;
-import com.amazonaws.services.kinesis.model.GetRecordsResult;
-import com.amazonaws.services.kinesis.model.GetShardIteratorRequest;
-import com.amazonaws.services.kinesis.model.GetShardIteratorResult;
-import com.amazonaws.services.kinesis.model.PutRecordRequest;
-import com.amazonaws.services.kinesis.model.Record;
-import com.amazonaws.services.kinesis.model.Shard;
-import com.amazonaws.services.kinesis.model.ShardIteratorType;
+import com.amazonaws.services.kinesis.model.*;
 import com.dematic.labs.analytics.common.Event;
 import com.dematic.labs.analytics.common.kinesis.KinesisStreamRule;
 import com.dematic.labs.analytics.common.kinesis.consumer.EventToByteArrayTransformer;
@@ -28,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static com.dematic.labs.analytics.common.AWSConnections.getAWSCredentialsProvider;
 import static org.junit.Assert.assertEquals;
 import static samples.utils.DynamoDBUtils.deleteTable;
 
@@ -99,6 +92,6 @@ public final class EventProcessingWorkflowIT {
     @After
     public void tearDown() {
         // delete the dynamo db lease table created using spark's streaming, the lease table is always within the east region
-        deleteTable(new AmazonDynamoDBClient(DriverUtils.getAWSCredentialsProvider()), DriverUtils.SPARKS_APP_NAME);
+        deleteTable(new AmazonDynamoDBClient(getAWSCredentialsProvider()), DriverUtils.SPARKS_APP_NAME);
     }
 }
