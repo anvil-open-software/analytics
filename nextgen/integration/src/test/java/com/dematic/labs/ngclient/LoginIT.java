@@ -451,11 +451,13 @@ public class LoginIT {
          *  *******************************************************************************/
 
         new Actions(driver).moveToElement(username).click().perform();
+        username.clear();
         username.sendKeys("superuserr");
         new Actions(driver).moveToElement(password).click().perform();
+        password.clear();
         password.sendKeys("abcd1234");
         login.click();
-        moveMouse(username);
+        //moveMouse(username);
         clunkykWait(3000);
         login    = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//button[@name='signin']")));
         Assert.assertTrue(isButtonBackgroundLightGrey(login));
