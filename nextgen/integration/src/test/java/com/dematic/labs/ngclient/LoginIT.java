@@ -29,6 +29,7 @@ public class LoginIT {
     private WebElement username;
     private WebElement password;
     private WebElement login;
+    private WebElement errorbox;
     private Pattern rgbaPattern = Pattern.compile("^(.*\\()(\\d+)(,.?)(\\d+)(,.?)(\\d+)(,.?)(\\d+)(\\))$");
 
     private Map<String, String> greyRGB = new HashMap<>();
@@ -54,6 +55,7 @@ public class LoginIT {
         username = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//input[@name=\"username\"]")));
         password = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//input[@name=\"password\"]")));
         login    = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//button[@name=\"signin\"]")));
+        errorbox = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//div[contains (@class, 'error-container')]")));
 
         greyRGB.put("red",   "204");
         greyRGB.put("green", "204");
@@ -95,9 +97,10 @@ public class LoginIT {
         Assert.assertNotNull(username);
         Assert.assertNotNull(password);
         Assert.assertNotNull(login);
-   }
+        Assert.assertNotNull(errorbox);
+    }
     @Test
-    public void test0200LoginFormInitialSetup ()  {
+    public void test0200LoginFormIInputAttributes ()  {
         /*
         As a User I want a the input elements rendered with:
         - a thin greyRGB border when originally rendered
@@ -163,6 +166,20 @@ public class LoginIT {
         clunkykWait(1000);
         Assert.assertTrue(isThickRedBorder(username));
         Assert.assertTrue(isThickRedBorder(password));
+    }
+
+    @Test
+    public void test0300LoginFormIErrors ()  {
+        /*
+        As a User I want a the error box rendered with:
+        - hidden when the form is shown
+        - with a thick gold border if any input element are invalid
+        - a thick red border when authentication failed
+         */
+
+        /* ********************************************************************************
+            error box rendered with a thick gold border if any of the attributes is invalid
+         *  *******************************************************************************/
     }
 
     @AfterClass
