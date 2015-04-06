@@ -3,10 +3,19 @@ package com.dematic.labs.analytics.integration;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
-import com.amazonaws.services.kinesis.model.*;
+import com.amazonaws.services.kinesis.model.DescribeStreamResult;
+import com.amazonaws.services.kinesis.model.GetRecordsRequest;
+import com.amazonaws.services.kinesis.model.GetRecordsResult;
+import com.amazonaws.services.kinesis.model.GetShardIteratorRequest;
+import com.amazonaws.services.kinesis.model.GetShardIteratorResult;
+import com.amazonaws.services.kinesis.model.PutRecordRequest;
+import com.amazonaws.services.kinesis.model.Record;
+import com.amazonaws.services.kinesis.model.Shard;
+import com.amazonaws.services.kinesis.model.ShardIteratorType;
 import com.dematic.labs.analytics.common.Event;
 import com.dematic.labs.analytics.common.kinesis.KinesisStreamRule;
 import com.dematic.labs.analytics.common.kinesis.consumer.EventToByteArrayTransformer;
+import com.dematic.labs.analytics.ingestion.sparks.DriverUtils;
 import com.jayway.awaitility.Awaitility;
 import org.joda.time.DateTime;
 import org.junit.After;
@@ -19,8 +28,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.dematic.labs.analytics.ingestion.sparks.Bootstrap.SPARKS_APP_NAME;
-import static com.dematic.labs.analytics.ingestion.sparks.Bootstrap.getAWSCredentialsProvider;
 import static org.junit.Assert.assertEquals;
 import static samples.utils.DynamoDBUtils.deleteTable;
 
@@ -92,6 +99,6 @@ public final class EventProcessingWorkflowIT {
     @After
     public void tearDown() {
         // delete the dynamo db lease table created using spark's streaming, the lease table is always within the east region
-        deleteTable(new AmazonDynamoDBClient(getAWSCredentialsProvider()), SPARKS_APP_NAME);
+        deleteTable(new AmazonDynamoDBClient(DriverUtils.getAWSCredentialsProvider()), DriverUtils.SPARKS_APP_NAME);
     }
 }
