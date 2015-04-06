@@ -1,8 +1,5 @@
 package com.dematic.labs.analytics.ingestion.sparks;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import org.apache.spark.SparkConf;
@@ -15,29 +12,14 @@ import org.apache.spark.streaming.kinesis.KinesisUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.dematic.labs.analytics.common.AWSConnections.getAmazonKinesisClient;
+
 //todo: nullable/non-nullable
 public final class DriverUtils {
     // todo: make configurable
     public static final String SPARKS_APP_NAME = "EventProcessor";
 
     private DriverUtils() {
-    }
-
-    public static AWSCredentialsProvider getAWSCredentialsProvider() {
-        // AWS credentials are set in system properties via junit.properties
-        return new DefaultAWSCredentialsProviderChain();
-    }
-
-    public static AmazonKinesisClient getAmazonKinesisClient(final String awsEndpointUrl) {
-        final AmazonKinesisClient kinesisClient = new AmazonKinesisClient(getAWSCredentialsProvider());
-        kinesisClient.setEndpoint(awsEndpointUrl);
-        return kinesisClient;
-    }
-
-    public static AmazonDynamoDBClient getAmazonDynamoDBClient(final String awsEndpointUrl) {
-        final AmazonDynamoDBClient dynamoDBClient = new AmazonDynamoDBClient(getAWSCredentialsProvider());
-        dynamoDBClient.setEndpoint(awsEndpointUrl);
-        return dynamoDBClient;
     }
 
     public static int getNumberOfShards(final String awsEndpointUrl, final String streamName) {
