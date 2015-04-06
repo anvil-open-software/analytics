@@ -13,7 +13,7 @@ public abstract class OwnedAssetEntity extends IdentifiableEntity {
     @NotNull(message = "Tenant ID may not be null")
     private String tenantId;
 
-    OwnedAssetEntity(@Nonnull UUID tenantId) {
+    protected OwnedAssetEntity(@Nonnull UUID tenantId) {
         this.tenantId = tenantId.toString();
     }
 

@@ -1,6 +1,7 @@
 package com.dematic.labs.persistence.entities;
 
 import com.dematic.labs.matchers.ConstraintViolationMatcher;
+import com.dematic.labs.matchers.HibernateWrappedCauseMatcher;
 import com.dematic.labs.persistence.EmbeddedH2;
 import com.dematic.labs.persistence.JpaRule;
 import com.dematic.labs.persistence.query.QueryParameters;
@@ -243,35 +244,6 @@ public class OrganizationTest {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("isn't accessible");
         QueryParametersHelper.convertPropertyStringsToQueryPaths(queryParameters, QOrganization.organization);
-    }
-
-    private class HibernateWrappedCauseMatcher extends TypeSafeMatcher<Throwable> {
-
-        private final Class<? extends Throwable> type, cause;
-        private final String expectedMessage;
-
-        public HibernateWrappedCauseMatcher(Class<? extends Throwable> type, Class<? extends Throwable> cause, String expectedMessage) {
-            this.type = type;
-            this.cause = cause;
-            this.expectedMessage = expectedMessage;
-        }
-
-        @Override
-        protected boolean matchesSafely(Throwable item) {
-            return item.getClass().isAssignableFrom(type)
-                    && item.getCause().getClass().isAssignableFrom(cause)
-                    && item.getCause().getMessage().contains(expectedMessage);
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText("expects type ")
-                    .appendValue(type)
-                    .appendText(" expects cause ")
-                    .appendValue(cause)
-                    .appendText(" and a message ")
-                    .appendValue(expectedMessage);
-        }
     }
 
     private class OrganizationBusinessRoleMatcher extends TypeSafeMatcher<OrganizationBusinessRole> {
