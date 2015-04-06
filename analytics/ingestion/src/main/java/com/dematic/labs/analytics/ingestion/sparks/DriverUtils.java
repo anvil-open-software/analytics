@@ -1,5 +1,7 @@
 package com.dematic.labs.analytics.ingestion.sparks;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
@@ -21,14 +23,19 @@ public final class DriverUtils {
     private DriverUtils() {
     }
 
+    public static AWSCredentialsProvider getAWSCredentialsProvider() {
+        // AWS credentials are set in system properties via junit.properties
+        return new DefaultAWSCredentialsProviderChain();
+    }
+
     public static AmazonKinesisClient getAmazonKinesisClient(final String awsEndpointUrl) {
-        final AmazonKinesisClient kinesisClient = new AmazonKinesisClient(Bootstrap.getAWSCredentialsProvider());
+        final AmazonKinesisClient kinesisClient = new AmazonKinesisClient(getAWSCredentialsProvider());
         kinesisClient.setEndpoint(awsEndpointUrl);
         return kinesisClient;
     }
 
     public static AmazonDynamoDBClient getAmazonDynamoDBClient(final String awsEndpointUrl) {
-        final AmazonDynamoDBClient dynamoDBClient = new AmazonDynamoDBClient(Bootstrap.getAWSCredentialsProvider());
+        final AmazonDynamoDBClient dynamoDBClient = new AmazonDynamoDBClient(getAWSCredentialsProvider());
         dynamoDBClient.setEndpoint(awsEndpointUrl);
         return dynamoDBClient;
     }
@@ -45,7 +52,7 @@ public final class DriverUtils {
         final int numSparkThreads = getNumberOfShards(awsEndpointUrl, streamName) + 1;
         // Spark config
         final SparkConf configuration = new SparkConf().
-                setAppName(Bootstrap.SPARKS_APP_NAME).setMaster("local[" + numSparkThreads + "]");
+                setAppName(SPARKS_APP_NAME).setMaster("local[" + numSparkThreads + "]");
         return new JavaStreamingContext(configuration, pollTime);
     }
 

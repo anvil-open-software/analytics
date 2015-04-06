@@ -19,11 +19,6 @@ public final class Bootstrap {
     private Bootstrap() {
     }
 
-    public static AWSCredentialsProvider getAWSCredentialsProvider() {
-        // AWS credentials are set in system properties via junit.properties
-        return new DefaultAWSCredentialsProviderChain();
-    }
-
     public static KinesisConnectorConfiguration getKinesisConnectorConfiguration(final AWSCredentialsProvider credentialsProvider) {
         final Properties properties = new Properties();
         properties.setProperty(PROP_KINESIS_ENDPOINT, trim(System.getProperty(PROP_KINESIS_ENDPOINT)));
