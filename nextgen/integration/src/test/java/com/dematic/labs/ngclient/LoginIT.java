@@ -215,6 +215,82 @@ public class LoginIT {
         Assert.assertTrue(isThickRedBorder(serverErrorBox));
     }
 
+
+
+    @Test
+    public void test0400LoginWithInvalidAttributes() {
+        /*
+        As a User I want to ensure that if click on the Sign In button while any of the input elements is in error, the submission is not accepted.
+         */
+
+        /* ********************************************************************************
+            login form remains active when username is invalid
+         *  *******************************************************************************/
+        new Actions(driver).moveToElement(username).click().perform();
+        username.sendKeys("s");
+        new Actions(driver).moveToElement(password).click().perform();
+        password.sendKeys("abcd1234");
+        login.click();
+        clunkykWait(1000);
+        Assert.assertNotNull(form);
+        Assert.assertTrue(form.isDisplayed());
+        Assert.assertNotNull(username);
+        Assert.assertTrue(username.isDisplayed());
+        Assert.assertNotNull(password);
+        Assert.assertNotNull(login);
+        Assert.assertTrue(login.isDisplayed());
+        Assert.assertNotNull(clientErrorBox);
+        Assert.assertTrue(clientErrorBox.isDisplayed());
+        Assert.assertNotNull(serverErrorBox);
+        Assert.assertFalse(serverErrorBox.isDisplayed());
+
+        /* ********************************************************************************
+            login form remains active when password is invalid
+         *  *******************************************************************************/
+        new Actions(driver).moveToElement(username).click().perform();
+        username.clear();
+        username.sendKeys("superuser");
+        new Actions(driver).moveToElement(password).click().perform();
+        password.clear();
+        password.sendKeys("ab");
+        login.click();
+        clunkykWait(1000);
+        Assert.assertNotNull(form);
+        Assert.assertTrue(form.isDisplayed());
+        Assert.assertNotNull(username);
+        Assert.assertTrue(username.isDisplayed());
+        Assert.assertNotNull(password);
+        Assert.assertNotNull(login);
+        Assert.assertTrue(login.isDisplayed());
+        Assert.assertNotNull(clientErrorBox);
+        Assert.assertTrue(clientErrorBox.isDisplayed());
+        Assert.assertNotNull(serverErrorBox);
+        Assert.assertFalse(serverErrorBox.isDisplayed());
+
+        /* ********************************************************************************
+            login form remains active when username and password are invalid
+         *  *******************************************************************************/
+        new Actions(driver).moveToElement(username).click().perform();
+        username.clear();
+        username.sendKeys("sup");
+        new Actions(driver).moveToElement(password).click().perform();
+        password.clear();
+        password.sendKeys("ab");
+        login.click();
+        clunkykWait(1000);
+        Assert.assertNotNull(form);
+        Assert.assertTrue(form.isDisplayed());
+        Assert.assertNotNull(username);
+        Assert.assertTrue(username.isDisplayed());
+        Assert.assertNotNull(password);
+        Assert.assertNotNull(login);
+        Assert.assertTrue(login.isDisplayed());
+        Assert.assertNotNull(clientErrorBox);
+        Assert.assertTrue(clientErrorBox.isDisplayed());
+        Assert.assertNotNull(serverErrorBox);
+        Assert.assertFalse(serverErrorBox.isDisplayed());
+    }
+
     @AfterClass
     public static void afterClass() {
         driver.close();
