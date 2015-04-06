@@ -51,7 +51,7 @@ public class NgClientIT {
         //login = driver.findElement(By.id("log-in"));
         username = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.name("username")));
         password = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.name("password")));
-        login    = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.id("log-in")));
+        login    = (new WebDriverWait(driver, 2)).until(ExpectedConditions.presenceOfElementLocated(By.name("signin")));
 
         username.clear();
         username.sendKeys(SecurityInitializer.INSTANCE_ADMIN_USERNAME);
