@@ -55,14 +55,17 @@ angular.module('Authentication')
                     $('.dl-unauthorized').removeClass('dl-unauthorized');
 
                     element.removeClass('dl-blurred');
+                    element.addClass('dl-focused');
                     scope.unauthorized = false;
                     scope.$digest();
                 });
                 element.bind('blur', function() {
-                    element.addClass('dl-blurred');
                     if (element.hasClass('ng-valid')) {
-                       scope.ready='btn-primary';
+                        scope.ready='btn-primary';
                     }
+                    element.removeClass('dl-focused');
+                    element.addClass('dl-blurred');
+                    scope.$digest();
                 });
             }
         };
