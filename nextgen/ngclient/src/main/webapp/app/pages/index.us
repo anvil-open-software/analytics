@@ -3,7 +3,9 @@
   <head>
    <base href="/ngclient/">
     <title><%= pkg.name %></title>
-    <link rel="stylesheet" type="text/css" href="css/app.css" media="all" />
+    <link rel="stylesheet" type="text/css"  href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>
+    <link rel="stylesheet" type="text/css"  href="css/app.css" media="all" />
+    <link rel="icon"       type="image/png" sizes="96x96" href="favicon-96x96.png">
   </head>
   <body>
     <div class="row">
@@ -12,11 +14,6 @@
         <div id="view" ng-view></div>
       </div>
     </div>
-    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/hmac-md5.js"></script>
-    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/hmac-sha1.js"></script>
-    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/core-min.js"></script>
-    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/enc-utf16-min.js"></script>
-    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/components/enc-base64-min.js"></script>
-    <script  type="text/javascript" src="js/app.js"></script>
+    <script type="text/javascript" src="js/app.js"></script>
   </body>
 </html>
