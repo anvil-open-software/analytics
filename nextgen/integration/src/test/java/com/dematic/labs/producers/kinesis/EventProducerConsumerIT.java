@@ -34,7 +34,7 @@ public final class EventProducerConsumerIT {
                 kinesisStreamRule.getKinesisConnectorConfiguration();
         final AmazonKinesisClient client = kinesisStreamRule.getAmazonKinesisClient();
 
-        // push events to stream
+        // push events to stream, and ensure they get pulled
         for (int i = 1; i <= 10; i++) {
             final PutRecordRequest putRecordRequest = new PutRecordRequest();
             putRecordRequest.setStreamName(kinesisConnectorConfiguration.KINESIS_INPUT_STREAM);

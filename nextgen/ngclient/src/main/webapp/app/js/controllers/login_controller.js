@@ -1,12 +1,16 @@
 /**
- * The Authentication Controller
+ * The Authentication Controller ...
 */
 angular.module('Authentication')
 
 .controller('LoginController', ['$scope', '$location', 'AuthenticationService', 'AuthenticatedUser', 'SecurityToken',
     function($scope, $location, AuthenticationService, AuthenticatedUser, SecurityToken) {
         $scope.title = "Landing";
-        $scope.credentials = { username: "superuser", password: "abcd1234" };
+        //$scope.credentials = { username: "superuser", password: "abcd1234" };
+        $scope.credentials = { username: "", password: "" };
+        $scope.unauthorized = false;
+        $scope.ready = 'dl-not-ready';
+        $scope.showSpinner=false;
 
         var onLoginSuccess = function() {
             $location.path('/home');
