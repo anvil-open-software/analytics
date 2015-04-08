@@ -1,6 +1,7 @@
 package com.dematic.labs.persistence.entities;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.UUID;
@@ -13,12 +14,12 @@ public class Line extends OwnedAssetEntity {
     @JoinColumn(name = "documentId", nullable = false)
     private Document document;
 
+    @Column(nullable = false)
+    private int lineNo;
+
     @NotNull(message = "Line # may not be null")
     @Column(length = 60)
     private String name;
-
-    @Column(nullable = false) //insertable = false, updatable = false,
-    private int lineNo;
 
     @SuppressWarnings("UnusedDeclaration")
     Line() {
@@ -51,11 +52,11 @@ public class Line extends OwnedAssetEntity {
         this.lineNo = lineNo;
     }
 
-    public void setDocument(@Nonnull Document document) {
+    public void setDocument(@Nullable Document document) {
         this.document = document;
     }
 
-    @Nonnull
+    @Nullable
     public Document getDocument() {
         return document;
     }

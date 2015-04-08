@@ -16,7 +16,7 @@ public class Document extends OwnedAssetEntity {
 
     private String name;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "document")
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "document")
     @OrderColumn(name = "lineNo", nullable = false)
     List<Line> lines = new ArrayList<>();
 
@@ -55,6 +55,17 @@ public class Document extends OwnedAssetEntity {
         lines.add(index, line);
 
         //need to adjust lineNo's above the insert point (for java consistency with db)
+        for (int i = index; i<lines.size(); i++) {
+            lines.get(i).setLineNo(i);
+        }
+    }
+
+    public void removeLine(int index) {
+        Line line = lines.get(index);
+        line.setDocument(null);
+        lines.remove(index);
+
+        //need to adjust lineNo's above the remove point (for java consistency with db)
         for (int i = index; i<lines.size(); i++) {
             lines.get(i).setLineNo(i);
         }

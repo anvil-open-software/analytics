@@ -182,37 +182,37 @@ public class DocumentTest {
     }
 
     @Test
-    public void testAddLine() {
+    public void testAddRemoveLines() {
 
         //create document
-        Document documentFromDb;
+        final Document originalDocument;
         {
 
-            Document document = crudService.createNewOwnedAsset(Document.class);
-            assertNull(document.getId());
+            Document documentToSave = crudService.createNewOwnedAsset(Document.class);
+            assertNull(documentToSave.getId());
 
-            document.setName("SO-0000001");
+            documentToSave.setName("SO-0000001");
 
-            crudService.create(document);
-            assertNotNull(document.getId());
+            crudService.create(documentToSave);
+            assertNotNull(documentToSave.getId());
 
             jpaRule.changeTransaction();
 
-            documentFromDb = crudService.findExisting(Document.class, document.getId());
+            originalDocument = crudService.findExisting(Document.class, documentToSave.getId());
         }
 
         //add lines
         {
-            documentFromDb.addLine(new Line(tenantId, "two"));
-            documentFromDb.addLine(0, new Line(tenantId, "one"));
-            documentFromDb.addLine(new Line(tenantId, "third"));
+            originalDocument.addLine(new Line(tenantId, "second"));
+            originalDocument.addLine(0, new Line(tenantId, "first"));
+            originalDocument.addLine(new Line(tenantId, "third"));
             jpaRule.changeTransaction();
 
             {
                 //these lines are the one's just created, i.e. testing for java consistency
                 List<Line> lines = getLines();
-                assertThat(lines, IsIterableContainingInOrder.contains(new LineMatcher(0, "one"),
-                        new LineMatcher(1, "two"),
+                assertThat(lines, IsIterableContainingInOrder.contains(new LineMatcher(0, "first"),
+                        new LineMatcher(1, "second"),
                         new LineMatcher(2, "third")));
             }
 
@@ -221,8 +221,8 @@ public class DocumentTest {
             {
                 //these lines are created by jpa, i.e. testing for db consistency
                 List<Line> lines = getLines();
-                assertThat(lines, IsIterableContainingInOrder.contains(new LineMatcher(0, "one"),
-                        new LineMatcher(1, "two"),
+                assertThat(lines, IsIterableContainingInOrder.contains(new LineMatcher(0, "first"),
+                        new LineMatcher(1, "second"),
                         new LineMatcher(2, "third")));
             }
 
@@ -230,17 +230,19 @@ public class DocumentTest {
 
         //add more lines
         {
-            documentFromDb = crudService.findExisting(Document.class, documentFromDb.getId());
-            documentFromDb.addLine(0, new Line(tenantId, "zero"));
+            Document document = crudService.findExisting(Document.class, originalDocument.getId());
+            document.addLine(0, new Line(tenantId, "zero"));
+            document.addLine(new Line(tenantId, "forth"));
 
             jpaRule.changeTransaction();
             {
                 //these lines are the one's just created, i.e. testing for java consistency
                 List<Line> lines = getLines();
                 assertThat(lines, IsIterableContainingInOrder.contains(new LineMatcher(0, "zero"),
-                        new LineMatcher(1, "one"),
-                        new LineMatcher(2, "two"),
-                        new LineMatcher(3, "third")));
+                        new LineMatcher(1, "first"),
+                        new LineMatcher(2, "second"),
+                        new LineMatcher(3, "third"),
+                        new LineMatcher(4, "forth")));
             }
 
             jpaRule.getEntityManager().clear();
@@ -249,11 +251,41 @@ public class DocumentTest {
                 //these lines are created by jpa, i.e. testing for db consistency
                 List<Line> lines = getLines();
                 assertThat(lines, IsIterableContainingInOrder.contains(new LineMatcher(0, "zero"),
-                        new LineMatcher(1, "one"),
-                        new LineMatcher(2, "two"),
-                        new LineMatcher(3, "third")));
+                        new LineMatcher(1, "first"),
+                        new LineMatcher(2, "second"),
+                        new LineMatcher(3, "third"),
+                        new LineMatcher(4, "forth")));
             }
         }
+
+        //remove lines
+        {
+            Document document = crudService.findExisting(Document.class, originalDocument.getId());
+            document.removeLine(2);
+
+            jpaRule.changeTransaction();
+            {
+                //these lines are the one's just created, i.e. testing for java consistency
+                List<Line> lines = getLines();
+                assertThat(lines, IsIterableContainingInOrder.contains(new LineMatcher(0, "zero"),
+                        new LineMatcher(1, "first"),
+                        new LineMatcher(2, "third"),
+                        new LineMatcher(3, "forth")));
+            }
+
+            jpaRule.getEntityManager().clear();
+
+            {
+                //these lines are created by jpa, i.e. testing for db consistency
+                List<Line> lines = getLines();
+                assertThat(lines, IsIterableContainingInOrder.contains(new LineMatcher(0, "zero"),
+                        new LineMatcher(1, "first"),
+                        new LineMatcher(2, "third"),
+                        new LineMatcher(3, "forth")));
+            }
+        }
+
+
     }
 
     private List<Line> getLines() {
