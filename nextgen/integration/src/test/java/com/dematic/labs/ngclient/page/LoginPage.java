@@ -141,12 +141,4 @@ public class LoginPage extends AbstractPage {
 
         return rtnValue;
     }
-
-/*
-    @Nonnull
-    public static Matcher<? super WebElement> webElementBorderMatcher(EnumSet<CssMatcher> cssEnumSet) {
-        return new HasCssProperty(cssEnumSet);
-    }
-
-*/
 }
