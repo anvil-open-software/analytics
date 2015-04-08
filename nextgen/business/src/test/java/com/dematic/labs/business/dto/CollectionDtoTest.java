@@ -2,7 +2,7 @@ package com.dematic.labs.business.dto;
 
 import com.dematic.labs.business.matchers.CollectionDtoMatcher;
 import com.dematic.labs.business.matchers.SortingPaginationDtoMatcher;
-import com.dematic.labs.persistence.entities.SortDirection;
+import com.dematic.labs.persistence.query.SortDirection;
 import com.dematic.labs.persistence.query.QueryParameters;
 import org.hamcrest.Matcher;
 import org.hamcrest.collection.IsIterableContainingInAnyOrder;

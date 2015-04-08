@@ -1,6 +1,6 @@
 package com.dematic.labs.business.dto;
 
-import com.dematic.labs.persistence.entities.SortDirection;
+import com.dematic.labs.persistence.query.SortDirection;
 import com.dematic.labs.persistence.query.QueryParameters;
 import org.apache.commons.beanutils.BeanComparator;
 import org.apache.commons.collections4.comparators.ComparatorChain;
