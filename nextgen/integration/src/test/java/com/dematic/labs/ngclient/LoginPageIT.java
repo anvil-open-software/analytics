@@ -65,6 +65,7 @@ public class LoginPageIT {
     @Test
     public void test0040ValidateLoginPageRendering() {
 
+        Matcher<? super WebElement> defaultCss = new HasCssProperty(LoginPage.THIN_GREY);
         Matcher<? super WebElement> focusCss = new HasCssProperty(LoginPage.THIN_BLUE);
         Matcher<? super WebElement> clientErrorCss = new HasCssProperty(LoginPage.THICK_GOLD);
         Matcher<? super List<String>> notVisible = Matchers.containsInAnyOrder("Not Visible");
@@ -72,8 +73,8 @@ public class LoginPageIT {
 
         LoginPage loginPage = LoginPage.navigateTo(driver);
 
-        assertThat(loginPage.getUsername(), new HasCssProperty(LoginPage.THIN_GREY));
-        assertThat(loginPage.getPassword(), new HasCssProperty(LoginPage.THIN_GREY));
+        assertThat(loginPage.getUsername(), defaultCss);
+        assertThat(loginPage.getPassword(), defaultCss);
         assertEquals("Not Visible", loginPage.getServerError());
         assertThat(loginPage.getClientErrors(), notVisible);
 
@@ -146,6 +147,14 @@ public class LoginPageIT {
                 .until((Predicate<WebElement>) serverErrorCss::matches);
 
         assertThat(loginPage.getSignInButton(), new HasCssProperty(LoginPage.LIGHT_GREY_BACKGROUND));
+
+        loginPage.clickUsername();
+        getWebElementFluentWait(loginPage.getUsername())
+                .until((Predicate<WebElement>) focusCss::matches);
+
+        getWebElementFluentWait(loginPage.getPassword())
+                .until((Predicate<WebElement>) defaultCss::matches);
+
 
         HomePage homePage = loginPage.login(SecurityInitializer.INSTANCE_ADMIN_USERNAME,
                 SecurityInitializer.INSTANCE_ADMIN_PASSWORD);
