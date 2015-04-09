@@ -15,13 +15,15 @@ import org.picketlink.idm.model.basic.Realm;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.UUID;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.TestCase.*;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ItemMasterTest {
 
+    private final UUID tenantId = UUID.randomUUID();
     private CrudService crudService;
 
     @Rule
@@ -33,7 +35,7 @@ public class ItemMasterTest {
     @Before
     public void setUp() throws Exception {
         Realm realm = new Realm();
-        realm.setId(UUID.randomUUID().toString());
+        realm.setId(tenantId.toString());
         realm.setName("dummy");
         RealmSelector realmSelector = mock(RealmSelector.class);
         when(realmSelector.select()).thenReturn(realm);
@@ -43,10 +45,9 @@ public class ItemMasterTest {
     @Test
     public void testSave() {
 
-        UUID tenantId = UUID.randomUUID();
-
-        ItemMaster itemMaster = new ItemMaster(tenantId);
+        ItemMaster itemMaster = crudService.createNewOwnedAsset(ItemMaster.class);
         assertNull(itemMaster.getId());
+
         assertEquals(tenantId, itemMaster.getTenantId());
 
         itemMaster.setName("Fred");
@@ -67,9 +68,7 @@ public class ItemMasterTest {
         //create itemMaster
         ItemMaster itemMasterFromDb;
         {
-            UUID tenantId = UUID.randomUUID();
-
-            ItemMaster itemMaster = new ItemMaster(tenantId);
+            ItemMaster itemMaster = crudService.createNewOwnedAsset(ItemMaster.class);
             assertNull(itemMaster.getId());
 
             itemMaster.setName("Fred");
@@ -101,11 +100,9 @@ public class ItemMasterTest {
     @Test
     public void testUniqueWithinTenant() {
 
-        UUID tenantId = UUID.randomUUID();
-
         //save first one
         {
-            ItemMaster itemMaster = new ItemMaster(tenantId);
+            ItemMaster itemMaster = crudService.createNewOwnedAsset(ItemMaster.class);
             assertNull(itemMaster.getId());
 
             itemMaster.setName("Fred");
@@ -118,7 +115,7 @@ public class ItemMasterTest {
 
         //attempt saving duplicate
         {
-            ItemMaster itemMaster = new ItemMaster(tenantId);
+            ItemMaster itemMaster = crudService.createNewOwnedAsset(ItemMaster.class);
             assertNull(itemMaster.getId());
 
             itemMaster.setName("Fred");

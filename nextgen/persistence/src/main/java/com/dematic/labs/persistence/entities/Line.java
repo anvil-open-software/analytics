@@ -17,6 +17,10 @@ public class Line extends OwnedAssetEntity {
     @Column(nullable = false)
     private int lineNo;
 
+    @ManyToOne
+    @JoinColumn(name = "itemMasterId", nullable = false)
+    private ItemMaster itemMaster;
+
     @NotNull(message = "Line # may not be null")
     @Column(length = 60)
     private String name;
@@ -26,13 +30,9 @@ public class Line extends OwnedAssetEntity {
         super();
     }
 
+    @SuppressWarnings("unused")
     Line(@Nonnull UUID tenantId) {
         super(tenantId);
-    }
-
-    public Line(UUID tenantId, String name) {
-        this(tenantId);
-        setName(name);
     }
 
     @Nonnull
@@ -60,4 +60,14 @@ public class Line extends OwnedAssetEntity {
     public Document getDocument() {
         return document;
     }
+
+
+    public ItemMaster getItemMaster() {
+        return itemMaster;
+    }
+
+    public void setItemMaster(@Nonnull ItemMaster itemMaster) {
+        this.itemMaster = itemMaster;
+    }
+
 }
