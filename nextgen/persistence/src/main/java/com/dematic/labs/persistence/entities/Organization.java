@@ -58,4 +58,11 @@ public class Organization extends OwnedAssetEntity {
         businessRoles.remove(businessRole);
     }
 
+    public boolean isBusinessRoleGranted(@Nonnull BusinessRole businessRole) {
+        return businessRoles.get(businessRole) != null;
+    }
+
+    public boolean isBusinessRoleActive(@Nonnull BusinessRole businessRole) {
+        return isBusinessRoleGranted(businessRole) && businessRoles.get(businessRole).isActive();
+    }
 }

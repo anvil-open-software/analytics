@@ -4,6 +4,7 @@
     <persistence-unit name="NewPersistenceUnit" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.ejb.HibernatePersistence</provider>
         <class>com.dematic.labs.persistence.entities.Document</class>
+        <class>com.dematic.labs.persistence.entities.DocumentOrganization</class>
         <class>com.dematic.labs.persistence.entities.ItemMaster</class>
         <class>com.dematic.labs.persistence.entities.Line</class>
         <class>com.dematic.labs.persistence.entities.Organization</class>

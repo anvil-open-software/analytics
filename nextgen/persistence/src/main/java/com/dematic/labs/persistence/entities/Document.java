@@ -3,9 +3,7 @@ package com.dematic.labs.persistence.entities;
 import javax.annotation.Nonnull;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Entity(name = "document")
 @Table(uniqueConstraints = @UniqueConstraint(name = "Document_U2", columnNames = {"tenantId", "name"}))
@@ -19,6 +17,11 @@ public class Document extends OwnedAssetEntity {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "document")
     @OrderColumn(name = "lineNo", nullable = false)
     List<Line> lines = new ArrayList<>();
+
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "documentId", nullable = false)
+    Set<DocumentOrganization> organizations = new HashSet<>();
 
     @SuppressWarnings("UnusedDeclaration")
     Document() {
@@ -69,5 +72,46 @@ public class Document extends OwnedAssetEntity {
         for (int i = index; i<lines.size(); i++) {
             lines.get(i).setLineNo(i);
         }
+    }
+
+    public boolean addOrganization(@Nonnull Organization organization, @Nonnull BusinessRole businessRole) {
+
+        if (!organization.isBusinessRoleGranted(businessRole)) {
+            throw new IllegalArgumentException(String.format("Organization [%s] " +
+                            "cannot participate in document with role [%s] " +
+                            "because Organization hasn't been assigned that role",
+                    organization.getName(),
+                    businessRole.toString()));
+        } else if (!organization.isBusinessRoleActive(businessRole)) {
+            throw new IllegalArgumentException(String.format("Organization [%s] " +
+                            "cannot participate in document with role [%s] " +
+                            "because this role isn't active for the Organization",
+                    organization.getName(),
+                    businessRole.toString()));
+        }
+
+        DocumentOrganization documentOrganization = new DocumentOrganization(organization, businessRole);
+
+        return !organizationsContains(documentOrganization) && organizations.add(documentOrganization);
+//        return organizations.add(documentOrganization);
+    }
+
+    //to avoid overriding equals and hashcode on DocumentOrganization
+    private boolean organizationsContains(DocumentOrganization target) {
+        for (DocumentOrganization element : organizations) {
+            if (element.getOrganization().getId().equals(target.getOrganization().getId()) &&
+                    element.getBusinessRole().equals(target.getBusinessRole())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Set<DocumentOrganization> getOrganizations() {
+        return Collections.unmodifiableSet(organizations);
+    }
+
+    public void clearOrganizations() {
+        organizations.clear();
     }
 }
