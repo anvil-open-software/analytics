@@ -35,6 +35,10 @@ module.exports = function(lineman) {
           ]
         }
       }
+    },
+
+    webfonts: {
+      root: "fonts"
     }
   };
 };
