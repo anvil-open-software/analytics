@@ -30,7 +30,7 @@ public final class EventConsumer {
         final String dynamoDBEndpoint = args[2];
 
         // create the table, if it does not exist
-        AWSConnections.createDynamoTable(kinesisEndpoint, Event.class);
+        AWSConnections.createDynamoTable(dynamoDBEndpoint, Event.class);
 
         final Duration pollTime = Durations.seconds(2);
         // make Duration configurable

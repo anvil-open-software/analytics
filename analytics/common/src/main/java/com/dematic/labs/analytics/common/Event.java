@@ -1,9 +1,6 @@
 package com.dematic.labs.analytics.common;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import org.joda.time.ReadableInstant;
 
 import java.util.UUID;
@@ -31,6 +28,7 @@ public final class Event {
         this.value = value;
     }
 
+    @DynamoDBMarshalling(marshallerClass = UUIDMarshaller.class)
     @DynamoDBHashKey(attributeName="id")
     public UUID getEventId() {
         return eventId;
@@ -58,6 +56,7 @@ public final class Event {
         this.jobId = jobId;
     }
 
+    @DynamoDBMarshalling(marshallerClass = ReadableInstantMarshaller.class)
     @DynamoDBRangeKey
     public ReadableInstant getTimestamp() {
         return timestamp;
