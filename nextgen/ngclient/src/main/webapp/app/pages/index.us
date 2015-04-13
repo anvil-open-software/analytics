@@ -10,7 +10,7 @@
   <body>
     <div class="row">
       <div class="large-12">
-        <h1>Nextgen</h1>
+        <h1>Dematic iQ</h1>
         <div id="view" ng-view></div>
       </div>
     </div>
