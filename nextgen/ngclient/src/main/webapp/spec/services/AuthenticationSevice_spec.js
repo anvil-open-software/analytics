@@ -5,6 +5,7 @@
 describe('Unit: Testing AuthenticationServices Module Directives', function() {
     var $compile,
         $rootScope,
+        expectedInputNamesLenght,
         element;    // our directive jqLite element
 
     function compileDirective(tpl) {
@@ -30,12 +31,13 @@ describe('Unit: Testing AuthenticationServices Module Directives', function() {
         });
 
         describe('As a User I want to have access to a Log In prompt', function() {
-            it('with two and only two input elements named username and password', function() {
-                var expectedInputNames = ['username', 'password'].sort(),
+            it('with three and only three input elements named tenant, username and password', function() {
+                var expectedInputNames = ['username', 'password', 'tenant'].sort(),
                     inputElements,
                     inputElementsNames = [];
 
                 // Compile the HTML containing the directive
+                expectedInputNamesLenght = expectedInputNames.length;
                 compileDirective('<div dl-signin-prompt></div>');
 
                 // Check that the compiled element contains input elements
@@ -48,7 +50,7 @@ describe('Unit: Testing AuthenticationServices Module Directives', function() {
                     inputElementsNames.push(angular.element(inputElements[i]).attr('name'));
                 }
                 inputElementsNames.sort();
-                expect(inputElementsNames.toString()).toEqual(expectedInputNames.toString());
+                expect(inputElementsNames.toString()).toEqual(expectedInputNames.sort().toString());
             });
 
             it('with one and only one button element of type submit', function() {
@@ -83,12 +85,12 @@ describe('Unit: Testing AuthenticationServices Module Directives', function() {
 
                 compileDirective('<div dl-signin-prompt></div>');
                 inputElements = element.find('input');
-                for (var i=0; i<inputElements.length; i++) {
+                for (i=0; i<inputElements.length; i++) {
                     inputElement = angular.element(inputElements[i]);
                     inputElementName = inputElement.attr('name');
                     if (inputElementName === 'username') break;
                 }
-                expect(i).toBeLessThan(2);
+                expect(i).toBeLessThan(3);
                 expect(inputElementName).toBe('username');
             });
 
@@ -122,14 +124,14 @@ describe('Unit: Testing AuthenticationServices Module Directives', function() {
 
                 compileDirective('<div dl-signin-prompt></div>');
                 inputElements = element.find('input');
-                for (var i=0; i<inputElements.length; i++) {
+                for (i=0; i<inputElements.length; i++) {
                     inputElement = angular.element(inputElements[i]);
                     inputElementName = inputElement.attr('name');
                     if (inputElementName === 'password') break;
                 }
             });
             it('a password string', function() {
-                expect(i).toBeLessThan(2);
+                expect(i).toBeLessThan(expectedInputNamesLenght);
                 expect(inputElementName).toBe('password');
             });
             it('with a minimum of 8 characters', function() {
