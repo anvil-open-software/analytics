@@ -39,7 +39,7 @@ public class LoginPageIT {
     public void test0010GetLoginPage() {
         LoginPage loginPage = LoginPage.navigateTo(driver);
 
-        assertEquals(SecuredEndpointHelper.CONTEXT_ROOT, loginPage.getTitle());
+        assertEquals(SecuredEndpointHelper.PAGE_TITLE, loginPage.getTitle());
     }
 
     @Test
