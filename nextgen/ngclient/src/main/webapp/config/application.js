@@ -53,7 +53,7 @@ module.exports = function(lineman) {
 
         webfonts: {
             files: {
-                "vendor/font-awesome/fonts/": "vendor/font-awesome/fonts/**/*.*"
+                "vendor/components/font-awesome/fonts/": "vendor/components/font-awesome/fonts/**/*.*"
             }
         }
 
