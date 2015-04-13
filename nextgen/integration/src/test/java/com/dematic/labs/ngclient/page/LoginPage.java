@@ -75,6 +75,13 @@ public class LoginPage extends AbstractPage {
         return PageFactory.initElements(driver, HomePage.class);
     }
 
+    public HomePage login(String tenant, String username, String password) {
+
+        performEntryAndSubmit(tenant, username, password);
+
+        return PageFactory.initElements(driver, HomePage.class);
+    }
+
     public LoginPage loginExpectingFailure(String username, String password) {
 
         performEntryAndSubmit(username, password);
@@ -85,7 +92,30 @@ public class LoginPage extends AbstractPage {
         return PageFactory.initElements(driver, LoginPage.class);
     }
 
+    public LoginPage loginExpectingFailure(String tenant, String username, String password) {
+
+        performEntryAndSubmit(username, password);
+
+        new WebDriverWait(driver, 2).until(ExpectedConditions
+                .visibilityOfElementLocated(By.xpath("//div[@name='server-errors']")));
+
+        return PageFactory.initElements(driver, LoginPage.class);
+    }
+
     private void performEntryAndSubmit(String username, String password) {
+        this.username.clear();
+        this.username.sendKeys(username);
+
+        this.password.clear();
+        this.password.sendKeys(password);
+
+        signin.click();
+    }
+
+    private void performEntryAndSubmit(String tenant, String username, String password) {
+        this.tenant.clear();
+        this.tenant.sendKeys(tenant);
+
         this.username.clear();
         this.username.sendKeys(username);
 
@@ -107,6 +137,8 @@ public class LoginPage extends AbstractPage {
         return serverError.getText();
     }
 
+    public WebElement getTenant() { return tenant; }
+
     public WebElement getUsername() {
         return username;
     }
@@ -115,6 +147,7 @@ public class LoginPage extends AbstractPage {
         return password;
     }
 
+    public void clickTenant() { this.tenant.click(); }
 
     public void clickUsername() {
 
@@ -123,6 +156,10 @@ public class LoginPage extends AbstractPage {
 
     public void clickPassword() {
         this.password.click();
+    }
+
+    public void typeTenant(String username) {
+        this.tenant.sendKeys(username);
     }
 
     public void typeUsername(String username) {
