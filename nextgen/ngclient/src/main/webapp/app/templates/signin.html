@@ -2,7 +2,22 @@
     <div class="panel-body">
         <form class="form-horizontal" name="aform" novalidate="" dl-submit="login()" dl-remove-hover>
             <div class="form-group">
-                <!-- label for="inputEmail3" class="col-sm-2 control-label">Email</label -->
+                <div class="input-group">
+                    <span class="input-group-addon">
+                        <i class="fa fa-building"></i>
+                    </span>
+                    <input  type="text"
+                            class='form-control'
+                            placeholder="Tenant"
+                            aria-describedby="basic-addon1"
+                            ng-model="credentials.tenant"
+                            name="tenant"
+                            required
+                            ng-readonly="tenantReadonly"
+                            dl-signin/>
+                </div>
+            </div>
+            <div class="form-group">
                 <div class="input-group">
                     <span class="input-group-addon">
                         <i class="glyphicon glyphicon-user"></i>
@@ -42,8 +57,15 @@
                 </div>
             </div>
             <div class="error-container error-border"
-                 ng-show="((aform.username.$touched && aform.username.$invalid)|| (aform.password.$touched && aform.password.$invalid))"
+                 ng-show="((aform.username.$touched && aform.username.$invalid) ||
+                           (aform.password.$touched && aform.password.$invalid) ||
+                           (aform.tenant.$touched   && aform.tenant.$invalid))"
                  name='client-errors'>
+                <div ng-show="aform.tenant.$touched">
+                    <small class="dl-error" ng-show="aform.tenant.$error.required">
+                        Tenant is required.<br/>
+                    </small>
+                </div>
                 <div ng-show="aform.username.$touched">
                     <small class="dl-error" ng-show="aform.username.$error.required">
                         Username is required....<br/>

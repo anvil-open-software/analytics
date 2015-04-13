@@ -26,6 +26,11 @@ public class LoginPage extends AbstractPage {
     public static final EnumSet<CssMatcher> DARK_GREY_BACKGROUND = EnumSet.of(CssMatcher.DARK_GREY_BACKGROUND);
     public static final EnumSet<CssMatcher> LIGHT_GREY_BACKGROUND = EnumSet.of(CssMatcher.LIGHT_GREY_BACKGROUND);
 
+     private static final String BASE_URL_TENANT = SecuredEndpointHelper.SCHEME + "://" + SecuredEndpointHelper.HOSTNAME + "/" + SecuredEndpointHelper.CONTEXT_ROOT + "?tenant=";
+
+    @FindBy(name="tenant")
+    private WebElement tenant;
+
     @FindBy(name="username")
     private WebElement username;
 
@@ -50,6 +55,12 @@ public class LoginPage extends AbstractPage {
 
     public static LoginPage navigateTo(WebDriver driver) {
         driver.get(SecuredEndpointHelper.BASE_URL);
+        return PageFactory.initElements(driver, LoginPage.class);
+    }
+
+    public static LoginPage navigateTo(WebDriver driver, String tenant) {
+        String url = BASE_URL_TENANT + tenant;
+        driver.get(url);
         return PageFactory.initElements(driver, LoginPage.class);
     }
 

@@ -5,13 +5,13 @@ angular.module("app").config(function($routeProvider, $locationProvider) {
     $routeProvider.when('/', {
         //templateUrl: 'login.html',
         templateUrl: 'dlSigninPrompt.html',
-        controller: 'LoginController'
+        controller: 'SigninController'
     });
 
   $routeProvider.when('/login', {
     //templateUrl: 'login.html',
     templateUrl: 'dlSigninPrompt.html',
-    controller: 'LoginController'
+    controller: 'SigninController'
   });
 
   $routeProvider.when('/home', {

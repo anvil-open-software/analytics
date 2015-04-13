@@ -37,14 +37,14 @@ public class LoginPageIT {
 
     @Test
     public void test0010GetLoginPage() {
-        LoginPage loginPage = LoginPage.navigateTo(driver);
+        LoginPage loginPage = LoginPage.navigateTo(driver, "Dematic");
 
         assertEquals(SecuredEndpointHelper.PAGE_TITLE, loginPage.getTitle());
     }
 
     @Test
     public void test0020Login() {
-        LoginPage loginPage = LoginPage.navigateTo(driver);
+        LoginPage loginPage = LoginPage.navigateTo(driver, "Dematic");
 
         HomePage homePage = loginPage.login(SecurityInitializer.INSTANCE_ADMIN_USERNAME,
                 SecurityInitializer.INSTANCE_ADMIN_PASSWORD);
@@ -54,7 +54,7 @@ public class LoginPageIT {
 
     @Test
     public void test0030LoginFailure() {
-        LoginPage loginPage = LoginPage.navigateTo(driver);
+        LoginPage loginPage = LoginPage.navigateTo(driver, "Dematic");
 
         LoginPage failedLoginPage = loginPage.loginExpectingFailure("badUserName",
                 SecurityInitializer.INSTANCE_ADMIN_PASSWORD);
@@ -71,7 +71,7 @@ public class LoginPageIT {
         Matcher<? super List<String>> notVisible = Matchers.containsInAnyOrder("Not Visible");
         Matcher<? super WebElement> serverErrorCss = new HasCssProperty(LoginPage.THICK_RED);
 
-        LoginPage loginPage = LoginPage.navigateTo(driver);
+        LoginPage loginPage = LoginPage.navigateTo(driver, "Dematic");
 
         assertThat(loginPage.getUsername(), defaultCss);
         assertThat(loginPage.getPassword(), defaultCss);
