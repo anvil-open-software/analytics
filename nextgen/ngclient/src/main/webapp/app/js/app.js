@@ -11,7 +11,7 @@ angular.module("app",
 		'SecurityServices'
 	])
 	.constant('iqConstants', {
-		'CONTEXT': 'ngclient'
+		'CONTEXT': 'iq'
 	})
 	.run(function($rootScope) {
 		// adds some basic utilities to the $rootScope for debugging purposes

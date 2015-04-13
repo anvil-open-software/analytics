@@ -77,9 +77,9 @@
                             <artifactId>ngclient</artifactId>
                             <type>war</type>
                             <properties>
-                                <context>ngclient</context>
+                                <context>iq</context>
                             </properties>
-                            <pingURL>http://localhost:8080/ngclient</pingURL>
+                            <pingURL>http://localhost:8080/iq</pingURL>
                             <pingTimeout>60000</pingTimeout>
                         </deployable>
                     </deployables>

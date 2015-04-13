@@ -46,7 +46,7 @@ module.exports = function(lineman) {
                     expand: true,
                     cwd: 'generated/',
                     src: ['**'],
-                    dest: '../../../target/ngclient.war/'
+                    dest: '../../../target/iq/'
                 }]
             }
         },

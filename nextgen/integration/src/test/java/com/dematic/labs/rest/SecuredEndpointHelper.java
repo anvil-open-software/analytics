@@ -30,7 +30,7 @@ public abstract class SecuredEndpointHelper {
 
     public static final String SCHEME = "http";
     public static final String HOSTNAME = "localhost:8080";
-    public static final String CONTEXT_ROOT = "ngclient";
+    public static final String CONTEXT_ROOT = "iq";
     public static final String PAGE_TITLE = "iQ";
     public static final String BASE_URL = SCHEME + "://" + HOSTNAME + "/" + CONTEXT_ROOT + "/";
 
