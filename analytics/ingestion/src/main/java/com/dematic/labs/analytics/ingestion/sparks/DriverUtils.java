@@ -2,6 +2,7 @@ package com.dematic.labs.analytics.ingestion.sparks;
 
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
+import com.dematic.labs.analytics.common.Event;
 import org.apache.spark.SparkConf;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
@@ -16,9 +17,6 @@ import static com.dematic.labs.analytics.common.AWSConnections.getAmazonKinesisC
 
 //todo: nullable/non-nullable
 public final class DriverUtils {
-    // todo: make configurable
-    public static final String SPARKS_APP_NAME = "EventProcessor";
-
     private DriverUtils() {
     }
 
@@ -34,7 +32,7 @@ public final class DriverUtils {
         final int numSparkThreads = getNumberOfShards(awsEndpointUrl, streamName) + 1;
         // Spark config
         final SparkConf configuration = new SparkConf().
-                setAppName(SPARKS_APP_NAME).setMaster("local[" + numSparkThreads + "]");
+                setAppName(Event.TABLE_NAME).setMaster("local[" + numSparkThreads + "]");
         return new JavaStreamingContext(configuration, pollTime);
     }
 

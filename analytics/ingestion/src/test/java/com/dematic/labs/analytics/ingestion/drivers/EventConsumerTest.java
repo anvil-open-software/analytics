@@ -6,7 +6,6 @@ import com.amazonaws.services.dynamodbv2.model.TableStatus;
 import com.dematic.labs.analytics.common.Event;
 import com.dematic.labs.analytics.common.SystemPropertyRule;
 import com.dematic.labs.analytics.common.kinesis.KinesisStreamRule;
-import com.dematic.labs.analytics.ingestion.sparks.DriverUtils;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.EventConsumer;
 import com.jayway.awaitility.Awaitility;
 import org.junit.After;
@@ -47,15 +46,13 @@ public final class EventConsumerTest {
             final String[] driverProperties = {kinesisEndpoint, kinesisInputStream, dynamoDBEndpoint};
             EventConsumer.main(driverProperties);
         });
-        // ensure kinesis stream and dynamo table exist
+        // ensure dynamo table exist, gets created by the driver
         // set the defaults
         Awaitility.setDefaultTimeout(3, TimeUnit.MINUTES);
         // now poll
         Awaitility.with().pollInterval(2, TimeUnit.SECONDS).and().with().
                 pollDelay(1, TimeUnit.MINUTES).await().
-                until(() -> assertTrue("ACTIVE".equals(
-                        getAmazonKinesisClient(kinesisEndpoint).describeStream(kinesisInputStream).
-                                getStreamDescription().getStreamStatus()) &&
+                until(() -> assertTrue(
                         TableStatus.ACTIVE.name().equals(getTableStatus(getAmazonDynamoDBClient(dynamoDBEndpoint),
                                 Event.TABLE_NAME).name())));
 
@@ -73,7 +70,5 @@ public final class EventConsumerTest {
     public void tearDown() {
         // delete the dynamo db event table
         deleteTable(getAmazonDynamoDBClient(System.getProperty("dynamoDBEndpoint")), Event.TABLE_NAME);
-        // delete the dynamo db lease table created using spark's streaming, the lease table is always within the east region
-        deleteTable(getAmazonDynamoDBClient("https://dynamodb.us-east-1.amazonaws.com"), DriverUtils.SPARKS_APP_NAME);
     }
 }
