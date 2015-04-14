@@ -1,5 +1,4 @@
-#idea
-.idea
-*.iml
-#maven
-target/
+admin/overlays/
+ngclient/src/main/webapp/generated/
+ngclient/src/main/webapp/dist/
+
