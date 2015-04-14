@@ -23,7 +23,7 @@ public class Organization extends OwnedAssetEntity {
     private Map<BusinessRole, OrganizationBusinessRole> businessRoles = new HashMap<>();
 
     @SuppressWarnings("UnusedDeclaration")
-    Organization() {
+    protected Organization() {
         super();
     }
 

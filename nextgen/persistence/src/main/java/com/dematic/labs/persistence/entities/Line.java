@@ -26,7 +26,7 @@ public class Line extends OwnedAssetEntity {
     private String name;
 
     @SuppressWarnings("UnusedDeclaration")
-    Line() {
+    protected Line() {
         super();
     }
 

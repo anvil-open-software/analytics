@@ -1,8 +1,13 @@
 package com.dematic.labs.persistence.entities;
 
+import org.joda.time.DateTimeZone;
+import org.joda.time.LocalDate;
+
 import javax.annotation.Nonnull;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
+import java.sql.Date;
 import java.util.*;
 
 @Entity(name = "document")
@@ -10,8 +15,8 @@ import java.util.*;
 public class Document extends OwnedAssetEntity {
 
     @NotNull(message = "Document Name may not be null")
+    @Size(min = 1, message = "Document Name may not be empty")
     @Column(length = 60)
-
     private String name;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "document")
@@ -23,8 +28,11 @@ public class Document extends OwnedAssetEntity {
     @JoinColumn(name = "documentId", nullable = false)
     Set<DocumentOrganization> organizations = new HashSet<>();
 
+    @Column
+    private Date bookedOn;
+
     @SuppressWarnings("UnusedDeclaration")
-    Document() {
+    protected Document() {
         super();
     }
 
@@ -113,5 +121,14 @@ public class Document extends OwnedAssetEntity {
 
     public void clearOrganizations() {
         organizations.clear();
+    }
+
+    public void setBookedOn(@Nonnull LocalDate bookedOn) {
+        this.bookedOn = new Date(bookedOn.toDateTimeAtStartOfDay(DateTimeZone.UTC).getMillis());
+    }
+
+    @Nonnull
+    public LocalDate getBookedOn() {
+        return new LocalDate(bookedOn, DateTimeZone.UTC);
     }
 }

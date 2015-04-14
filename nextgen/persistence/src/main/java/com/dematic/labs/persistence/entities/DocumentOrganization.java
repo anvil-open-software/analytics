@@ -18,7 +18,7 @@ public class DocumentOrganization extends IdentifiableEntity {
     private BusinessRole businessRole;
 
     @SuppressWarnings("UnusedDeclaration")
-    DocumentOrganization() {
+    protected DocumentOrganization() {
         super();
     }
 

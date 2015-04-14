@@ -7,15 +7,21 @@ import com.dematic.labs.persistence.MySql;
 import com.dematic.labs.picketlink.RealmSelector;
 import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.hibernate.exception.ConstraintViolationException;
+import org.joda.time.DateTimeUtils;
+import org.joda.time.LocalDate;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.picketlink.idm.model.basic.Realm;
 
+import java.time.Duration;
 import java.util.UUID;
 
-import static junit.framework.TestCase.*;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -49,14 +55,45 @@ public class DocumentTest {
 
         document.setName("SO-0000001");
 
+//        LocalDate bookedOn = new LocalDate();
+//        document.setBookedOn(bookedOn);
+
         crudService.create(document);
         assertNotNull(document.getId());
 
         jpaRule.changeTransaction();
+        jpaRule.getEntityManager().clear();
 
         Document documentFromDb = crudService.findExisting(Document.class, document.getId());
         assertEquals(document.getId(), documentFromDb.getId());
         assertEquals("SO-0000001", documentFromDb.getName());
+//        assertEquals(bookedOn, documentFromDb.getBookedOn());
+    }
+
+    @Ignore
+    @Test
+    public void testSaveDateWrtTimezones() {
+
+        for (int i=0; i<24; i++) {
+            DateTimeUtils.setCurrentMillisOffset(Duration.ofHours(i).toMillis());
+            Document document = crudService.createNewOwnedAsset(Document.class);
+            assertNull(document.getId());
+            assertEquals(tenantId, document.getTenantId());
+
+            document.setName("SO-000000" + i);
+            LocalDate bookedOn = new LocalDate();
+
+            document.setBookedOn(bookedOn);
+
+            crudService.create(document);
+
+            jpaRule.changeTransaction();
+            jpaRule.getEntityManager().clear();
+
+            Document documentFromDb = crudService.findExisting(Document.class, document.getId());
+            assertEquals(bookedOn, documentFromDb.getBookedOn());
+        }
+        DateTimeUtils.setCurrentMillisOffset(0);
     }
 
     @Test
@@ -164,6 +201,16 @@ public class DocumentTest {
 
         expectedException.expect(new ConstraintViolationMatcher("Document Name may not be null",
                 "Tenant ID may not be null"));
+        crudService.create(document);
+    }
+
+    @Test
+    public void testConstraintViolationsBlankName() {
+
+        Document document = crudService.createNewOwnedAsset(Document.class);
+        document.setName("");
+
+        expectedException.expect(new ConstraintViolationMatcher("Document Name may not be empty"));
         crudService.create(document);
     }
 
