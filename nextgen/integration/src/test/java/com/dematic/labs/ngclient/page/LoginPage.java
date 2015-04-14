@@ -94,7 +94,7 @@ public class LoginPage extends AbstractPage {
 
     public LoginPage loginExpectingFailure(String tenant, String username, String password) {
 
-        performEntryAndSubmit(username, password);
+        performEntryAndSubmit(tenant, username, password);
 
         new WebDriverWait(driver, 2).until(ExpectedConditions
                 .visibilityOfElementLocated(By.xpath("//div[@name='server-errors']")));
