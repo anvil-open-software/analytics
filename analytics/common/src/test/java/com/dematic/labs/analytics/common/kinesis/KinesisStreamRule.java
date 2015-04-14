@@ -3,11 +3,14 @@ package com.dematic.labs.analytics.common.kinesis;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.model.PutRecordRequest;
+import com.amazonaws.services.kinesis.model.PutRecordResult;
 import com.dematic.labs.analytics.common.Event;
 import com.dematic.labs.analytics.common.kinesis.consumer.EventToByteArrayTransformer;
 import com.jayway.awaitility.Awaitility;
 import org.joda.time.DateTime;
 import org.junit.rules.ExternalResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -18,6 +21,8 @@ import static com.dematic.labs.analytics.common.AWSConnections.*;
 import static org.junit.Assert.assertTrue;
 
 public final class KinesisStreamRule extends ExternalResource {
+    private static final Logger LOGGER = LoggerFactory.getLogger(KinesisStreamRule.class);
+
     @Override
     protected void before() throws Throwable {
         final String kinesisEndpoint = System.getProperty("kinesisEndpoint");
@@ -38,15 +43,19 @@ public final class KinesisStreamRule extends ExternalResource {
         final String kinesisEndpoint = System.getProperty("kinesisEndpoint");
         final String kinesisInputStream = System.getProperty("kinesisInputStream");
         final AmazonKinesisClient kinesisClient = getAmazonKinesisClient(kinesisEndpoint);
-        // delete the stream
-        deleteKinesisStream(kinesisClient, kinesisInputStream);
-        // ensure stream removed
-        // set the defaults
-        Awaitility.setDefaultTimeout(3, TimeUnit.MINUTES);
-        // now poll
-        Awaitility.with().pollInterval(2, TimeUnit.SECONDS).and().with().
-                pollDelay(30, TimeUnit.SECONDS).await().
-                until(() -> assertTrue(!kinesisStreamsExist(kinesisClient, kinesisInputStream)));
+        try {
+            // delete the stream
+            deleteKinesisStream(kinesisClient, kinesisInputStream);
+            // ensure stream removed
+            // set the defaults
+            Awaitility.setDefaultTimeout(3, TimeUnit.MINUTES);
+            // now poll
+            Awaitility.with().pollInterval(2, TimeUnit.SECONDS).and().with().
+                    pollDelay(30, TimeUnit.SECONDS).await().
+                    until(() -> assertTrue(!kinesisStreamsExist(kinesisClient, kinesisInputStream)));
+        } catch (final Throwable any) {
+            LOGGER.error(String.format("error deleting stream >%s<",kinesisInputStream), any);
+        }
         // delete the dynamo db lease table created using spark's streaming, the lease table is always within the east region
         final AmazonDynamoDBClient dynamoDBClient = getAmazonDynamoDBClient("https://dynamodb.us-east-1.amazonaws.com");
         // todo: make table configurable
@@ -69,7 +78,8 @@ public final class KinesisStreamRule extends ExternalResource {
             putRecordRequest.setData(ByteBuffer.wrap(new EventToByteArrayTransformer().fromClass(event)));
             // partition key = which shard to send the request,
             putRecordRequest.setPartitionKey("1");
-            getAmazonKinesisClient(kinesisEndpoint).putRecord(putRecordRequest);
+            final PutRecordResult putRecordResult = getAmazonKinesisClient(kinesisEndpoint).putRecord(putRecordRequest);
+            LOGGER.info("pushed event >{}< : status: {}", event.getEventId(), putRecordResult.toString());
         }
     }
 }

@@ -60,7 +60,7 @@ public final class EventConsumerTest {
         kinesisStreamRule.generateEventsAndPush(EVENT_COUNT);
         // poll dynamoDB table and ensure all events received
         Awaitility.with().pollInterval(10, TimeUnit.SECONDS).and().with().
-                pollDelay(1, TimeUnit.MINUTES).await().
+                pollDelay(30, TimeUnit.SECONDS).await().
                 until(() -> assertTrue(new DynamoDBMapper(
                         getAmazonDynamoDBClient(dynamoDBEndpoint)).scan(Event.class,
                         new DynamoDBScanExpression()).size() == EVENT_COUNT));

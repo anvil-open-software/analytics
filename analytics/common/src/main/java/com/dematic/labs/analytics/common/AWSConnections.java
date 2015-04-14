@@ -42,7 +42,7 @@ public final class AWSConnections {
         try {
             kinesisClient.describeStream(kinesisStream);
             return true;
-        } catch (final ResourceNotFoundException ignore) {
+        } catch (final Throwable ignore) {
            return false;
         }
     }
@@ -87,7 +87,7 @@ public final class AWSConnections {
         try {
             dynamoDBClient.describeTable(describeTableRequest);
             return true;
-        } catch (ResourceNotFoundException ignore) {
+        } catch (Throwable ignore) {
             return false;
         }
     }
