@@ -4,7 +4,6 @@ import com.dematic.labs.ngclient.page.HasCssProperty;
 import com.dematic.labs.ngclient.page.HomePage;
 import com.dematic.labs.ngclient.page.LoginPage;
 import com.dematic.labs.picketlink.SecurityInitializer;
-import com.dematic.labs.rest.SecuredEndpointHelper;
 import com.google.common.base.Predicate;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
@@ -27,6 +26,7 @@ import static org.junit.Assert.assertThat;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LoginPageIT {
 
+    private static final String PAGE_TITLE = "iQ";
     private static WebDriver driver;
 
     @BeforeClass
@@ -39,7 +39,7 @@ public class LoginPageIT {
     public void test0010GetLoginPage() {
         LoginPage loginPage = LoginPage.navigateTo(driver, "Dematic");
 
-        assertEquals(SecuredEndpointHelper.PAGE_TITLE, loginPage.getTitle());
+        assertEquals(PAGE_TITLE, loginPage.getTitle());
     }
 
     @Test
