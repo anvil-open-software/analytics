@@ -58,10 +58,11 @@ public final class EventConsumer {
                     if (rdd.count() > 0) {
                         // todo: batch save
                         final List<String> events = rdd.collect();
-                        for (final String event : events) {
-                            dynamoDBMapper.save(EventUtils.jsonToEvent(event));
+                        for (final String json : events) {
+                            final Event event = EventUtils.jsonToEvent(json);
+                            dynamoDBMapper.save(event);
+                            LOGGER.info("saved event >{}<", event.getEventId());
                         }
-
                     }
                     return null;
                 }
