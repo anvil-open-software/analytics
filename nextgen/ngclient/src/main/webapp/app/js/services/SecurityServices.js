@@ -128,8 +128,8 @@ angular.module("SecurityServices")
         return service;
     }
 )
-.factory('SignRequestInterceptor', ['$location', 'StringToSign', 'SecurityToken', 'DLabsDate',
-    function($location, StringToSign, SecurityToken, DLabsDate) {
+.factory('SignRequestInterceptor', ['$rootScope', '$q', '$location', 'StringToSign', 'SecurityToken', 'DLabsDate',
+    function($rootScope, $q, $location, StringToSign, SecurityToken, DLabsDate) {
         var signRequestInterceptor = {
             request: function(config) {
                 var stringToSign,
@@ -146,7 +146,11 @@ angular.module("SecurityServices")
                 if (typeof config === null || typeof config !== 'object') {return config;}
                 if (!config.hasOwnProperty('url')) {return config;}
                 if (config['url'].indexOf('resources') !== 0) {return config;}
-                if (config['url'].indexOf('resources/token') === 0) {return config;}
+                if (config['url'].indexOf('resources/token') === 0) {
+                    // This is an user authentication request
+                    $rootScope.$broadcast('dl-authentication-start');
+                    return config;
+                }
 
                 // Add the x-dlabs-date custom header. This is being done to ensure
                 // that the date is formatted as specified in DLABS-84
@@ -185,7 +189,31 @@ angular.module("SecurityServices")
                 return config;
             },
             response: function(config) {
+                $rootScope.$broadcast('dl-authentication-end');
                 return config;
+            },
+            responseError: function(rejection) {
+                $rootScope.$broadcast('dl-authentication-end');
+                if (rejection.status === 401) {
+                    // Return a new promise. This is a mechanism to offer the user
+                    // the opportunity to login in and have the failed request
+                    // to be resubmitted. This is not supported now
+                    /*
+                    return userService.authenticate().then(function() {
+                        return $injector.get('$http')(rejection.config);
+                    });
+                    */
+
+                    // For now we will issue an dl-unauthorized-event and preserve
+                    // the login page
+                    //$location.path('/login');
+                    $rootScope.$broadcast('dl-unauthorized-event');
+                }
+
+                /* If not a 401, do nothing with this error.
+                 * This is necessary to make a `responseError`
+                 * interceptor a no-op. */
+                return $q.reject(rejection);
             }
         };
         return signRequestInterceptor;

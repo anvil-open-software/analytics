@@ -36,8 +36,9 @@ public class CrudService {
     public CrudService() {
     }
 
-    public CrudService(@NotNull EntityManager entityManager) {
+    public CrudService(@NotNull EntityManager entityManager, @NotNull RealmSelector realmSelector) {
         this.entityManager = entityManager;
+        this.realmSelector = realmSelector;
     }
 
     @NotNull

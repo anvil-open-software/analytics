@@ -1,30 +1,21 @@
 <div id="home" class="row">
-    <div class="large-6 large-offset-3">
+    <div class="col-md-6">
         <h3 id="hello">Hello {{authenticatedUser.token}} from {{authenticatedUser.realm}}</h3>
         <h3 id="welcome">Welcome to the {{ title }} page!</h3>
-        <div class="alert-box">{{ message }}</div>
 
         <div style="margin-left: 30px;">
-            <!--a href="#" ng-click="showDetails = ! showDetails">Show Tenants</a-->
             <a id='tenant-click' href="#" ng-click="showTenants($event)">Show Tenants</a>
             <ul id='tenants' ng-show="showDetails">
                 <li id='tenant-{{$index}}' ng-repeat="tenant in tenants.items">{{tenant.name}}</li>
             </ul>
         </div>
 
-        <ul class="small-block-grid-2">
-            <li>
-                <img class="th" src="img/pic_1.png" shows-message-when-hovered message="Im the Dematic Log.">
-            </li>
-            <li>
-                <img class="th" src="img/pic_2.png" shows-message-when-hovered message="Im the Dematic multishuttle.">
-            </li>
-        </ul>
-
-        <div class="row">
-            <div class="large-12 columns">
-                <button id='logout' ng-click="logout()" class="button large expand radius">Log Out</button>
-            </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div style="margin-left: 30px;">
+            <button id='logout' ng-click="logout()" class="button large expand radius">Log Out</button>
         </div>
     </div>
 </div>

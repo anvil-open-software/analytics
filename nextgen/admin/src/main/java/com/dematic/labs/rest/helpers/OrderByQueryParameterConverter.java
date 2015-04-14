@@ -1,7 +1,7 @@
 package com.dematic.labs.rest.helpers;
 
 import com.dematic.labs.persistence.query.QueryParameters.ColumnSort;
-import com.dematic.labs.persistence.entities.SortDirection;
+import com.dematic.labs.persistence.query.SortDirection;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

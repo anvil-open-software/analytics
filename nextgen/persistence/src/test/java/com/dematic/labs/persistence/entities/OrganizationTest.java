@@ -3,6 +3,10 @@ package com.dematic.labs.persistence.entities;
 import com.dematic.labs.matchers.ConstraintViolationMatcher;
 import com.dematic.labs.persistence.EmbeddedH2;
 import com.dematic.labs.persistence.JpaRule;
+import com.dematic.labs.persistence.query.QueryParameters;
+import com.dematic.labs.persistence.query.QueryParametersHelper;
+import com.dematic.labs.persistence.query.SortDirection;
+import com.dematic.labs.picketlink.RealmSelector;
 import org.h2.jdbc.JdbcSQLException;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
@@ -11,7 +15,10 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.picketlink.idm.model.basic.Realm;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -20,6 +27,8 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class OrganizationTest {
 
@@ -33,15 +42,20 @@ public class OrganizationTest {
 
     @Before
     public void setUp() throws Exception {
-        crudService = new CrudService(jpaRule.getEntityManager());
+        Realm realm = new Realm();
+        realm.setId(UUID.randomUUID().toString());
+        realm.setName("dummy");
+        RealmSelector realmSelector = mock(RealmSelector.class);
+        when(realmSelector.select()).thenReturn(realm);
+        crudService = new CrudService(jpaRule.getEntityManager(), realmSelector);
     }
 
     @Test
     public void testSave() {
 
-        UUID tenantId = UUID.randomUUID();
-
-        Organization organization = new Organization(tenantId);
+//        UUID tenantId = UUID.randomUUID();
+//        Organization organization = new Organization(tenantId);
+        Organization organization = crudService.createNewOwnedAsset(Organization.class);
         assertNull(organization.getId());
 
         organization.setName("Fred");
@@ -139,6 +153,7 @@ public class OrganizationTest {
                     "Unique index or primary key violation: \"ORGANIZATION_U2"));
             crudService.create(organization);
         }
+
     }
 
     @Test
@@ -179,6 +194,55 @@ public class OrganizationTest {
 
         expectedException.expect(new ConstraintViolationMatcher("Organization Name may not be null", "Tenant ID may not be null"));
         crudService.create(organization);
+    }
+
+    @Test
+    public void testCreateQuery() {
+
+        List<QueryParameters.ColumnSort> columnSortList = new ArrayList<>();
+        columnSortList.add(new QueryParameters.ColumnSort("name", SortDirection.DESC));
+        QueryParameters queryParameters = new QueryParameters(0, QueryParameters.DEFAULT_LIMIT, columnSortList);
+        QueryParametersHelper.convertPropertyStringsToQueryPaths(queryParameters, QOrganization.organization);
+
+
+        crudService.createQuery(queryParameters, QOrganization.organization);
+
+    }
+
+    @Test
+    public void testCreateQueryUnknownSortColumnName() {
+
+        List<QueryParameters.ColumnSort> columnSortList = new ArrayList<>();
+        columnSortList.add(new QueryParameters.ColumnSort("bad", SortDirection.DESC));
+        QueryParameters queryParameters = new QueryParameters(0, QueryParameters.DEFAULT_LIMIT, columnSortList);
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("Unknown Property name");
+        QueryParametersHelper.convertPropertyStringsToQueryPaths(queryParameters, QOrganization.organization);
+    }
+
+    @Test
+    public void testCreateQueryNonComparableSortColumnName() {
+
+        List<QueryParameters.ColumnSort> columnSortList = new ArrayList<>();
+        columnSortList.add(new QueryParameters.ColumnSort("businessRoles", SortDirection.DESC));
+        QueryParameters queryParameters = new QueryParameters(0, QueryParameters.DEFAULT_LIMIT, columnSortList);
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("isn't valid for sorting (doesn't implement Comparable)");
+        QueryParametersHelper.convertPropertyStringsToQueryPaths(queryParameters, QOrganization.organization);
+    }
+
+    @Test
+    public void testCreateQueryNonAccessibleSortColumnName() {
+
+        List<QueryParameters.ColumnSort> columnSortList = new ArrayList<>();
+        columnSortList.add(new QueryParameters.ColumnSort("serialVersionUID", SortDirection.DESC));
+        QueryParameters queryParameters = new QueryParameters(0, QueryParameters.DEFAULT_LIMIT, columnSortList);
+
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("isn't accessible");
+        QueryParametersHelper.convertPropertyStringsToQueryPaths(queryParameters, QOrganization.organization);
     }
 
     private class HibernateWrappedCauseMatcher extends TypeSafeMatcher<Throwable> {

@@ -1,6 +1,5 @@
 package com.dematic.labs.persistence.query;
 
-import com.dematic.labs.persistence.entities.SortDirection;
 import com.mysema.query.types.Order;
 import com.mysema.query.types.Path;
 import com.mysema.query.types.path.EntityPathBase;
@@ -25,7 +24,9 @@ public class QueryParametersHelper {
                         propertyField = (Path<? extends Comparable>) field.get(entityPathBase);
                         break;
                     } catch (IllegalAccessException e) {
-                        e.printStackTrace();
+                        throw new IllegalArgumentException(
+                                String.format("Property [%s] isn't accessible.",
+                                columnSort.getPropertyName()));
                     } catch (ClassCastException cce) {
                         throw new IllegalArgumentException("Property isn't a Path");
                     }

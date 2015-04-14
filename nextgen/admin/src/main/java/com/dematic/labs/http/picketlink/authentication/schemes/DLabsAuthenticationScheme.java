@@ -124,7 +124,8 @@ public class DLabsAuthenticationScheme implements HttpAuthenticationScheme<Basic
     public void challengeClient(HttpServletRequest request, HttpServletResponse response) {
 
         try {
-            response.setHeader("WWW-Authenticate", "Basic realm=\"" + this.realm + "\"");
+            //response.setHeader("WWW-Authenticate", "Basic realm=\"" + this.realm + "\"");
+            response.setHeader("WWW-Authenticate", "XXXXX realm=\"" + this.realm + "\"");
 
             // this usually means we have a failing authentication request from an ajax client. so we return SC_FORBIDDEN instead.
             // this is a workaround to avoid browsers to popup an authentication dialog when authentication via ajax.
