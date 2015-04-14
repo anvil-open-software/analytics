@@ -6,7 +6,12 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.model.*;
+import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+import com.amazonaws.services.dynamodbv2.model.DescribeTableRequest;
+import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
+import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
+import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
+import com.amazonaws.services.dynamodbv2.model.TableStatus;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
 import org.slf4j.Logger;
@@ -14,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import samples.utils.DynamoDBUtils;
 import samples.utils.KinesisUtils;
 
-import java.util.List;
 import java.util.Properties;
 
 import static com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration.*;
@@ -90,12 +94,8 @@ public final class AWSConnections {
         final CreateTableRequest createTableRequest = dynamoDBMapper.generateCreateTableRequest(clazz);
         final String tableName = createTableRequest.getTableName();
         if (tableExists(dynamoDBClient, tableName)) {
-            if (tableHasCorrectSchema(dynamoDBClient, tableName, createTableRequest.getKeySchema().get(0).toString())) {
-                waitForActive(dynamoDBClient, tableName);
-                return;
-            } else {
-                throw new IllegalStateException("Table already exists and schema does not match");
-            }
+            waitForActive(dynamoDBClient, tableName);
+            return;
         }
         try {
             // just using default read/write provisioning, will need to use a service to monitor and scale accordingly
@@ -152,39 +152,6 @@ public final class AWSConnections {
         final DescribeTableResult describeTableResult = dynamoDBClient.describeTable(describeTableRequest);
         final String status = describeTableResult.getTable().getTableStatus();
         return TableStatus.fromValue(status);
-    }
-
-    private static boolean tableHasCorrectSchema(final AmazonDynamoDBClient dynamoDBClient, final String tableName,
-                                                 final String key) {
-        final DescribeTableRequest describeTableRequest = new DescribeTableRequest();
-        describeTableRequest.setTableName(tableName);
-        final DescribeTableResult describeTableResult = dynamoDBClient.describeTable(describeTableRequest);
-        final TableDescription tableDescription = describeTableResult.getTable();
-        if (tableDescription.getAttributeDefinitions().size() != 1) {
-            LOGGER.error("The number of attribute definitions does not match the existing table.");
-            return false;
-        }
-
-        final AttributeDefinition attributeDefinition = tableDescription.getAttributeDefinitions().get(0);
-        if (!attributeDefinition.getAttributeName().equals(key)
-                || !attributeDefinition.getAttributeType().equals(ScalarAttributeType.S.toString())) {
-            LOGGER.error("Attribute name or type does not match existing table.");
-            return false;
-        }
-
-        final List<KeySchemaElement> keySchemaElements = tableDescription.getKeySchema();
-        if (keySchemaElements.size() != 1) {
-            LOGGER.error("The number of key schema elements does not match the existing table.");
-            return false;
-        }
-
-        final KeySchemaElement keySchemaElement = keySchemaElements.get(0);
-        if (!keySchemaElement.getAttributeName().equals(key) ||
-                !keySchemaElement.getKeyType().equals(KeyType.HASH.toString())) {
-            LOGGER.error("The hash key does not match the existing table.");
-            return false;
-        }
-        return true;
     }
 
     private static String getAppName() {
