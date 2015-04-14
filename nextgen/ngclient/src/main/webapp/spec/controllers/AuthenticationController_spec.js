@@ -48,7 +48,8 @@ describe("controller: SigninController ($httpBackend.expect().respond, vanilla j
                 SecurityToken: securityToken
             });
             expect(scope.credentials.tenant).toBeNull();
-            expect(scope.tenantReadonly).toBeFalsy();
+            expect(scope.hasOwnProperty('urlHasTenant')).toBe(true);
+            expect(scope.urlHasTenant).toBeFalsy();
         });
         it("as 'Dematic' when routeParams.tenant is Dematic", function() {
             var ctrlr = controller ('SigninController', {
@@ -60,7 +61,8 @@ describe("controller: SigninController ($httpBackend.expect().respond, vanilla j
                 SecurityToken: securityToken
             });
             expect(scope.credentials.tenant).toBe('Dematic');
-            expect(scope.tenantReadonly).toBeTruthy();
+            expect(scope.hasOwnProperty('urlHasTenant')).toBe(true);
+            expect(scope.urlHasTenant).toBeTruthy();
         });
     });
 });
