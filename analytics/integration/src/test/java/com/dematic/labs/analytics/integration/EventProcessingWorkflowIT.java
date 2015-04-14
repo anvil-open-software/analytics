@@ -1,6 +1,5 @@
 package com.dematic.labs.analytics.integration;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.connectors.KinesisConnectorConfiguration;
 import com.amazonaws.services.kinesis.model.DescribeStreamResult;
@@ -22,7 +21,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.dematic.labs.analytics.common.AWSConnections.getAWSCredentialsProvider;
+import static com.dematic.labs.analytics.common.AWSConnections.getAmazonDynamoDBClient;
 import static org.junit.Assert.assertEquals;
 import static samples.utils.DynamoDBUtils.deleteTable;
 
@@ -85,6 +84,6 @@ public final class EventProcessingWorkflowIT {
     @After
     public void tearDown() {
         // delete the dynamo db lease table created using spark's streaming, the lease table is always within the east region
-        deleteTable(new AmazonDynamoDBClient(getAWSCredentialsProvider()), DriverUtils.SPARKS_APP_NAME);
+        deleteTable(getAmazonDynamoDBClient("https://dynamodb.us-east-1.amazonaws.com"), DriverUtils.SPARKS_APP_NAME);
     }
 }

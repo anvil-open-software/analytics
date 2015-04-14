@@ -108,7 +108,7 @@ public final class AWSConnections {
         waitForActive(dynamoDBClient, tableName);
     }
 
-    private static boolean tableExists(final AmazonDynamoDBClient dynamoDBClient, final String tableName) {
+    public static boolean tableExists(final AmazonDynamoDBClient dynamoDBClient, final String tableName) {
         DescribeTableRequest describeTableRequest = new DescribeTableRequest();
         describeTableRequest.setTableName(tableName);
         try {
@@ -146,7 +146,7 @@ public final class AWSConnections {
         }
     }
 
-    private static TableStatus getTableStatus(final AmazonDynamoDBClient dynamoDBClient, final String tableName) {
+    public static TableStatus getTableStatus(final AmazonDynamoDBClient dynamoDBClient, final String tableName) {
         final DescribeTableRequest describeTableRequest = new DescribeTableRequest();
         describeTableRequest.setTableName(tableName);
         final DescribeTableResult describeTableResult = dynamoDBClient.describeTable(describeTableRequest);
