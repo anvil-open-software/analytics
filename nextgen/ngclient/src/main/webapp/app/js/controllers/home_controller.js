@@ -13,7 +13,7 @@ angular.module('Authentication')
         $scope.showDetails = false;
 
         var onLogoutSuccess = function (response) {
-            $location.path('/login');
+            $location.path('/');
         };
 
         $scope.showTenants = function(event) {
