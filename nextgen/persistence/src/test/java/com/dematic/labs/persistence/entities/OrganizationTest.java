@@ -1,6 +1,7 @@
 package com.dematic.labs.persistence.entities;
 
 import com.dematic.labs.matchers.ConstraintViolationMatcher;
+import com.dematic.labs.matchers.HibernateWrappedCauseMatcher;
 import com.dematic.labs.persistence.EmbeddedH2;
 import com.dematic.labs.persistence.JpaRule;
 import com.dematic.labs.persistence.query.QueryParameters;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
 
 public class OrganizationTest {
 
+    private final UUID tenantId = UUID.randomUUID();
     private CrudService crudService;
 
     @Rule
@@ -43,7 +45,7 @@ public class OrganizationTest {
     @Before
     public void setUp() throws Exception {
         Realm realm = new Realm();
-        realm.setId(UUID.randomUUID().toString());
+        realm.setId(tenantId.toString());
         realm.setName("dummy");
         RealmSelector realmSelector = mock(RealmSelector.class);
         when(realmSelector.select()).thenReturn(realm);
@@ -53,10 +55,9 @@ public class OrganizationTest {
     @Test
     public void testSave() {
 
-//        UUID tenantId = UUID.randomUUID();
-//        Organization organization = new Organization(tenantId);
         Organization organization = crudService.createNewOwnedAsset(Organization.class);
         assertNull(organization.getId());
+        assertEquals(tenantId, organization.getTenantId());
 
         organization.setName("Fred");
         organization.addBusinessRole(BusinessRole.CUSTOMER, true);
@@ -83,9 +84,7 @@ public class OrganizationTest {
         //create organization
         Organization organizationFromDb;
         {
-            UUID tenantId = UUID.randomUUID();
-
-            Organization organization = new Organization(tenantId);
+            Organization organization = crudService.createNewOwnedAsset(Organization.class);
             assertNull(organization.getId());
 
             organization.setName("Fred");
@@ -126,11 +125,9 @@ public class OrganizationTest {
     @Test
     public void testUniqueWithinTenant() {
 
-        UUID tenantId = UUID.randomUUID();
-
         //save first one
         {
-            Organization organization = new Organization(tenantId);
+            Organization organization = crudService.createNewOwnedAsset(Organization.class);
             assertNull(organization.getId());
 
             organization.setName("Fred");
@@ -143,7 +140,7 @@ public class OrganizationTest {
 
         //attempt saving duplicate
         {
-            Organization organization = new Organization(tenantId);
+            Organization organization = crudService.createNewOwnedAsset(Organization.class);
             assertNull(organization.getId());
 
             organization.setName("Fred");
@@ -243,35 +240,6 @@ public class OrganizationTest {
         expectedException.expect(IllegalArgumentException.class);
         expectedException.expectMessage("isn't accessible");
         QueryParametersHelper.convertPropertyStringsToQueryPaths(queryParameters, QOrganization.organization);
-    }
-
-    private class HibernateWrappedCauseMatcher extends TypeSafeMatcher<Throwable> {
-
-        private final Class<? extends Throwable> type, cause;
-        private final String expectedMessage;
-
-        public HibernateWrappedCauseMatcher(Class<? extends Throwable> type, Class<? extends Throwable> cause, String expectedMessage) {
-            this.type = type;
-            this.cause = cause;
-            this.expectedMessage = expectedMessage;
-        }
-
-        @Override
-        protected boolean matchesSafely(Throwable item) {
-            return item.getClass().isAssignableFrom(type)
-                    && item.getCause().getClass().isAssignableFrom(cause)
-                    && item.getCause().getMessage().contains(expectedMessage);
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText("expects type ")
-                    .appendValue(type)
-                    .appendText(" expects cause ")
-                    .appendValue(cause)
-                    .appendText(" and a message ")
-                    .appendValue(expectedMessage);
-        }
     }
 
     private class OrganizationBusinessRoleMatcher extends TypeSafeMatcher<OrganizationBusinessRole> {

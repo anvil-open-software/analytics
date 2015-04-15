@@ -31,10 +31,15 @@ module.exports = function(lineman) {
         options: {
           paths: [
             "vendor/css/**/*.css",
+            "vendor/components/font-awesome/css/*.css",
             "app/css/**/*.less"
           ]
         }
       }
+    },
+
+    webfonts: {
+      root: "fonts"
     }
   };
 };
