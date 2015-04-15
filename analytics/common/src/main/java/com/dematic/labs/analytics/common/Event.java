@@ -1,5 +1,10 @@
 package com.dematic.labs.analytics.common;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMarshalling;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 import org.joda.time.ReadableInstant;
 
 import java.util.UUID;
@@ -8,7 +13,10 @@ import java.util.UUID;
  * Event needs to be defined,
  */
 @SuppressWarnings("UnusedDeclaration")
+@DynamoDBTable(tableName = Event.TABLE_NAME)
 public final class Event {
+    public static final String TABLE_NAME = "Events";
+
     private UUID eventId;
     private int nodeId; // node 1 - 5
     private int jobId; // job 1 - 9
@@ -26,6 +34,8 @@ public final class Event {
         this.value = value;
     }
 
+    @DynamoDBMarshalling(marshallerClass = UUIDMarshaller.class)
+    @DynamoDBHashKey(attributeName="id")
     public UUID getEventId() {
         return eventId;
     }
@@ -34,6 +44,7 @@ public final class Event {
         this.eventId = eventId;
     }
 
+    @DynamoDBAttribute
     public int getNodeId() {
         return nodeId;
     }
@@ -42,6 +53,7 @@ public final class Event {
         this.nodeId = nodeId;
     }
 
+    @DynamoDBAttribute
     public int getJobId() {
         return jobId;
     }
@@ -50,6 +62,8 @@ public final class Event {
         this.jobId = jobId;
     }
 
+    @DynamoDBMarshalling(marshallerClass = ReadableInstantMarshaller.class)
+    @DynamoDBRangeKey
     public ReadableInstant getTimestamp() {
         return timestamp;
     }
@@ -58,6 +72,7 @@ public final class Event {
         this.timestamp = timestamp;
     }
 
+    @DynamoDBAttribute
     public double getValue() {
         return value;
     }
