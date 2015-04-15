@@ -14,6 +14,10 @@ public abstract class IdentifiableEntity {
     @Column(length = 36)
     private String id;
 
+    @SuppressWarnings("unused")
+    @Version
+    private int version;
+
     public UUID getId() {
         if (id == null) {
             return null;
@@ -21,4 +25,7 @@ public abstract class IdentifiableEntity {
         return UUID.fromString(id);
     }
 
+    public int getVersion() {
+        return version;
+    }
 }

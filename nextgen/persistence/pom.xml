@@ -33,6 +33,11 @@
             <!-- must be Bean Validation 1.0 compatible version since picketlink uses that-->
             <version>4.3.2.Final</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.4</version>
+        </dependency>
 
         <dependency>
             <groupId>com.h2database</groupId>
