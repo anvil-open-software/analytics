@@ -207,12 +207,6 @@ public class LoginPageIT {
 
         // Assert that an invalid tenant name, using a valid username and password fails to authenticate
         loginPage.loginExpectingFailure("a", SecurityInitializer.INSTANCE_ADMIN_USERNAME, SecurityInitializer.INSTANCE_ADMIN_PASSWORD);
-        //loginPage.typeTenant("a");
-        //loginPage.typeUsername(SecurityInitializer.INSTANCE_ADMIN_USERNAME);
-        //loginPage.typePassword(SecurityInitializer.INSTANCE_ADMIN_PASSWORD);
-        new FluentWait<>(loginPage.getClientErrors()).withTimeout(2, TimeUnit.SECONDS)
-                .until((Predicate<List<String>>) notVisible::matches);
-        loginPage.clickSignIn();
 
         getWebElementFluentWait(loginPage.getTenant())
                 .until((Predicate<WebElement>) serverErrorCss::matches);

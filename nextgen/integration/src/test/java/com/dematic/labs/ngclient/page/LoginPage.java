@@ -158,10 +158,6 @@ public class LoginPage extends AbstractPage {
         this.password.click();
     }
 
-    public void typeTenant(String username) {
-        this.tenant.sendKeys(username);
-    }
-
     public void typeUsername(String username) {
         this.username.sendKeys(username);
     }
