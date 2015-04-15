@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import static samples.utils.DynamoDBUtils.deleteTable;
 
 public final class EventConsumerTest {
+    // number of events
     private static final int EVENT_COUNT = 50;
 
     // setup Kinesis
@@ -46,7 +47,7 @@ public final class EventConsumerTest {
             final String[] driverProperties = {kinesisEndpoint, kinesisInputStream, dynamoDBEndpoint};
             EventConsumer.main(driverProperties);
         });
-        
+
         // ensure dynamo table exist, gets created by the driver
         // set the defaults
         Awaitility.setDefaultTimeout(3, TimeUnit.MINUTES);
