@@ -15,6 +15,7 @@ import org.picketlink.idm.model.basic.Realm;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.UUID;
 
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
@@ -51,15 +52,18 @@ public class ItemMasterTest {
         assertEquals(tenantId, itemMaster.getTenantId());
 
         itemMaster.setName("Fred");
+        itemMaster.setActive(true);
 
         crudService.create(itemMaster);
         assertNotNull(itemMaster.getId());
 
         jpaRule.changeTransaction();
+        jpaRule.getEntityManager().clear();
 
         ItemMaster itemMasterFromDb = crudService.findExisting(ItemMaster.class, itemMaster.getId());
         assertEquals(itemMaster.getId(), itemMasterFromDb.getId());
         assertEquals("Fred", itemMasterFromDb.getName());
+        assertTrue(itemMaster.isActive());
     }
 
     @Test
@@ -166,6 +170,17 @@ public class ItemMasterTest {
         assertNull(itemMaster.getTenantId());
 
         expectedException.expect(new ConstraintViolationMatcher("Item Master Name may not be null", "Tenant ID may not be null"));
+        crudService.create(itemMaster);
+    }
+
+
+    @Test
+    public void testConstraintViolationsBlankName() {
+
+        ItemMaster itemMaster = crudService.createNewOwnedAsset(ItemMaster.class);
+        itemMaster.setName("");
+
+        expectedException.expect(new ConstraintViolationMatcher("Item Master Name may not be empty"));
         crudService.create(itemMaster);
     }
 

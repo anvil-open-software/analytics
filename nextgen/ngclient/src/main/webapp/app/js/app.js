@@ -6,19 +6,21 @@ angular.module("app",
 	[
 		'ngResource',
 		'ngRoute',
-        'ResourceServices',
-        'Authentication',
-        'SecurityServices'
-	]
-).run(function($rootScope) {
-  // adds some basic utilities to the $rootScope for debugging purposes
+		'ResourceServices',
+		'Authentication',
+		'SecurityServices'
+	])
+	.constant('iqConstants', {
+		'CONTEXT': 'iq'
+	})
+	.run(function($rootScope) {
+		// adds some basic utilities to the $rootScope for debugging purposes
 		$rootScope.log = function(thing) {
 			console.log(thing);
 		};
 
 		$rootScope.alert = function(thing) {
-            // comment
+			// comment
 			alert(thing);
 		};
-	}
-);
+	});

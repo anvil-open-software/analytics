@@ -26,6 +26,11 @@ public class LoginPage extends AbstractPage {
     public static final EnumSet<CssMatcher> DARK_GREY_BACKGROUND = EnumSet.of(CssMatcher.DARK_GREY_BACKGROUND);
     public static final EnumSet<CssMatcher> LIGHT_GREY_BACKGROUND = EnumSet.of(CssMatcher.LIGHT_GREY_BACKGROUND);
 
+     private static final String BASE_URL_TENANT = SecuredEndpointHelper.SCHEME + "://" + SecuredEndpointHelper.HOSTNAME + "/" + SecuredEndpointHelper.CONTEXT_ROOT + "?tenant=";
+
+    @FindBy(name="tenant")
+    private WebElement tenant;
+
     @FindBy(name="username")
     private WebElement username;
 
@@ -53,6 +58,12 @@ public class LoginPage extends AbstractPage {
         return PageFactory.initElements(driver, LoginPage.class);
     }
 
+    public static LoginPage navigateTo(WebDriver driver, String tenant) {
+        String url = BASE_URL_TENANT + tenant;
+        driver.get(url);
+        return PageFactory.initElements(driver, LoginPage.class);
+    }
+
     public String getTitle() {
         return driver.getTitle();
     }
@@ -60,6 +71,13 @@ public class LoginPage extends AbstractPage {
     public HomePage login(String username, String password) {
 
         performEntryAndSubmit(username, password);
+
+        return PageFactory.initElements(driver, HomePage.class);
+    }
+
+    public HomePage login(String tenant, String username, String password) {
+
+        performEntryAndSubmit(tenant, username, password);
 
         return PageFactory.initElements(driver, HomePage.class);
     }
@@ -74,7 +92,30 @@ public class LoginPage extends AbstractPage {
         return PageFactory.initElements(driver, LoginPage.class);
     }
 
+    public LoginPage loginExpectingFailure(String tenant, String username, String password) {
+
+        performEntryAndSubmit(tenant, username, password);
+
+        new WebDriverWait(driver, 2).until(ExpectedConditions
+                .visibilityOfElementLocated(By.xpath("//div[@name='server-errors']")));
+
+        return PageFactory.initElements(driver, LoginPage.class);
+    }
+
     private void performEntryAndSubmit(String username, String password) {
+        this.username.clear();
+        this.username.sendKeys(username);
+
+        this.password.clear();
+        this.password.sendKeys(password);
+
+        signin.click();
+    }
+
+    private void performEntryAndSubmit(String tenant, String username, String password) {
+        this.tenant.clear();
+        this.tenant.sendKeys(tenant);
+
         this.username.clear();
         this.username.sendKeys(username);
 
@@ -96,6 +137,8 @@ public class LoginPage extends AbstractPage {
         return serverError.getText();
     }
 
+    public WebElement getTenant() { return tenant; }
+
     public WebElement getUsername() {
         return username;
     }
@@ -104,6 +147,7 @@ public class LoginPage extends AbstractPage {
         return password;
     }
 
+    public void clickTenant() { this.tenant.click(); }
 
     public void clickUsername() {
 
