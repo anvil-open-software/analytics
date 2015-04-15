@@ -1,6 +1,8 @@
 package com.dematic.labs.analytics.common;
 
 import org.junit.rules.ExternalResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -9,6 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class SystemPropertyRule extends ExternalResource {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemPropertyRule.class);
     // load system properties from the junit.properties file
     @Override
     protected void before() throws Throwable {
@@ -23,7 +26,9 @@ public final class SystemPropertyRule extends ExternalResource {
                 final String propertyValue = split[1];
                 // special case for kinesisInputStream
                 if (propertyKey.equals("kinesisInputStream")) {
-                    System.setProperty(propertyKey, String.format("%s_stream", System.getProperty("user.name")));
+                    final String kinesisInputStream = String.format("%s_stream", System.getProperty("user.name"));
+                    System.setProperty(propertyKey, kinesisInputStream);
+                    LOGGER.info("created kinesis stream >{}<", kinesisInputStream);
                 } else {
                     // add to system properties
                     System.setProperty(propertyKey, propertyValue);
