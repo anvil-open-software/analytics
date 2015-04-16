@@ -121,6 +121,8 @@
                         <!--suppress MavenModelInspection -->
                         <aws.secretKey>${aws.secretKey}</aws.secretKey>
                         <!--suppress MavenModelInspection -->
+                        <dynamoDBEndpoint>${dynamoDBEndpoint}</dynamoDBEndpoint>
+                        <!--suppress MavenModelInspection -->
                         <kinesisEndpoint>${kinesisEndpoint}</kinesisEndpoint>
                         <!--suppress MavenModelInspection -->
                         <regionName>${regionName}</regionName>
@@ -147,6 +149,8 @@
                         <aws.accessKeyId>${aws.accessKeyId}</aws.accessKeyId>
                         <!--suppress MavenModelInspection -->
                         <aws.secretKey>${aws.secretKey}</aws.secretKey>
+                        <!--suppress MavenModelInspection -->
+                        <dynamoDBEndpoint>${dynamoDBEndpoint}</dynamoDBEndpoint>
                         <!--suppress MavenModelInspection -->
                         <kinesisEndpoint>${kinesisEndpoint}</kinesisEndpoint>
                         <!--suppress MavenModelInspection -->
