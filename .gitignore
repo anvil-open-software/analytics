@@ -3,3 +3,4 @@
 *.iml
 #maven
 target/
+derby.log
