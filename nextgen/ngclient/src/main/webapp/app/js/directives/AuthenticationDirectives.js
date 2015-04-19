@@ -42,6 +42,7 @@ angular.module('Authentication')
     .directive('dlSignin', function() {
         return {
             restrict: 'A',
+            require: '^form',
             link: function (scope, element, attributes, formController) {
                 scope.$on('dl-unauthorized-event', function(event, args) {
                     element.addClass('dl-unauthorized');
@@ -59,10 +60,13 @@ angular.module('Authentication')
                     scope.unauthorized = false;
                     scope.$digest();
                 });
-                element.bind('blur', function() {
-                    if (element.hasClass('ng-valid')) {
+                element.bind('keyup', function() {
+                    if (formController.$valid) {
                         scope.ready='btn-primary';
                     }
+                    scope.$digest();
+                });
+                element.bind('blur', function() {
                     element.removeClass('dl-focused');
                     element.addClass('dl-blurred');
                     scope.$digest();

@@ -127,14 +127,21 @@ public class LoginPageIT {
         new FluentWait<>(loginPage.getClientErrors()).withTimeout(2, TimeUnit.SECONDS)
                 .until((Predicate<List<String>>) containsInAnyOrder::matches);
 
+        // This requirement has been updated. Now, the button becomes ready only
+        // after ALL attributes are correct.
         loginPage.clickUsername();
-        assertThat(loginPage.getSignInButton(), new HasCssProperty(LoginPage.DARK_BLUE_BACKGROUND));
+        assertThat(loginPage.getSignInButton(), new HasCssProperty(LoginPage.DARK_GREY_BACKGROUND));
+
 
         //enter valid (client side) username
         loginPage.typeUsername("bcde");
 
         new FluentWait<>(loginPage.getClientErrors()).withTimeout(2, TimeUnit.SECONDS)
                 .until((Predicate<List<String>>) notVisible::matches);
+
+        // This requirement has been updated. Now, the button becomes ready only
+        // after ALL attributes are correct.
+        assertThat(loginPage.getSignInButton(), new HasCssProperty(LoginPage.DARK_BLUE_BACKGROUND));
 
         //submit login, validate error, validate grey button
         loginPage.clickSignIn();
