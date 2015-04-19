@@ -19,6 +19,7 @@ public class LoginPage extends AbstractPage {
 
     public static final EnumSet<CssMatcher> THIN_GREY = EnumSet.of(CssMatcher.THIN, CssMatcher.GREY);
     public static final EnumSet<CssMatcher> THIN_BLUE = EnumSet.of(CssMatcher.THIN, CssMatcher.BLUE);
+    public static final EnumSet<CssMatcher> THICK_BLUE = EnumSet.of(CssMatcher.THICK, CssMatcher.BLUE);
     public static final EnumSet<CssMatcher> THICK_GOLD = EnumSet.of(CssMatcher.THICK, CssMatcher.GOLD);
     public static final EnumSet<CssMatcher> THICK_RED = EnumSet.of(CssMatcher.THICK, CssMatcher.RED);
 
