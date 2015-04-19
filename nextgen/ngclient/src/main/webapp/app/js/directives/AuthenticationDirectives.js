@@ -1,9 +1,4 @@
 /**
- * Created by silveir on 3/28/15.
- */
-
-
-/**
 * The Authentication Directives
 */
 angular.module('Authentication')
@@ -32,6 +27,7 @@ angular.module('Authentication')
                     // if form is not valid cancel it.
                     if (!formController.$valid) {return false;}
 
+                    scope.authorizing = true;
                     scope.$apply(function() {
                         fn(scope, {$event:event});
                     });
@@ -60,6 +56,7 @@ angular.module('Authentication')
 
                     element.removeClass('dl-blurred');
                     element.addClass('dl-focused');
+                    scope.authorizing = false;
                     scope.unauthorized = false;
                     scope.$digest();
                 });

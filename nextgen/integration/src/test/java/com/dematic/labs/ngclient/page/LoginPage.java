@@ -27,7 +27,9 @@ public class LoginPage extends AbstractPage {
     public static final EnumSet<CssMatcher> DARK_GREY_BACKGROUND = EnumSet.of(CssMatcher.DARK_GREY_BACKGROUND);
     public static final EnumSet<CssMatcher> LIGHT_GREY_BACKGROUND = EnumSet.of(CssMatcher.LIGHT_GREY_BACKGROUND);
 
-     private static final String BASE_URL_TENANT = SecuredEndpointHelper.SCHEME + "://" + SecuredEndpointHelper.HOSTNAME + "/" + SecuredEndpointHelper.CONTEXT_ROOT + "?tenant=";
+    public static final EnumSet<DLAttributeMatcher> DISABLED = EnumSet.of(DLAttributeMatcher.DISABLED);
+
+    private static final String BASE_URL_TENANT = SecuredEndpointHelper.SCHEME + "://" + SecuredEndpointHelper.HOSTNAME + "/" + SecuredEndpointHelper.CONTEXT_ROOT + "?tenant=";
 
     @FindBy(name="tenant")
     private WebElement tenant;

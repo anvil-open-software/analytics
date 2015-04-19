@@ -7,7 +7,7 @@ import javax.annotation.Nonnull;
 
 public enum DLAttributeMatcher {
 
-    DISABLED(AttributeProperty.DISABLED, "disabled") {
+    DISABLED(DLAttributeProperty.DISABLED, "true") {
         @Override
         public boolean matches(@Nonnull WebElement element, @Nonnull Description mismatchDescription) {
             return attributeMatches(element, mismatchDescription);

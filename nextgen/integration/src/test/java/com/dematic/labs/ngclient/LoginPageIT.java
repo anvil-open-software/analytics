@@ -1,8 +1,6 @@
 package com.dematic.labs.ngclient;
 
-import com.dematic.labs.ngclient.page.HasCssProperty;
-import com.dematic.labs.ngclient.page.HomePage;
-import com.dematic.labs.ngclient.page.LoginPage;
+import com.dematic.labs.ngclient.page.*;
 import com.dematic.labs.picketlink.SecurityInitializer;
 import com.google.common.base.Predicate;
 import org.hamcrest.Matcher;
@@ -183,12 +181,7 @@ public class LoginPageIT {
     @Test
     public void test0042ValidateSubmitWithErrosShowErrorBox() {
 
-        Matcher<? super WebElement> defaultCss = new HasCssProperty(LoginPage.THIN_GREY);
-        Matcher<? super WebElement> focusCss = new HasCssProperty(LoginPage.THIN_BLUE);
-        Matcher<? super WebElement> focusErrorCss = new HasCssProperty(LoginPage.THICK_BLUE);
         Matcher<? super WebElement> clientErrorCss = new HasCssProperty(LoginPage.THICK_GOLD);
-        Matcher<? super List<String>> notVisible = Matchers.containsInAnyOrder("Not Visible");
-        Matcher<? super WebElement> serverErrorCss = new HasCssProperty(LoginPage.THICK_RED);
 
         LoginPage loginPage = LoginPage.navigateTo(driver, "Dematic");
 
@@ -202,6 +195,28 @@ public class LoginPageIT {
         getWebElementFluentWait(loginPage.getClientErrorDiv())
                 .until((Predicate<WebElement>) clientErrorCss::matches);
      }
+
+    @Test
+    public void test0044ValidateButtonDisabled() {
+
+        Matcher<? super WebElement> disabled = new HasAttribute(LoginPage.DISABLED);
+        Matcher<? super WebElement> serverErrorCss = new HasCssProperty(LoginPage.THICK_RED);
+
+        LoginPage loginPage = LoginPage.navigateTo(driver, "Dematic");
+
+        //enter valid (client side) username
+        loginPage = loginPage.loginExpectingFailure("invalid_user", "invalid_password");
+
+        getWebElementFluentWait(loginPage.getUsername())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+        getWebElementFluentWait(loginPage.getPassword())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+        getWebElementFluentWait(loginPage.getServerErrorDiv())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+        getWebElementFluentWait(loginPage.getSignInButton())
+                .until((Predicate<WebElement>) disabled::matches);
+
+    }
 
     @Test
     public void test0050ValidateLoginPageRenderingWithoutTenant() {

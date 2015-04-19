@@ -14,6 +14,7 @@ angular.module('Authentication')
             $scope.credentials.tenant = $routeParams.hasOwnProperty('tenant') ? $routeParams['tenant'] : null;
             //$scope.tenantReadonly = $scope.credentials.tenant ? true : false;
             $scope.urlHasTenant = $scope.credentials.tenant ? true : false;
+            $scope.authorizing = false;
 
             var onLoginSuccess = function() {
                 $location.path('/home');
