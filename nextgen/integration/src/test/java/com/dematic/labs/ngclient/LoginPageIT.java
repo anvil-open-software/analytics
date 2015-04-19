@@ -181,6 +181,29 @@ public class LoginPageIT {
     }
 
     @Test
+    public void test0042ValidateSubmitWithErrosShowErrorBox() {
+
+        Matcher<? super WebElement> defaultCss = new HasCssProperty(LoginPage.THIN_GREY);
+        Matcher<? super WebElement> focusCss = new HasCssProperty(LoginPage.THIN_BLUE);
+        Matcher<? super WebElement> focusErrorCss = new HasCssProperty(LoginPage.THICK_BLUE);
+        Matcher<? super WebElement> clientErrorCss = new HasCssProperty(LoginPage.THICK_GOLD);
+        Matcher<? super List<String>> notVisible = Matchers.containsInAnyOrder("Not Visible");
+        Matcher<? super WebElement> serverErrorCss = new HasCssProperty(LoginPage.THICK_RED);
+
+        LoginPage loginPage = LoginPage.navigateTo(driver, "Dematic");
+
+        //submit login, ensure error container has the validation error markup
+        loginPage.clickSignIn();
+
+        getWebElementFluentWait(loginPage.getUsername())
+                .until((Predicate<WebElement>) clientErrorCss::matches);
+        getWebElementFluentWait(loginPage.getPassword())
+                .until((Predicate<WebElement>) clientErrorCss::matches);
+        getWebElementFluentWait(loginPage.getClientErrorDiv())
+                .until((Predicate<WebElement>) clientErrorCss::matches);
+     }
+
+    @Test
     public void test0050ValidateLoginPageRenderingWithoutTenant() {
 
         Matcher<? super WebElement> defaultCss = new HasCssProperty(LoginPage.THIN_GREY);

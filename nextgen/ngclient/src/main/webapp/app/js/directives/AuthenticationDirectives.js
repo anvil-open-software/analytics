@@ -42,8 +42,11 @@ angular.module('Authentication')
     .directive('dlSignin', function() {
         return {
             restrict: 'A',
-            require: '^form',
-            link: function (scope, element, attributes, formController) {
+            require: ['^form', 'ngModel'],
+            link: function (scope, element, attributes, controllers) {
+                var formController = controllers[0],
+                    modelController = controllers[1];
+
                 scope.$on('dl-unauthorized-event', function(event, args) {
                     element.addClass('dl-unauthorized');
                     scope.unauthorized = true;
@@ -71,17 +74,40 @@ angular.module('Authentication')
                     element.addClass('dl-blurred');
                     scope.$digest();
                 });
+                scope.$on('dl-input-click-event', function () {
+                    // Once the user clicks, force all validation errors to be shown.
+                    // Right now they are only shown after the field is touched. This
+                    // forces the field to be touched.
+                    // see https://docs.angularjs.org/api/ng/type/ngModel.NgModelController
+                    element.addClass('dl-blurred');
+                    modelController.$setDirty();
+                    modelController.$setTouched();
+                    scope.$apply();
+                });
             }
         };
     })
-    .directive('dlSigninButton', function() {
+    .directive('dlSigninButton', ['$rootScope', function($rootScope) {
         return {
             restrict: 'E',
             templateUrl: 'signinButton.html',
             link: function(scope, element, attributes, controller) {
+                element.bind('click', function() {
+                    $rootScope.$broadcast('dl-input-click-event');
+                });
             }
         };
-    })
+    }])
+    .directive('dlLoginButton', ['$rootScope', function($rootScope) {
+        return {
+            restrict: 'E',
+            link: function(scope, element, attributes, controller) {
+                element.bind('click', function() {
+                    $rootScope.$broadcast('dl-input-click-event');
+                });
+            }
+        };
+    }])
     .directive('dlRemoveHover', ['$compile', function($compile) {
         return {
             restrict: 'A',

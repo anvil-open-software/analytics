@@ -126,6 +126,9 @@ public class LoginPage extends AbstractPage {
         signin.click();
     }
 
+    public WebElement getClientErrorDiv() {
+        return this.clientErrors;
+    }
     public WebElement getServerErrorDiv() {
         return this.serverError;
     }
