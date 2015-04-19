@@ -47,7 +47,7 @@ angular.module('Authentication')
                     element.addClass('dl-unauthorized');
                     scope.unauthorized = true;
                 });
-                element.bind('focus', function() {
+                element.bind('keydown', function() {
                     // This is a classical example where good old jQuery shines.
                     // I need to remove the 'dl-unauthorized' from all DOM elements
                     // that have it. I could not have been done in a simpler way using
