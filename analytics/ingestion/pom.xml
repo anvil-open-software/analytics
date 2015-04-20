@@ -12,17 +12,6 @@
     <artifactId>ingestion</artifactId>
 
     <dependencies>
-        <dependency>
-            <groupId>com.dematic.labs</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.dematic.labs</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <type>test-jar</type>
-        </dependency>
         <!-- spark's streaming dependencies -->
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -38,10 +27,6 @@
                     <artifactId>commons-httpclient</artifactId>
                     <groupId>commons-httpclient</groupId>
                 </exclusion>
-                <exclusion>
-                    <artifactId>slf4j-log4j12</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -52,10 +37,6 @@
                 <exclusion>
                     <artifactId>commons-httpclient</artifactId>
                     <groupId>commons-httpclient</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>slf4j-log4j12</artifactId>
-                    <groupId>org.slf4j</groupId>
                 </exclusion>
             </exclusions>
         </dependency>

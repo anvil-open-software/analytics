@@ -1,6 +1,6 @@
 package com.dematic.labs.analytics.integration;
 
-import com.dematic.labs.analytics.common.kinesis.KinesisStreamRule;
+import com.dematic.labs.toolkit.aws.KinesisStreamRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;

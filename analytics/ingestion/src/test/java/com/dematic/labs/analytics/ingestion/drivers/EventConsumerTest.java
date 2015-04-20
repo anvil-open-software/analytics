@@ -3,10 +3,11 @@ package com.dematic.labs.analytics.ingestion.drivers;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.model.TableStatus;
-import com.dematic.labs.analytics.common.Event;
-import com.dematic.labs.analytics.common.SystemPropertyRule;
-import com.dematic.labs.analytics.common.kinesis.KinesisStreamRule;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.EventConsumer;
+
+import com.dematic.labs.toolkit.SystemPropertyRule;
+import com.dematic.labs.toolkit.aws.KinesisStreamRule;
+import com.dematic.labs.toolkit.communication.Event;
 import com.jayway.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Rule;
@@ -19,9 +20,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.dematic.labs.analytics.common.AWSConnections.*;
+import static com.dematic.labs.toolkit.aws.Connections.*;
+import static com.dematic.labs.toolkit.aws.Connections.getTableStatus;
 import static org.junit.Assert.assertTrue;
-import static samples.utils.DynamoDBUtils.deleteTable;
 
 public final class EventConsumerTest {
     // number of events
@@ -71,6 +72,6 @@ public final class EventConsumerTest {
     @After
     public void tearDown() {
         // delete the dynamo db event table
-        deleteTable(getAmazonDynamoDBClient(System.getProperty("dynamoDBEndpoint")), Event.TABLE_NAME);
+        deleteDynamoTable(getAmazonDynamoDBClient(System.getProperty("dynamoDBEndpoint")), Event.TABLE_NAME);
     }
 }
