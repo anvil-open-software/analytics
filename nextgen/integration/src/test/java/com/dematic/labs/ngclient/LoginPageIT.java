@@ -1,8 +1,6 @@
 package com.dematic.labs.ngclient;
 
-import com.dematic.labs.ngclient.page.HasCssProperty;
-import com.dematic.labs.ngclient.page.HomePage;
-import com.dematic.labs.ngclient.page.LoginPage;
+import com.dematic.labs.ngclient.page.*;
 import com.dematic.labs.picketlink.SecurityInitializer;
 import com.google.common.base.Predicate;
 import org.hamcrest.Matcher;
@@ -67,6 +65,7 @@ public class LoginPageIT {
 
         Matcher<? super WebElement> defaultCss = new HasCssProperty(LoginPage.THIN_GREY);
         Matcher<? super WebElement> focusCss = new HasCssProperty(LoginPage.THIN_BLUE);
+        Matcher<? super WebElement> focusErrorCss = new HasCssProperty(LoginPage.THICK_BLUE);
         Matcher<? super WebElement> clientErrorCss = new HasCssProperty(LoginPage.THICK_GOLD);
         Matcher<? super List<String>> notVisible = Matchers.containsInAnyOrder("Not Visible");
         Matcher<? super WebElement> serverErrorCss = new HasCssProperty(LoginPage.THICK_RED);
@@ -126,14 +125,21 @@ public class LoginPageIT {
         new FluentWait<>(loginPage.getClientErrors()).withTimeout(2, TimeUnit.SECONDS)
                 .until((Predicate<List<String>>) containsInAnyOrder::matches);
 
+        // This requirement has been updated. Now, the button becomes ready only
+        // after ALL attributes are correct.
         loginPage.clickUsername();
-        assertThat(loginPage.getSignInButton(), new HasCssProperty(LoginPage.DARK_BLUE_BACKGROUND));
+        assertThat(loginPage.getSignInButton(), new HasCssProperty(LoginPage.DARK_GREY_BACKGROUND));
+
 
         //enter valid (client side) username
         loginPage.typeUsername("bcde");
 
         new FluentWait<>(loginPage.getClientErrors()).withTimeout(2, TimeUnit.SECONDS)
                 .until((Predicate<List<String>>) notVisible::matches);
+
+        // This requirement has been updated. Now, the button becomes ready only
+        // after ALL attributes are correct.
+        assertThat(loginPage.getSignInButton(), new HasCssProperty(LoginPage.DARK_BLUE_BACKGROUND));
 
         //submit login, validate error, validate grey button
         loginPage.clickSignIn();
@@ -149,12 +155,20 @@ public class LoginPageIT {
 
         assertThat(loginPage.getSignInButton(), new HasCssProperty(LoginPage.LIGHT_GREY_BACKGROUND));
 
+        // Assert that clicking on any input field after a authentication failure DOES NOT reset borders
         loginPage.clickUsername();
         getWebElementFluentWait(loginPage.getUsername())
-                .until((Predicate<WebElement>) focusCss::matches);
+                .until((Predicate<WebElement>) focusErrorCss::matches);
 
         getWebElementFluentWait(loginPage.getPassword())
-                .until((Predicate<WebElement>) defaultCss::matches);
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+
+        loginPage.clickPassword();
+        getWebElementFluentWait(loginPage.getUsername())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+
+        getWebElementFluentWait(loginPage.getPassword())
+                .until((Predicate<WebElement>) focusErrorCss::matches);
 
 
         HomePage homePage = loginPage.login(SecurityInitializer.INSTANCE_ADMIN_USERNAME,
@@ -165,10 +179,51 @@ public class LoginPageIT {
     }
 
     @Test
+    public void test0042ValidateSubmitWithErrosShowErrorBox() {
+
+        Matcher<? super WebElement> clientErrorCss = new HasCssProperty(LoginPage.THICK_GOLD);
+
+        LoginPage loginPage = LoginPage.navigateTo(driver, "Dematic");
+
+        //submit login, ensure error container has the validation error markup
+        loginPage.clickSignIn();
+
+        getWebElementFluentWait(loginPage.getUsername())
+                .until((Predicate<WebElement>) clientErrorCss::matches);
+        getWebElementFluentWait(loginPage.getPassword())
+                .until((Predicate<WebElement>) clientErrorCss::matches);
+        getWebElementFluentWait(loginPage.getClientErrorDiv())
+                .until((Predicate<WebElement>) clientErrorCss::matches);
+     }
+
+    @Test
+    public void test0044ValidateButtonDisabled() {
+
+        Matcher<? super WebElement> disabled = new HasAttribute(LoginPage.DISABLED);
+        Matcher<? super WebElement> serverErrorCss = new HasCssProperty(LoginPage.THICK_RED);
+
+        LoginPage loginPage = LoginPage.navigateTo(driver, "Dematic");
+
+        //enter valid (client side) username
+        loginPage = loginPage.loginExpectingFailure("invalid_user", "invalid_password");
+
+        getWebElementFluentWait(loginPage.getUsername())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+        getWebElementFluentWait(loginPage.getPassword())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+        getWebElementFluentWait(loginPage.getServerErrorDiv())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+        getWebElementFluentWait(loginPage.getSignInButton())
+                .until((Predicate<WebElement>) disabled::matches);
+
+    }
+
+    @Test
     public void test0050ValidateLoginPageRenderingWithoutTenant() {
 
         Matcher<? super WebElement> defaultCss = new HasCssProperty(LoginPage.THIN_GREY);
         Matcher<? super WebElement> focusCss = new HasCssProperty(LoginPage.THIN_BLUE);
+        Matcher<? super WebElement> focusErrorCss = new HasCssProperty(LoginPage.THICK_BLUE);
         Matcher<? super WebElement> clientErrorCss = new HasCssProperty(LoginPage.THICK_GOLD);
         Matcher<? super List<String>> notVisible = Matchers.containsInAnyOrder("Not Visible");
         Matcher<? super WebElement> serverErrorCss = new HasCssProperty(LoginPage.THICK_RED);
@@ -222,18 +277,57 @@ public class LoginPageIT {
 
         assertThat(loginPage.getSignInButton(), new HasCssProperty(LoginPage.LIGHT_GREY_BACKGROUND));
 
-
-        // Assert that clicking on the tenant after a authentication failure reset borders
+        // Assert that clicking on any input field after a authentication failure DOES NOT reset borders
         loginPage.clickTenant();
         getWebElementFluentWait(loginPage.getTenant())
-                .until((Predicate<WebElement>) focusCss::matches);
+                .until((Predicate<WebElement>) focusErrorCss::matches);
+        getWebElementFluentWait(loginPage.getUsername())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+        getWebElementFluentWait(loginPage.getPassword())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
 
+        loginPage.clickUsername();
+        getWebElementFluentWait(loginPage.getTenant())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+        getWebElementFluentWait(loginPage.getUsername())
+                .until((Predicate<WebElement>) focusErrorCss::matches);
+        getWebElementFluentWait(loginPage.getPassword())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+
+        loginPage.clickPassword();
+        getWebElementFluentWait(loginPage.getTenant())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+        getWebElementFluentWait(loginPage.getUsername())
+                .until((Predicate<WebElement>) serverErrorCss::matches);
+        getWebElementFluentWait(loginPage.getPassword())
+                .until((Predicate<WebElement>) focusErrorCss::matches);
+        
+        // Assert that a keydown on any input field after a authentication failure resets borders
+        loginPage.getTenant().sendKeys("a");
+        getWebElementFluentWait(loginPage.getTenant())
+                .until((Predicate<WebElement>) focusCss::matches);
         getWebElementFluentWait(loginPage.getUsername())
                 .until((Predicate<WebElement>) defaultCss::matches);
-
         getWebElementFluentWait(loginPage.getPassword())
                 .until((Predicate<WebElement>) defaultCss::matches);
 
+        loginPage.loginExpectingFailure("a", SecurityInitializer.INSTANCE_ADMIN_USERNAME, SecurityInitializer.INSTANCE_ADMIN_PASSWORD);
+        loginPage.getUsername().sendKeys("a");
+        getWebElementFluentWait(loginPage.getTenant())
+                .until((Predicate<WebElement>) defaultCss::matches);
+        getWebElementFluentWait(loginPage.getUsername())
+                .until((Predicate<WebElement>) focusCss::matches);
+        getWebElementFluentWait(loginPage.getPassword())
+                .until((Predicate<WebElement>) defaultCss::matches);
+
+        loginPage.loginExpectingFailure("a", SecurityInitializer.INSTANCE_ADMIN_USERNAME, SecurityInitializer.INSTANCE_ADMIN_PASSWORD);
+        loginPage.getPassword().sendKeys("a");
+        getWebElementFluentWait(loginPage.getTenant())
+                .until((Predicate<WebElement>) defaultCss::matches);
+        getWebElementFluentWait(loginPage.getUsername())
+                .until((Predicate<WebElement>) defaultCss::matches);
+        getWebElementFluentWait(loginPage.getPassword())
+                .until((Predicate<WebElement>) focusCss::matches);
 
         HomePage homePage = loginPage.login(SecurityInitializer.INSTANCE_TENANT_NAME, SecurityInitializer.INSTANCE_ADMIN_USERNAME,
                 SecurityInitializer.INSTANCE_ADMIN_PASSWORD);

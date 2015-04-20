@@ -1,9 +1,4 @@
 /**
- * Created by silveir on 3/28/15.
- */
-
-
-/**
 * The Authentication Directives
 */
 angular.module('Authentication')
@@ -32,6 +27,7 @@ angular.module('Authentication')
                     // if form is not valid cancel it.
                     if (!formController.$valid) {return false;}
 
+                    scope.authorizing = true;
                     scope.$apply(function() {
                         fn(scope, {$event:event});
                     });
@@ -42,12 +38,16 @@ angular.module('Authentication')
     .directive('dlSignin', function() {
         return {
             restrict: 'A',
-            link: function (scope, element, attributes, formController) {
+            require: ['^form', 'ngModel'],
+            link: function (scope, element, attributes, controllers) {
+                var formController = controllers[0],
+                    modelController = controllers[1];
+
                 scope.$on('dl-unauthorized-event', function(event, args) {
                     element.addClass('dl-unauthorized');
                     scope.unauthorized = true;
                 });
-                element.bind('focus', function() {
+                element.bind('keydown', function() {
                     // This is a classical example where good old jQuery shines.
                     // I need to remove the 'dl-unauthorized' from all DOM elements
                     // that have it. I could not have been done in a simpler way using
@@ -56,28 +56,55 @@ angular.module('Authentication')
 
                     element.removeClass('dl-blurred');
                     element.addClass('dl-focused');
+                    scope.authorizing = false;
                     scope.unauthorized = false;
                     scope.$digest();
                 });
-                element.bind('blur', function() {
-                    if (element.hasClass('ng-valid')) {
+                element.bind('keyup', function() {
+                    if (formController.$valid) {
                         scope.ready='btn-primary';
                     }
+                    scope.$digest();
+                });
+                element.bind('blur', function() {
                     element.removeClass('dl-focused');
                     element.addClass('dl-blurred');
                     scope.$digest();
                 });
+                scope.$on('dl-input-click-event', function () {
+                    // Once the user clicks, force all validation errors to be shown.
+                    // Right now they are only shown after the field is touched. This
+                    // forces the field to be touched.
+                    // see https://docs.angularjs.org/api/ng/type/ngModel.NgModelController
+                    element.addClass('dl-blurred');
+                    modelController.$setDirty();
+                    modelController.$setTouched();
+                    scope.$apply();
+                });
             }
         };
     })
-    .directive('dlSigninButton', function() {
+    .directive('dlSigninButton', ['$rootScope', function($rootScope) {
         return {
             restrict: 'E',
             templateUrl: 'signinButton.html',
             link: function(scope, element, attributes, controller) {
+                element.bind('click', function() {
+                    $rootScope.$broadcast('dl-input-click-event');
+                });
             }
         };
-    })
+    }])
+    .directive('dlLoginButton', ['$rootScope', function($rootScope) {
+        return {
+            restrict: 'E',
+            link: function(scope, element, attributes, controller) {
+                element.bind('click', function() {
+                    $rootScope.$broadcast('dl-input-click-event');
+                });
+            }
+        };
+    }])
     .directive('dlRemoveHover', ['$compile', function($compile) {
         return {
             restrict: 'A',

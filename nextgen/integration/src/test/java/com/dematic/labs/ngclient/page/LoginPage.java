@@ -19,6 +19,7 @@ public class LoginPage extends AbstractPage {
 
     public static final EnumSet<CssMatcher> THIN_GREY = EnumSet.of(CssMatcher.THIN, CssMatcher.GREY);
     public static final EnumSet<CssMatcher> THIN_BLUE = EnumSet.of(CssMatcher.THIN, CssMatcher.BLUE);
+    public static final EnumSet<CssMatcher> THICK_BLUE = EnumSet.of(CssMatcher.THICK, CssMatcher.BLUE);
     public static final EnumSet<CssMatcher> THICK_GOLD = EnumSet.of(CssMatcher.THICK, CssMatcher.GOLD);
     public static final EnumSet<CssMatcher> THICK_RED = EnumSet.of(CssMatcher.THICK, CssMatcher.RED);
 
@@ -26,7 +27,9 @@ public class LoginPage extends AbstractPage {
     public static final EnumSet<CssMatcher> DARK_GREY_BACKGROUND = EnumSet.of(CssMatcher.DARK_GREY_BACKGROUND);
     public static final EnumSet<CssMatcher> LIGHT_GREY_BACKGROUND = EnumSet.of(CssMatcher.LIGHT_GREY_BACKGROUND);
 
-     private static final String BASE_URL_TENANT = SecuredEndpointHelper.SCHEME + "://" + SecuredEndpointHelper.HOSTNAME + "/" + SecuredEndpointHelper.CONTEXT_ROOT + "?tenant=";
+    public static final EnumSet<DLAttributeMatcher> DISABLED = EnumSet.of(DLAttributeMatcher.DISABLED);
+
+    private static final String BASE_URL_TENANT = SecuredEndpointHelper.SCHEME + "://" + SecuredEndpointHelper.HOSTNAME + "/" + SecuredEndpointHelper.CONTEXT_ROOT + "?tenant=";
 
     @FindBy(name="tenant")
     private WebElement tenant;
@@ -125,6 +128,9 @@ public class LoginPage extends AbstractPage {
         signin.click();
     }
 
+    public WebElement getClientErrorDiv() {
+        return this.clientErrors;
+    }
     public WebElement getServerErrorDiv() {
         return this.serverError;
     }
