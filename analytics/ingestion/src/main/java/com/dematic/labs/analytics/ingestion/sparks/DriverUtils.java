@@ -2,7 +2,8 @@ package com.dematic.labs.analytics.ingestion.sparks;
 
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
-import com.dematic.labs.analytics.common.Event;
+import com.dematic.labs.toolkit.aws.Connections;
+import com.dematic.labs.toolkit.communication.Event;
 import org.apache.spark.SparkConf;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
@@ -13,7 +14,6 @@ import org.apache.spark.streaming.kinesis.KinesisUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.dematic.labs.analytics.common.AWSConnections.getAmazonKinesisClient;
 
 //todo: nullable/non-nullable
 public final class DriverUtils {
@@ -21,7 +21,7 @@ public final class DriverUtils {
     }
 
     public static int getNumberOfShards(final String awsEndpointUrl, final String streamName) {
-        final AmazonKinesisClient amazonKinesisClient = getAmazonKinesisClient(awsEndpointUrl);
+        final AmazonKinesisClient amazonKinesisClient = Connections.getAmazonKinesisClient(awsEndpointUrl);
         // Determine the number of shards from the stream and create 1 Kinesis Worker/Receiver/DStream for each shard
         return amazonKinesisClient.describeStream(streamName).getStreamDescription().getShards().size();
     }

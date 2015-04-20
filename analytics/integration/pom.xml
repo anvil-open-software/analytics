@@ -14,18 +14,6 @@
     <dependencies>
         <dependency>
             <groupId>com.dematic.labs</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>com.dematic.labs</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <type>test-jar</type>
-        </dependency>
-        <dependency>
-            <groupId>com.dematic.labs</groupId>
             <artifactId>ingestion</artifactId>
             <version>1.0-SNAPSHOT</version>
             <type>jar</type>

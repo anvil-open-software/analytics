@@ -1,9 +1,9 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.dematic.labs.analytics.common.AWSConnections;
-import com.dematic.labs.analytics.common.Event;
-import com.dematic.labs.analytics.common.EventUtils;
+import com.dematic.labs.toolkit.aws.Connections;
+import com.dematic.labs.toolkit.communication.Event;
+import com.dematic.labs.toolkit.communication.EventUtils;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -30,7 +30,7 @@ public final class EventConsumer {
         final String dynamoDBEndpoint = args[2];
 
         // create the table, if it does not exist
-        AWSConnections.createDynamoTable(dynamoDBEndpoint, Event.class);
+        Connections.createDynamoTable(dynamoDBEndpoint, Event.class);
 
         final Duration pollTime = Durations.seconds(2);
         // make Duration configurable
@@ -45,7 +45,7 @@ public final class EventConsumer {
     }
 
     public void persistEvents(final JavaDStream<byte[]> inputStream, final String dynamoDBEndpoint) {
-        final DynamoDBMapper dynamoDBMapper = new DynamoDBMapper(AWSConnections.getAmazonDynamoDBClient(dynamoDBEndpoint));
+        final DynamoDBMapper dynamoDBMapper = new DynamoDBMapper(Connections.getAmazonDynamoDBClient(dynamoDBEndpoint));
         // transform the byte[] (byte arrays are json) to a string
         final JavaDStream<String> eventMap =
                 inputStream.map(
