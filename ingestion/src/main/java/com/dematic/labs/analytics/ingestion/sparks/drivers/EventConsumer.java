@@ -22,7 +22,7 @@ public final class EventConsumer {
 
     public static void main(final String[] args) {
         if (args.length < 3) {
-            throw new IllegalArgumentException(String.format("Driver requires Kinesis Endpoint and Kinesis StreamName and DynamoDB Endpoint"));
+            throw new IllegalArgumentException("Driver requires Kinesis Endpoint and Kinesis StreamName and DynamoDB Endpoint");
         }
         // url and stream name to pull events
         final String kinesisEndpoint = args[0];
