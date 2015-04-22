@@ -14,7 +14,7 @@
     </modules>
     <packaging>pom</packaging>
 
-    <!-- te -->
+    <!-- tve -->
     <dependencyManagement>
         <dependencies>
             <dependency>
