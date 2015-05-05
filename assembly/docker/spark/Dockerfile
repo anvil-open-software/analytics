@@ -2,7 +2,7 @@ FROM sequenceiq/hadoop-docker:2.6.0
 
 MAINTAINER michael.mitchell@dematic.com
 
-ENV REFRESHED_AT 2015-03-24
+ENV REFRESHED_AT 2015-04-05
 
 # Install java 8 and make default
 RUN mkdir -p /usr/java/default && \
@@ -15,17 +15,17 @@ RUN yum update -y; yum clean all
 # copy yarn env script
 COPY yarn-env.sh /usr/local/hadoop/etc/hadoop/yarn-env.sh
 
-# pull spark's built with kinesis lib from nexus and install, spark includes version 1.2.1 and hadoop 2.6
-RUN curl -s -u ${nexus.Username}:${nexus.Password} http://${nexus.Ip}/nexus/content/repositories/releases/org/apache/spark/1.2.1/spark-1.2.1.tgz | tar -xz -C /usr/local/
-RUN cd /usr/local && ln -s spark-1.2.1-bin-2.6.0 spark
+# pull spark's built with kinesis lib from nexus and install, spark includes version 1.3.1 and hadoop 2.6
+RUN curl -s -u ${nexus.Username}:${nexus.Password} http://${nexus.Ip}/nexus/content/repositories/releases/org/apache/spark/1.3.1/spark-1.3.1.tgz | tar -xz -C /usr/local/
+RUN cd /usr/local && ln -s spark-1.3.1-bin-2.6.0 spark
 ENV SPARK_HOME /usr/local/spark
 RUN mkdir $SPARK_HOME/yarn-remote-client
 ADD yarn-remote-client $SPARK_HOME/yarn-remote-client
 
-RUN $BOOTSTRAP && $HADOOP_PREFIX/bin/hadoop dfsadmin -safemode leave && $HADOOP_PREFIX/bin/hdfs dfs -put $SPARK_HOME-1.2.1-bin-2.6.0/lib /spark
+RUN $BOOTSTRAP && $HADOOP_PREFIX/bin/hadoop dfsadmin -safemode leave && $HADOOP_PREFIX/bin/hdfs dfs -put $SPARK_HOME-1.3.1-bin-2.6.0/lib /spark
 
 ENV YARN_CONF_DIR $HADOOP_PREFIX/etc/hadoop
-ENV SPARK_JAR hdfs:///spark/spark-assembly-1.2.1-hadoop2.6.0.jar
+ENV SPARK_JAR hdfs:///spark/spark-assembly-1.3.1-hadoop2.6.0.jar
 ENV PATH $PATH:$SPARK_HOME/bin:$HADOOP_PREFIX/bin
 
 # update boot script
