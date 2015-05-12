@@ -25,7 +25,7 @@ public final class EventCount implements Serializable {
 
     public static void main(final String[] args) {
         if (args.length < 2) {
-            throw new IllegalArgumentException(String.format("Driver requires Kinesis Endpoint and Kinesis StreamName"));
+            throw new IllegalArgumentException("Driver requires Kinesis Endpoint and Kinesis StreamName");
         }
         // url and stream name to pull events
         final String endpointUrl = args[0];
