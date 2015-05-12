@@ -15,7 +15,7 @@ RUN yum update -y; yum clean all
 # copy yarn env script
 COPY yarn-env.sh /usr/local/hadoop/etc/hadoop/yarn-env.sh
 
-# pull spark's built with kinesis lib from nexus and install, spark includes version 1.3.1 and hadoop 2.6
+# pull spark's built with kinesis lib from nexus and install, spark includes version 1.3.1 and hadoop 2.6, built with scala 2.11
 RUN curl -s -u ${nexus.Username}:${nexus.Password} http://${nexus.Ip}/nexus/content/repositories/releases/org/apache/spark/1.3.1/spark-1.3.1.tgz | tar -xz -C /usr/local/
 RUN cd /usr/local && ln -s spark-1.3.1-bin-2.6.0 spark
 ENV SPARK_HOME /usr/local/spark
