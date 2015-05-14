@@ -16,7 +16,6 @@ import scala.Tuple2;
 import java.nio.charset.Charset;
 import java.util.List;
 
-
 import static com.dematic.labs.analytics.ingestion.sparks.DriverUtils.getJavaDStream;
 import static com.dematic.labs.analytics.ingestion.sparks.DriverUtils.getStreamingContext;
 
@@ -70,14 +69,33 @@ public class EventStreamStatistics {
                         event -> EventUtils.jsonToEvent(new String(event, Charset.defaultCharset()))
                 );
         // compute the count of events by node
-        final JavaPairDStream<Integer, Long> responseCodeCountDStream = events
+        eventsByNodeSummation(events);
+        // compute the count of events by order
+        eventsByOrderSummation(events);
+    }
+
+    public void eventsByNodeSummation(final JavaDStream<Event> events) {
+        final JavaPairDStream<Integer, Long> eventsByNode = events
                 .mapToPair(event -> Tuple2.apply(event.getNodeId(), 1L))
                 .reduceByKey(SUM_REDUCER)
                 .updateStateByKey(COMPUTE_RUNNING_SUM);
 
-        responseCodeCountDStream.foreachRDD(rdd -> {
+        eventsByNode.foreachRDD(rdd -> {
             LOGGER.info("node counts: {}", rdd.take(100));
             System.out.println("node counts: " + rdd.take(100));
+            return null;
+        });
+    }
+
+    public void eventsByOrderSummation(final JavaDStream<Event> events) {
+        final JavaPairDStream<Integer, Long> eventsByOrder = events
+                .mapToPair(event -> Tuple2.apply(event.getOrderId(), 1L))
+                .reduceByKey(SUM_REDUCER)
+                .updateStateByKey(COMPUTE_RUNNING_SUM);
+
+        eventsByOrder.foreachRDD(rdd -> {
+            LOGGER.info("order counts: {}", rdd.take(100));
+            System.out.println("order counts: " + rdd.take(100));
             return null;
         });
     }
