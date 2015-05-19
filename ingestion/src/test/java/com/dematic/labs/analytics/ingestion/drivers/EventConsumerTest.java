@@ -60,7 +60,7 @@ public final class EventConsumerTest {
                                 Event.TABLE_NAME).name())));
 
         // generate events
-        kinesisStreamRule.generateEventsAndPush(EVENT_COUNT);
+        kinesisStreamRule.pushEvents(kinesisStreamRule.generateEvents(EVENT_COUNT, 10, 20));
         // poll dynamoDB table and ensure all events received
         Awaitility.with().pollInterval(10, TimeUnit.SECONDS).and().with().
                 pollDelay(30, TimeUnit.SECONDS).await().

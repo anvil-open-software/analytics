@@ -17,14 +17,8 @@ public final class EventProcessingWorkflowIT {
 
     @Test
     public void workflow() throws IOException {
-        // submit events
-        produceEventsToKinesis();
         // ensure events were consumed by sparks
         sparksConsumedEvents();
-    }
-
-    private void produceEventsToKinesis() throws IOException {
-        kinesisStreamRule.generateEventsAndPush(EVENT_COUNT);
     }
 
     // ensure all events are pulled from the kinesis stream, sparks is consuming the events
