@@ -26,6 +26,7 @@ public class EventStreamStatistics {
 
     // functions
     private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
+
     private static Function2<List<Long>, Optional<Long>, Optional<Long>>
             COMPUTE_RUNNING_SUM = (nums, current) -> {
         long sum = current.or(0L);
@@ -33,6 +34,28 @@ public class EventStreamStatistics {
             sum += i;
         }
         return Optional.of(sum);
+    };
+
+    private static Function2<Tuple2<Double, Long>, Tuple2<Double, Long>, Tuple2<Double, Long>>
+            SUM_AND_COUNT_REDUCER = (x, y) -> new Tuple2<>(x._1() + y._1(), x._2() + y._2());
+
+    private static Function2<List<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>>
+            COMPUTE_RUNNING_AVG = (sums, current) -> {
+        Tuple2<Double, Long> avgAndCount = current.or(new Tuple2<>(0.0, 0L));
+
+        for (final Tuple2<Double, Long> sumAndCount : sums) {
+            final double avg = avgAndCount._1();
+            final long avgCount = avgAndCount._2();
+
+            final double sum = sumAndCount._1();
+            final long sumCount = sumAndCount._2();
+
+            final Long countTotal = avgCount + sumCount;
+            final Double newAvg = ((avgCount * avg) + (sumCount * sum / sumCount)) / countTotal;
+
+            avgAndCount = new Tuple2<>(newAvg, countTotal);
+        }
+        return Optional.of(avgAndCount);
     };
 
     public static void main(final String[] args) {
@@ -68,10 +91,17 @@ public class EventStreamStatistics {
                 inputStream.map(
                         event -> EventUtils.jsonToEvent(new String(event, Charset.defaultCharset()))
                 );
+
+        // calculate statistics
+
         // compute the count of events by node
         eventsByNodeSummation(events);
+        // compute the moving average of values by node
+        eventsByNodeValueAverage(events);
         // compute the count of events by order
         eventsByOrderSummation(events);
+        // compute the moving average of values by order
+        eventsByOrderValueAverage(events);
     }
 
     public void eventsByNodeSummation(final JavaDStream<Event> events) {
@@ -96,6 +126,32 @@ public class EventStreamStatistics {
         eventsByOrder.foreachRDD(rdd -> {
             LOGGER.info("order counts: {}", rdd.take(100));
             System.out.println("order counts: " + rdd.take(100));
+            return null;
+        });
+    }
+
+    public void eventsByNodeValueAverage(final JavaDStream<Event> events) {
+        final JavaPairDStream<Integer, Tuple2<Double, Long>> eventsByNode = events
+                .mapToPair(event -> Tuple2.apply(event.getNodeId(), new Tuple2<>(event.getValue(), 1L)))
+                .reduceByKey(SUM_AND_COUNT_REDUCER)
+                .updateStateByKey(COMPUTE_RUNNING_AVG);
+
+        eventsByNode.foreachRDD(rdd -> {
+            LOGGER.info("node average value: {}", rdd.take(100));
+            System.out.println("node average value: " + rdd.take(100));
+            return null;
+        });
+    }
+
+    public void eventsByOrderValueAverage(final JavaDStream<Event> events) {
+        final JavaPairDStream<Integer, Tuple2<Double, Long>> eventsByNode = events
+                .mapToPair(event -> Tuple2.apply(event.getOrderId(), new Tuple2<>(event.getValue(), 1L)))
+                .reduceByKey(SUM_AND_COUNT_REDUCER)
+                .updateStateByKey(COMPUTE_RUNNING_AVG);
+
+        eventsByNode.foreachRDD(rdd -> {
+            LOGGER.info("order average value: {}", rdd.take(100));
+            System.out.println("order average value: " + rdd.take(100));
             return null;
         });
     }
