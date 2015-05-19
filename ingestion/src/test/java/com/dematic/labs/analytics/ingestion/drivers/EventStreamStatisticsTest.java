@@ -43,7 +43,7 @@ public final class EventStreamStatisticsTest {
                         mapToDouble(d -> d).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
         // 2) create a java spark context
         final JavaSparkContext sc =
-                new JavaSparkContext(new SparkConf().setAppName("SparkStats").setMaster("local[*]"));
+                new JavaSparkContext(new SparkConf().setAppName("SparkStats").setMaster("local[*]").set("spark.driver.allowMultipleContexts" , "true"));
         final JavaDoubleRDD rdd = sc.parallelizeDoubles(testData);
         final StatCounter statCounter = rdd.stats();
 
