@@ -21,7 +21,7 @@ import static com.dematic.labs.analytics.ingestion.sparks.DriverUtils.getStreami
 
 public class EventStreamStatistics {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamStatistics.class);
-    // store state
+    // store state,
     private static final String TMP_DIR = "/tmp/streaming_event_statistics";
 
     // functions
