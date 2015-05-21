@@ -10,6 +10,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaDoubleRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.util.StatCounter;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,9 +40,10 @@ public final class EventStreamStatisticsTest {
 
     @Test
     public void calculateStatisticsWithStatCounter() {
+        final int numberOfValues = 100000;
         // 1) create a test data
         final List<Double> testData =
-                IntStream.range(1, 100000).
+                IntStream.range(0, numberOfValues).
                         mapToDouble(d -> d).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
         // 2) create a java spark context
         final JavaSparkContext sc =
@@ -56,6 +58,7 @@ public final class EventStreamStatisticsTest {
         LOGGER.info("Mean:     " + statCounter.mean());
         LOGGER.info("Variance: " + statCounter.variance());
         LOGGER.info("Stdev:    " + statCounter.stdev());
+        Assert.assertEquals(numberOfValues, statCounter.count());
     }
 
     @Ignore
