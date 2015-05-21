@@ -25,6 +25,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import static com.dematic.labs.toolkit.communication.EventTestingUtils.generateEvents;
+
 public final class EventStreamStatisticsTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamStatisticsTest.class);
 
@@ -43,7 +45,7 @@ public final class EventStreamStatisticsTest {
                         mapToDouble(d -> d).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
         // 2) create a java spark context
         final JavaSparkContext sc =
-                new JavaSparkContext(new SparkConf().setAppName("SparkStats").setMaster("local[*]").set("spark.driver.allowMultipleContexts" , "true"));
+                new JavaSparkContext(new SparkConf().setAppName("SparkStats").setMaster("local[*]").set("spark.driver.allowMultipleContexts", "true"));
         final JavaDoubleRDD rdd = sc.parallelizeDoubles(testData);
         final StatCounter statCounter = rdd.stats();
 
@@ -74,7 +76,7 @@ public final class EventStreamStatisticsTest {
         events.stream().forEach(System.out::println);
         kinesisStreamRule.pushEvents(events);*/
 
-      // wait for an hour
+        // wait for an hour
         Awaitility.await().atMost(new Duration(1, TimeUnit.HOURS))
                 .until(() -> false);
     }
@@ -82,8 +84,8 @@ public final class EventStreamStatisticsTest {
     @Ignore
     public void calculateStreamingStatistics1() {
         // 3) generate the events and push
-        final List<Event> events = kinesisStreamRule.generateEvents(1000, 4, 9);
+        final List<Event> events = generateEvents(1000, 4, 9);
         events.stream().forEach(System.out::println);
-        kinesisStreamRule.pushEvents(events);
+        kinesisStreamRule.pushEventsToKinesis(events);
     }
 }

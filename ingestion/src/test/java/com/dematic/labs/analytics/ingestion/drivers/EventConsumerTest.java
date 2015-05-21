@@ -4,7 +4,6 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.model.TableStatus;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.EventConsumer;
-
 import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
 import com.dematic.labs.toolkit.communication.Event;
@@ -21,7 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static com.dematic.labs.toolkit.aws.Connections.*;
-import static com.dematic.labs.toolkit.aws.Connections.getTableStatus;
+import static com.dematic.labs.toolkit.communication.EventTestingUtils.generateEvents;
 import static org.junit.Assert.assertTrue;
 
 public final class EventConsumerTest {
@@ -60,7 +59,7 @@ public final class EventConsumerTest {
                                 Event.TABLE_NAME).name())));
 
         // generate events
-        kinesisStreamRule.pushEvents(kinesisStreamRule.generateEvents(EVENT_COUNT, 10, 20));
+        kinesisStreamRule.pushEventsToKinesis(generateEvents(EVENT_COUNT, 10, 20));
         // poll dynamoDB table and ensure all events received
         Awaitility.with().pollInterval(10, TimeUnit.SECONDS).and().with().
                 pollDelay(30, TimeUnit.SECONDS).await().
