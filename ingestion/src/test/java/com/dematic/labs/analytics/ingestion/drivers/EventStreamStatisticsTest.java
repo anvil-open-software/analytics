@@ -10,6 +10,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaDoubleRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.util.StatCounter;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,6 +26,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import static com.dematic.labs.toolkit.communication.EventTestingUtils.generateEvents;
+
 public final class EventStreamStatisticsTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamStatisticsTest.class);
 
@@ -37,13 +40,14 @@ public final class EventStreamStatisticsTest {
 
     @Test
     public void calculateStatisticsWithStatCounter() {
+        final int numberOfValues = 100000;
         // 1) create a test data
         final List<Double> testData =
-                IntStream.range(1, 100000).
+                IntStream.range(0, numberOfValues).
                         mapToDouble(d -> d).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
         // 2) create a java spark context
         final JavaSparkContext sc =
-                new JavaSparkContext(new SparkConf().setAppName("SparkStats").setMaster("local[*]").set("spark.driver.allowMultipleContexts" , "true"));
+                new JavaSparkContext(new SparkConf().setAppName("SparkStats").setMaster("local[*]").set("spark.driver.allowMultipleContexts", "true"));
         final JavaDoubleRDD rdd = sc.parallelizeDoubles(testData);
         final StatCounter statCounter = rdd.stats();
 
@@ -54,6 +58,7 @@ public final class EventStreamStatisticsTest {
         LOGGER.info("Mean:     " + statCounter.mean());
         LOGGER.info("Variance: " + statCounter.variance());
         LOGGER.info("Stdev:    " + statCounter.stdev());
+        Assert.assertEquals(numberOfValues, statCounter.count());
     }
 
     @Ignore
@@ -74,7 +79,7 @@ public final class EventStreamStatisticsTest {
         events.stream().forEach(System.out::println);
         kinesisStreamRule.pushEvents(events);*/
 
-      // wait for an hour
+        // wait for an hour
         Awaitility.await().atMost(new Duration(1, TimeUnit.HOURS))
                 .until(() -> false);
     }
@@ -82,8 +87,8 @@ public final class EventStreamStatisticsTest {
     @Ignore
     public void calculateStreamingStatistics1() {
         // 3) generate the events and push
-        final List<Event> events = kinesisStreamRule.generateEvents(1000, 4, 9);
+        final List<Event> events = generateEvents(1000, 4, 9);
         events.stream().forEach(System.out::println);
-        kinesisStreamRule.pushEvents(events);
+        kinesisStreamRule.pushEventsToKinesis(events);
     }
 }

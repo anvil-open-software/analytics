@@ -32,6 +32,7 @@ public final class DriverUtils {
         final int numSparkThreads = getNumberOfShards(awsEndpointUrl, streamName) + 1;
         // Spark config
         final SparkConf configuration = new SparkConf().
+                // sets the lease manager table name
                 setAppName(Event.TABLE_NAME).setMaster("local[" + numSparkThreads + "]");
         return new JavaStreamingContext(configuration, pollTime);
     }
