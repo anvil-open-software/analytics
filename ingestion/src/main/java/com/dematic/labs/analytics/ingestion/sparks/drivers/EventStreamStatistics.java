@@ -68,24 +68,26 @@ public class EventStreamStatistics {
 
         final Duration pollTime = Durations.seconds(1);
         // make Duration configurable
-        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, streamName, pollTime);
+        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, streamName,
+                pollTime);
+
+        // Checkpointing must be enabled to use the updateStateByKey function
+        streamingContext.checkpoint(TMP_DIR);
+        LOGGER.info("checkpoint dir >{}<", TMP_DIR);
 
         // calculate stream statistics
         final EventStreamStatistics stats = new EventStreamStatistics();
 
         final JavaDStream<byte[]> javaDStream = getJavaDStream(kinesisEndpoint, streamName, pollTime, streamingContext);
 
-        stats.calculate(javaDStream, streamingContext);
+        stats.calculate(javaDStream);
 
         // Start the streaming context and await termination
         streamingContext.start();
         streamingContext.awaitTermination();
     }
 
-    public void calculate(final JavaDStream<byte[]> inputStream, final JavaStreamingContext streamingContext) {
-        // Checkpointing must be enabled to use the updateStateByKey function
-        streamingContext.checkpoint(TMP_DIR);
-        LOGGER.info("checkpoint dir >{}<", TMP_DIR);
+    public void calculate(final JavaDStream<byte[]> inputStream) {
         // transform the byte[] (byte arrays are json) to a string to events
         final JavaDStream<Event> events =
                 inputStream.map(
