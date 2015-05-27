@@ -46,20 +46,19 @@ public final class EventConsumer {
 
     public void persistEvents(final JavaDStream<byte[]> inputStream, final String dynamoDBEndpoint) {
         final DynamoDBMapper dynamoDBMapper = new DynamoDBMapper(Connections.getAmazonDynamoDBClient(dynamoDBEndpoint));
-        // transform the byte[] (byte arrays are json) to a string
-        final JavaDStream<String> eventMap =
+        // transform the byte[] (byte arrays are json) to a string to events
+        final JavaDStream<Event> eventStream =
                 inputStream.map(
-                        event -> new String(event, Charset.defaultCharset())
+                        event -> EventUtils.jsonToEvent(new String(event, Charset.defaultCharset()))
                 );
         // for each distributed data set, send to an output stream, and write to a dynamo table
-        eventMap.foreachRDD(
+        eventStream.foreachRDD(
                 // rdd = distributed data set
                 rdd -> {
                     if (rdd.count() > 0) {
                         // todo: batch save
-                        final List<String> events = rdd.collect();
-                        for (final String json : events) {
-                            final Event event = EventUtils.jsonToEvent(json);
+                        final List<Event> events = rdd.collect();
+                        for (final Event event : events) {
                             dynamoDBMapper.save(event);
                             LOGGER.info("saved event >{}<", event.getEventId());
                         }
