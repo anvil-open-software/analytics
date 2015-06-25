@@ -16,8 +16,8 @@ import scala.Tuple2;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import static com.dematic.labs.analytics.ingestion.sparks.DriverUtils.getJavaDStream;
-import static com.dematic.labs.analytics.ingestion.sparks.DriverUtils.getStreamingContext;
+import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
+import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
 
 public class EventStreamStatistics {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamStatistics.class);

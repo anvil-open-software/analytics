@@ -1,4 +1,4 @@
-package com.dematic.labs.analytics.ingestion.sparks;
+package com.dematic.labs.analytics.common.sparks;
 
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;

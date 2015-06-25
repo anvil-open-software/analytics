@@ -1,8 +1,8 @@
-package com.dematic.labs.analytics.ingestion.drivers;
+package com.dematic.labs.analytics.store.drivers;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
-import com.dematic.labs.analytics.ingestion.sparks.drivers.EventConsumer;
+import com.dematic.labs.analytics.store.sparks.drivers.Persister;
 import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
@@ -11,7 +11,6 @@ import com.jayway.awaitility.Awaitility;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -24,14 +23,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.dematic.labs.analytics.ingestion.sparks.DriverUtils.getJavaDStream;
-import static com.dematic.labs.analytics.ingestion.sparks.DriverUtils.getStreamingContext;
-import static com.dematic.labs.toolkit.aws.Connections.deleteDynamoTable;
+import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
+import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
+import static com.dematic.labs.analytics.store.sparks.drivers.Persister.RAW_EVENT_LEASE_TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
 import static com.dematic.labs.toolkit.communication.EventTestingUtils.generateEvents;
 import static org.junit.Assert.assertTrue;
 
-public final class EventConsumerTest {
+public final class PersisterTest {
     // number of events
     private static final int EVENT_COUNT = 50;
 
@@ -55,18 +54,18 @@ public final class EventConsumerTest {
         final String kinesisInputStream = System.getProperty("kinesisInputStream");
         final String dynamoDBEndpoint = System.getProperty("dynamoDBEndpoint");
 
-        final EventConsumer eventConsumer = new EventConsumer();
+        final Persister persister = new Persister();
         // create the spark context
         final Duration pollTime = Durations.seconds(2);
         // make Duration configurable
         final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint,
-                EventConsumer.RAW_EVENT_LEASE_TABLE_NAME, kinesisInputStream, pollTime);
+                RAW_EVENT_LEASE_TABLE_NAME, kinesisInputStream, pollTime);
 
         try {
             final ExecutorService executorService = Executors.newCachedThreadPool();
             executorService.submit(() -> {
                 // call the driver to consume events and store in dynamoDB
-                eventConsumer.persistEvents(
+                persister.persistEvents(
                         getJavaDStream(kinesisEndpoint, kinesisInputStream, pollTime, streamingContext),
                         dynamoDBEndpoint);
 
@@ -94,11 +93,5 @@ public final class EventConsumerTest {
             streamingContext.stop(true);
             System.clearProperty("spark.master.port");
         }
-    }
-
-    @After
-    public void deleteDynamoDBTable() {
-        // delete the dynamo db event table
-        deleteDynamoTable(getAmazonDynamoDBClient(System.getProperty("dynamoDBEndpoint")), Event.TABLE_NAME);
     }
 }
