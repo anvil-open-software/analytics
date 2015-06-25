@@ -1,6 +1,9 @@
 package com.dematic.labs.analytics.store.sparks.drivers;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
+import com.amazonaws.util.StringUtils;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.Event;
 import com.dematic.labs.toolkit.communication.EventUtils;
@@ -8,18 +11,16 @@ import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.nio.charset.Charset;
-import java.util.List;
 
+import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.*;
 import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
 import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
+import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 
-public final class Persister {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Persister.class);
-
+public final class Persister implements Serializable {
     public static final String RAW_EVENT_LEASE_TABLE_NAME = "Raw_Event_LT";
 
     public static void main(final String[] args) {
@@ -32,7 +33,7 @@ public final class Persister {
         final String dynamoDBEndpoint = args[2];
 
         // create the table, if it does not exist
-        Connections.createDynamoTable(dynamoDBEndpoint, Event.class);
+        createDynamoTable(dynamoDBEndpoint, Event.class, null);
 
         final Duration pollTime = Durations.seconds(2);
         // make Duration configurable
@@ -41,33 +42,31 @@ public final class Persister {
 
         // persist events
         final Persister persister = new Persister();
-        persister.persistEvents(getJavaDStream(kinesisEndpoint, streamName, pollTime, streamingContext), dynamoDBEndpoint);
+        persister.persistEvents(getJavaDStream(kinesisEndpoint, streamName, pollTime, streamingContext),
+                dynamoDBEndpoint, null);
         // Start the streaming context and await termination
         streamingContext.start();
         streamingContext.awaitTermination();
     }
 
-    public void persistEvents(final JavaDStream<byte[]> inputStream, final String dynamoDBEndpoint) {
-        final DynamoDBMapper dynamoDBMapper = new DynamoDBMapper(Connections.getAmazonDynamoDBClient(dynamoDBEndpoint));
+    public void persistEvents(final JavaDStream<byte[]> inputStream, final String dynamoDBEndpoint, final String tablePrefix) {
         // transform the byte[] (byte arrays are json) to a string to events
         final JavaDStream<Event> eventStream =
                 inputStream.map(
                         event -> EventUtils.jsonToEvent(new String(event, Charset.defaultCharset()))
                 );
-        // for each distributed data set, send to an output stream, and write to a dynamo table
-        eventStream.foreachRDD(
-                // rdd = distributed data set
-                rdd -> {
-                    if (rdd.count() > 0) {
-                        // todo: batch save
-                        final List<Event> events = rdd.collect();
-                        for (final Event event : events) {
-                            dynamoDBMapper.save(event);
-                            LOGGER.info("saved event >{}<", event.getEventId());
-                        }
-                    }
-                    return null;
-                }
-        );
+        // save by partition
+        eventStream.foreachRDD(v1 -> {
+            v1.foreachPartition(eventIterator -> {
+                //todo look into batching the events and time to create dynamo connection and figure out exception handling
+                final AmazonDynamoDBClient amazonDynamoDBClient = Connections.getAmazonDynamoDBClient(dynamoDBEndpoint);
+                eventIterator.forEachRemaining(event -> {
+                    final DynamoDBMapper dynamoDBMapper = StringUtils.isNullOrEmpty(tablePrefix) ?
+                            new DynamoDBMapper(amazonDynamoDBClient) :
+                            new DynamoDBMapper(amazonDynamoDBClient, new DynamoDBMapperConfig(withTableNamePrefix(tablePrefix)));
+                    dynamoDBMapper.save(event);});
+            });
+            return null;
+        });
     }
 }
