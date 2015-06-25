@@ -24,6 +24,9 @@ public class EventStreamStatistics {
     // store state,
     private static final String TMP_DIR = "/tmp/streaming_event_statistics";
 
+    public static final String STATISTICS_LEASE_TABLE_NAME = "Event_Statistics_LT";
+
+
     // functions
     private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
 
@@ -68,8 +71,8 @@ public class EventStreamStatistics {
 
         final Duration pollTime = Durations.seconds(1);
         // make Duration configurable
-        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, streamName,
-                pollTime);
+        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, STATISTICS_LEASE_TABLE_NAME,
+                streamName, pollTime);
 
         // Checkpointing must be enabled to use the updateStateByKey function
         streamingContext.checkpoint(TMP_DIR);

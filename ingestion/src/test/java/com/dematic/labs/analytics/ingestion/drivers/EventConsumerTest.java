@@ -59,7 +59,8 @@ public final class EventConsumerTest {
         // create the spark context
         final Duration pollTime = Durations.seconds(2);
         // make Duration configurable
-        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, kinesisInputStream, pollTime);
+        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint,
+                EventConsumer.RAW_EVENT_LEASE_TABLE_NAME, kinesisInputStream, pollTime);
 
         try {
             final ExecutorService executorService = Executors.newCachedThreadPool();

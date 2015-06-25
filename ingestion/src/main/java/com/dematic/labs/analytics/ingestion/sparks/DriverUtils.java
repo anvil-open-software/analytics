@@ -3,7 +3,6 @@ package com.dematic.labs.analytics.ingestion.sparks;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.dematic.labs.toolkit.aws.Connections;
-import com.dematic.labs.toolkit.communication.Event;
 import org.apache.spark.SparkConf;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
@@ -26,14 +25,14 @@ public final class DriverUtils {
         return amazonKinesisClient.describeStream(streamName).getStreamDescription().getShards().size();
     }
 
-    public static JavaStreamingContext getStreamingContext(final String awsEndpointUrl, final String streamName,
-                                                           final Duration pollTime) {
+    public static JavaStreamingContext getStreamingContext(final String awsEndpointUrl, final String applicationName,
+                                                           final String streamName, final Duration pollTime) {
         // Must add 1 more thread than the number of receivers or the output won't show properly from the driver
         final int numSparkThreads = getNumberOfShards(awsEndpointUrl, streamName) + 1;
         // Spark config
         final SparkConf configuration = new SparkConf().
                 // sets the lease manager table name
-                setAppName(Event.TABLE_NAME).setMaster("local[" + numSparkThreads + "]");
+                setAppName(applicationName).setMaster("local[" + numSparkThreads + "]");
         return new JavaStreamingContext(configuration, pollTime);
     }
 

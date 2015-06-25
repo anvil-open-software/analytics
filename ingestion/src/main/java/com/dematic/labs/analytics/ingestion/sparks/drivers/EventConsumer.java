@@ -20,6 +20,8 @@ import static com.dematic.labs.analytics.ingestion.sparks.DriverUtils.getStreami
 public final class EventConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventConsumer.class);
 
+    public static final String RAW_EVENT_LEASE_TABLE_NAME = "Raw_Event_LT";
+
     public static void main(final String[] args) {
         if (args.length < 3) {
             throw new IllegalArgumentException("Driver requires Kinesis Endpoint and Kinesis StreamName and DynamoDB Endpoint");
@@ -34,7 +36,8 @@ public final class EventConsumer {
 
         final Duration pollTime = Durations.seconds(2);
         // make Duration configurable
-        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, streamName, pollTime);
+        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, RAW_EVENT_LEASE_TABLE_NAME,
+                streamName, pollTime);
 
         // consume events
         final EventConsumer consumer = new EventConsumer();
