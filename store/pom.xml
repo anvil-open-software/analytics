@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.dematic.labs.analytics</groupId>
-    <artifactId>ingestion</artifactId>
+    <artifactId>store</artifactId>
 
     <dependencies>
         <dependency>
@@ -34,7 +34,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>spark-ingestion-driver-${project.version}</finalName>
+                            <finalName>spark-store-driver-${project.version}</finalName>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>

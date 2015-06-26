@@ -8,6 +8,8 @@
     <artifactId>analytics</artifactId>
     <version>1.0-SNAPSHOT</version>
     <modules>
+        <module>common</module>
+        <module>store</module>
         <module>ingestion</module>
         <module>assembly</module>
         <module>integration</module>
@@ -48,6 +50,38 @@
             <version>1.0-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
+        </dependency>
+        <!-- spark streaming dependencies -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming_2.11</artifactId>
+            <version>1.3.1</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jets3t</artifactId>
+                    <groupId>net.java.dev.jets3t</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>commons-httpclient</artifactId>
+                    <groupId>commons-httpclient</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>slf4j-log4j12</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming-kinesis-asl_2.11</artifactId>
+            <version>1.3.1</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-httpclient</artifactId>
+                    <groupId>commons-httpclient</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- declare tests dependencies -->
         <dependency>
@@ -271,12 +305,12 @@
         <repository>
             <id>nexus</id>
             <name>Releases</name>
-            <url>http://nexus.dematiclabs.com:8081/nexus/content/repositories/releases/</url>
+            <url>http://nexus:8081/nexus/content/repositories/releases/</url>
         </repository>
         <snapshotRepository>
             <id>nexus</id>
             <name>Snapshots</name>
-            <url>http://nexus.dematiclabs.com:8081/nexus/content/repositories/snapshots/</url>
+            <url>http://nexus:8081/nexus/content/repositories/snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
 

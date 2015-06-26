@@ -16,13 +16,16 @@ import scala.Tuple2;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import static com.dematic.labs.analytics.ingestion.sparks.DriverUtils.getJavaDStream;
-import static com.dematic.labs.analytics.ingestion.sparks.DriverUtils.getStreamingContext;
+import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
+import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
 
 public class EventStreamStatistics {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamStatistics.class);
     // store state,
     private static final String TMP_DIR = "/tmp/streaming_event_statistics";
+
+    public static final String STATISTICS_LEASE_TABLE_NAME = "Event_Statistics_LT";
+
 
     // functions
     private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
@@ -68,8 +71,8 @@ public class EventStreamStatistics {
 
         final Duration pollTime = Durations.seconds(1);
         // make Duration configurable
-        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, streamName,
-                pollTime);
+        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, STATISTICS_LEASE_TABLE_NAME,
+                streamName, pollTime);
 
         // Checkpointing must be enabled to use the updateStateByKey function
         streamingContext.checkpoint(TMP_DIR);
