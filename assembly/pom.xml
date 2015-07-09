@@ -20,8 +20,14 @@
             <artifactId>ingestion</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>com.dematic.labs.analytics</groupId>
+            <artifactId>store</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
+    <!-- todo: at this point we are just moving the docker file to target, the docker file will just build the base spark -->
     <build>
         <plugins>
             <!-- move the docker file to target -->
@@ -47,49 +53,6 @@
                                     <filtering>true</filtering>
                                 </resource>
                             </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- create the sparks driver ubar jars -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <finalName>spark-drivers-${project.version}</finalName>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                        <exclude>junit:junit</exclude>
-                                        <exclude>jmock:*</exclude>
-                                        <exclude>*:xml-apis</exclude>
-                                        <!-- todo: not being excluded -->
-                                        <exclude>com.dematic.labs:common:test-jar:tests</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                            <artifactSet>
-                                <excludes>
-                                    <exclude>commons-httpclient:commons-httpclient</exclude>
-                                    <exclude>junit:junit</exclude>
-                                    <exclude>jmock:*</exclude>
-                                    <exclude>*:xml-apis</exclude>
-                                    <exclude>*:tests</exclude>
-                                    <exclude>*:test-jar:tests</exclude>
-                                </excludes>
-                            </artifactSet>
                         </configuration>
                     </execution>
                 </executions>
