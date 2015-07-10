@@ -73,10 +73,11 @@ public final class PersisterTest {
                 streamingContext.start();
                 streamingContext.awaitTermination();
             });
+
             // wait until spark is started
             Awaitility.with().pollInterval(5, TimeUnit.SECONDS).and().with().
                     pollDelay(60, TimeUnit.SECONDS).await().
-                    until(() -> assertTrue(Objects.equals("Started", streamingContext.ssc().state().toString())));
+                    until(() -> assertTrue(Objects.equals("ACTIVE", streamingContext.ssc().getState().toString())));
 
             // generate events
             kinesisStreamRule.pushEventsToKinesis(generateEvents(EVENT_COUNT, 10, 20));
@@ -97,7 +98,7 @@ public final class PersisterTest {
             // delete the event table
             deleteDynamoTable(getAmazonDynamoDBClient(System.getProperty("dynamoDBEndpoint")), tableName);
             // delete the lease table, always in the east
-            deleteDynamoLeaseManagerTable(getAmazonDynamoDBClient("https://dynamodb.us-east-1.amazonaws.com"),
+            deleteDynamoLeaseManagerTable(getAmazonDynamoDBClient(System.getProperty("dynamoDBEndpoint")),
                     leaseTable);
         }
     }
