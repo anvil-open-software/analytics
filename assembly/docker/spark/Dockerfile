@@ -20,3 +20,4 @@ RUN cd /usr/local && ln -s spark-1.4.0-bin-2.6.0 spark
 ENV SPARK_HOME /usr/local/spark
 
 # next steps have docker configure cluster mgr, spark, and start spark master and slaves
+#EXPOSE 8080
