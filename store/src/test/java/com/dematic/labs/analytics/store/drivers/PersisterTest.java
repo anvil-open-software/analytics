@@ -28,7 +28,7 @@ import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingC
 import static com.dematic.labs.analytics.store.sparks.drivers.Persister.RAW_EVENT_LEASE_TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.*;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
-import static com.dematic.labs.toolkit.communication.EventTestingUtils.generateEvents;
+import static com.dematic.labs.toolkit.communication.EventUtils.generateEvents;
 import static org.junit.Assert.assertTrue;
 
 public final class PersisterTest {
