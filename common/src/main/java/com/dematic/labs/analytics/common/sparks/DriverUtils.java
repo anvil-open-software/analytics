@@ -3,6 +3,7 @@ package com.dematic.labs.analytics.common.sparks;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.dematic.labs.toolkit.aws.Connections;
+import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
@@ -40,7 +41,8 @@ public final class DriverUtils {
             streamingContext.checkpoint(checkPointDir);
             return streamingContext;
         };
-        return JavaStreamingContext.getOrCreate(checkPointDir, factory);
+        return Strings.isNullOrEmpty(checkPointDir) ? factory.create() :
+                JavaStreamingContext.getOrCreate(checkPointDir, factory);
     }
 
     public static JavaDStream<byte[]> getJavaDStream(final String awsEndpointUrl, final String streamName,
