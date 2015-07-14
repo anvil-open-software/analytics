@@ -71,8 +71,8 @@ public class EventStreamStatistics {
 
         final Duration pollTime = Durations.seconds(1);
         // make Duration configurable
-        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, STATISTICS_LEASE_TABLE_NAME,
-                streamName, pollTime);
+        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, null,
+                STATISTICS_LEASE_TABLE_NAME, streamName, pollTime);
 
         // Checkpointing must be enabled to use the updateStateByKey function
         streamingContext.checkpoint(TMP_DIR);

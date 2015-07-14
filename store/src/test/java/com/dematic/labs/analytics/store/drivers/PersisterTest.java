@@ -60,7 +60,7 @@ public final class PersisterTest {
         final Duration pollTime = Durations.seconds(2);
         // make Duration configurable
         final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, leaseTable,
-                kinesisInputStream, pollTime);
+                Persister.CHECKPOINT_DIR, kinesisInputStream, pollTime);
 
         try {
             final ExecutorService executorService = Executors.newCachedThreadPool();
