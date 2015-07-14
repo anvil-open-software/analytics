@@ -69,7 +69,6 @@ public final class PersisterTest {
                 persister.persistEvents(
                         getJavaDStream(kinesisEndpoint, kinesisInputStream, pollTime, streamingContext),
                         dynamoDBEndpoint, userNamePrefix);
-
                 streamingContext.start();
                 streamingContext.awaitTermination();
             });
