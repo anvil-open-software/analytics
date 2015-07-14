@@ -34,7 +34,8 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>spark-ingestion-driver-${project.version}</finalName>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>driver</shadedClassifierName>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
