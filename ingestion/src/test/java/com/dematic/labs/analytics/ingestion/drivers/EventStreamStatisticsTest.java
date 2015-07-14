@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-import static com.dematic.labs.toolkit.communication.EventTestingUtils.generateEvents;
+import static com.dematic.labs.toolkit.communication.EventUtils.generateEvents;
 
 public final class EventStreamStatisticsTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamStatisticsTest.class);
