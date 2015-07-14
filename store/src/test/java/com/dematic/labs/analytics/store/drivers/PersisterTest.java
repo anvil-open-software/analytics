@@ -28,7 +28,7 @@ import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingC
 import static com.dematic.labs.analytics.store.sparks.drivers.Persister.RAW_EVENT_LEASE_TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.*;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
-import static com.dematic.labs.toolkit.communication.EventTestingUtils.generateEvents;
+import static com.dematic.labs.toolkit.communication.EventUtils.generateEvents;
 import static org.junit.Assert.assertTrue;
 
 public final class PersisterTest {
@@ -60,7 +60,7 @@ public final class PersisterTest {
         final Duration pollTime = Durations.seconds(2);
         // make Duration configurable
         final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, leaseTable,
-                kinesisInputStream, pollTime);
+                null, kinesisInputStream, pollTime);
 
         try {
             final ExecutorService executorService = Executors.newCachedThreadPool();
@@ -69,7 +69,6 @@ public final class PersisterTest {
                 persister.persistEvents(
                         getJavaDStream(kinesisEndpoint, kinesisInputStream, pollTime, streamingContext),
                         dynamoDBEndpoint, userNamePrefix);
-
                 streamingContext.start();
                 streamingContext.awaitTermination();
             });

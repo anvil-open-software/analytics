@@ -3,11 +3,13 @@ package com.dematic.labs.analytics.common.sparks;
 import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.dematic.labs.toolkit.aws.Connections;
+import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.api.java.JavaStreamingContextFactory;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
 
 import java.util.ArrayList;
@@ -26,14 +28,21 @@ public final class DriverUtils {
     }
 
     public static JavaStreamingContext getStreamingContext(final String awsEndpointUrl, final String applicationName,
-                                                           final String streamName, final Duration pollTime) {
-        // Must add 1 more thread than the number of receivers or the output won't show properly from the driver
-        final int numSparkThreads = getNumberOfShards(awsEndpointUrl, streamName) + 1;
-        // Spark config
-        final SparkConf configuration = new SparkConf().
-                // sets the lease manager table name
-                setAppName(applicationName).setMaster("local[" + numSparkThreads + "]");
-        return new JavaStreamingContext(configuration, pollTime);
+                                                           final String checkPointDir, final String streamName,
+                                                           final Duration pollTime) {
+        final JavaStreamingContextFactory factory = () -> {
+            // Must add 1 more thread than the number of receivers or the output won't show properly from the driver
+            final int numSparkThreads = getNumberOfShards(awsEndpointUrl, streamName) + 1;
+            // Spark config
+            final SparkConf configuration = new SparkConf().
+                    // sets the lease manager table name
+                            setAppName(applicationName).setMaster("local[" + numSparkThreads + "]");
+            final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, pollTime);
+            streamingContext.checkpoint(checkPointDir);
+            return streamingContext;
+        };
+        return Strings.isNullOrEmpty(checkPointDir) ? factory.create() :
+                JavaStreamingContext.getOrCreate(checkPointDir, factory);
     }
 
     public static JavaDStream<byte[]> getJavaDStream(final String awsEndpointUrl, final String streamName,

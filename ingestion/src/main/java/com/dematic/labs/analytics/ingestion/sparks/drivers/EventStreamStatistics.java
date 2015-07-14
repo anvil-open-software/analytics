@@ -22,7 +22,7 @@ import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingC
 public class EventStreamStatistics {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamStatistics.class);
     // store state,
-    private static final String TMP_DIR = "/tmp/streaming_event_statistics";
+    private static final String CHECKPOINT_DIR = "/tmp/streaming_event_statistics";
 
     public static final String STATISTICS_LEASE_TABLE_NAME = "Event_Statistics_LT";
 
@@ -70,14 +70,11 @@ public class EventStreamStatistics {
         final String streamName = args[1];
 
         final Duration pollTime = Durations.seconds(1);
-        // make Duration configurable
-        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, STATISTICS_LEASE_TABLE_NAME,
-                streamName, pollTime);
-
         // Checkpointing must be enabled to use the updateStateByKey function
-        streamingContext.checkpoint(TMP_DIR);
-        LOGGER.info("checkpoint dir >{}<", TMP_DIR);
-
+        LOGGER.info("checkpoint dir >{}<", CHECKPOINT_DIR);
+        // make Duration configurable
+        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, CHECKPOINT_DIR,
+                STATISTICS_LEASE_TABLE_NAME, streamName, pollTime);
         // calculate stream statistics
         final EventStreamStatistics stats = new EventStreamStatistics();
 
