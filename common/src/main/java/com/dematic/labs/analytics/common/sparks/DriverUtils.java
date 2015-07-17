@@ -32,9 +32,12 @@ public final class DriverUtils {
                                                            final Duration pollTime) {
         final JavaStreamingContextFactory factory = () -> {
             // Spark config
-            final SparkConf configuration = new SparkConf().setMaster(masterUrl).
+            final SparkConf configuration = new SparkConf().
                     // sets the lease manager table name
                             setAppName(applicationName);
+            if (!Strings.isNullOrEmpty(masterUrl)) {
+                configuration.setMaster(masterUrl);
+            }
             final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, pollTime);
             if (!Strings.isNullOrEmpty(checkPointDir)) {
                 streamingContext.checkpoint(checkPointDir);
