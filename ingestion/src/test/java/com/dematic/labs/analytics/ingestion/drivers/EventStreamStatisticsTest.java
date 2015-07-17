@@ -36,8 +36,6 @@ public final class EventStreamStatisticsTest {
             final List<Double> testData =
                     IntStream.range(0, numberOfValues).
                             mapToDouble(d -> d).collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
-            // 2) create a java spark context
-
             final JavaDoubleRDD rdd = sc.parallelizeDoubles(testData);
             final StatCounter statCounter = rdd.stats();
 
