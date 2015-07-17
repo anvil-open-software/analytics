@@ -3,6 +3,7 @@ package com.dematic.labs.analytics.store.drivers;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
+import com.dematic.labs.analytics.common.sparks.DriverUtils;
 import com.dematic.labs.analytics.store.sparks.drivers.Persister;
 import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
@@ -27,7 +28,6 @@ import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStrea
 import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
 import static com.dematic.labs.analytics.store.sparks.drivers.Persister.RAW_EVENT_LEASE_TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.*;
-import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
 import static com.dematic.labs.toolkit.communication.EventUtils.generateEvents;
 import static org.junit.Assert.assertTrue;
 
@@ -57,10 +57,12 @@ public final class PersisterTest {
 
         final Persister persister = new Persister();
         // create the spark context
-        final Duration pollTime = Durations.seconds(2);
         // make Duration configurable
-        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, leaseTable,
-                null, kinesisInputStream, pollTime);
+        final Duration pollTime = Durations.seconds(2);
+        // Must add 1 more thread than the number of receivers or the output won't show properly from the driver
+        final int numSparkThreads = DriverUtils.getNumberOfShards(kinesisEndpoint, kinesisInputStream) + 1;
+        final JavaStreamingContext streamingContext = getStreamingContext("local[" + numSparkThreads + "]",
+                leaseTable, null, pollTime);
 
         try {
             final ExecutorService executorService = Executors.newCachedThreadPool();

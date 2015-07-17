@@ -73,8 +73,8 @@ public class EventStreamStatistics {
         // Checkpointing must be enabled to use the updateStateByKey function
         LOGGER.info("checkpoint dir >{}<", CHECKPOINT_DIR);
         // make Duration configurable
-        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, CHECKPOINT_DIR,
-                STATISTICS_LEASE_TABLE_NAME, streamName, pollTime);
+        final JavaStreamingContext streamingContext = getStreamingContext(null, CHECKPOINT_DIR,
+                STATISTICS_LEASE_TABLE_NAME, pollTime);
         // calculate stream statistics
         final EventStreamStatistics stats = new EventStreamStatistics();
 

@@ -27,8 +27,6 @@ import static java.util.stream.StreamSupport.stream;
 
 public final class Persister implements Serializable {
     public static final String RAW_EVENT_LEASE_TABLE_NAME = "Raw_Event_LT";
-    // store state, look into s3
-    public static final String CHECKPOINT_DIR = "/tmp/persister";
 
     public static void main(final String[] args) {
         if (args.length < 3) {
@@ -41,13 +39,10 @@ public final class Persister implements Serializable {
 
         // create the table, if it does not exist
         createDynamoTable(dynamoDBEndpoint, Event.class, null);
-
-        final Duration pollTime = Durations.seconds(2);
         // make Duration configurable
-        final JavaStreamingContext streamingContext = getStreamingContext(kinesisEndpoint, RAW_EVENT_LEASE_TABLE_NAME,
-                CHECKPOINT_DIR, streamName, pollTime);
-
-        streamingContext.checkpoint(CHECKPOINT_DIR);
+        final Duration pollTime = Durations.seconds(2);
+        // master url will be set using the spark submit driver command
+        final JavaStreamingContext streamingContext = getStreamingContext(null, RAW_EVENT_LEASE_TABLE_NAME, null, pollTime);
         // persist events
         final Persister persister = new Persister();
         persister.persistEvents(getJavaDStream(kinesisEndpoint, streamName, pollTime, streamingContext),

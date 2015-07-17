@@ -27,18 +27,18 @@ public final class DriverUtils {
         return amazonKinesisClient.describeStream(streamName).getStreamDescription().getShards().size();
     }
 
-    public static JavaStreamingContext getStreamingContext(final String awsEndpointUrl, final String applicationName,
-                                                           final String checkPointDir, final String streamName,
+    public static JavaStreamingContext getStreamingContext(final String masterUrl, final String applicationName,
+                                                           final String checkPointDir,
                                                            final Duration pollTime) {
         final JavaStreamingContextFactory factory = () -> {
-            // Must add 1 more thread than the number of receivers or the output won't show properly from the driver
-            final int numSparkThreads = getNumberOfShards(awsEndpointUrl, streamName) + 1;
             // Spark config
-            final SparkConf configuration = new SparkConf().
+            final SparkConf configuration = new SparkConf().setMaster(masterUrl).
                     // sets the lease manager table name
-                            setAppName(applicationName).setMaster("local[" + numSparkThreads + "]");
+                            setAppName(applicationName);
             final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, pollTime);
-            streamingContext.checkpoint(checkPointDir);
+            if (!Strings.isNullOrEmpty(checkPointDir)) {
+                streamingContext.checkpoint(checkPointDir);
+            }
             return streamingContext;
         };
         return Strings.isNullOrEmpty(checkPointDir) ? factory.create() :
