@@ -7,6 +7,7 @@ import com.amazonaws.util.StringUtils;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.Event;
 import com.dematic.labs.toolkit.communication.EventUtils;
+import com.google.common.base.Strings;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -30,23 +31,27 @@ public final class Persister implements Serializable {
 
     public static void main(final String[] args) {
         if (args.length < 3) {
-            throw new IllegalArgumentException("Driver requires Kinesis Endpoint and Kinesis StreamName and DynamoDB Endpoint");
+            throw new IllegalArgumentException("Driver requires Kinesis Endpoint and Kinesis StreamName and DynamoDB " +
+                    "Endpoint and optional dynamo prefix");
         }
         // url and stream name to pull events
         final String kinesisEndpoint = args[0];
         final String streamName = args[1];
         final String dynamoDBEndpoint = args[2];
+        final String dynamoPrefix = args.length == 4 ? args[3] : null;
+        final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? RAW_EVENT_LEASE_TABLE_NAME :
+                String.format("%s%s",dynamoPrefix, RAW_EVENT_LEASE_TABLE_NAME);
 
         // create the table, if it does not exist
-        createDynamoTable(dynamoDBEndpoint, Event.class, null);
+        createDynamoTable(dynamoDBEndpoint, Event.class, dynamoPrefix);
         // make Duration configurable
         final Duration pollTime = Durations.seconds(2);
         // master url will be set using the spark submit driver command
-        final JavaStreamingContext streamingContext = getStreamingContext(null, RAW_EVENT_LEASE_TABLE_NAME, null, pollTime);
+        final JavaStreamingContext streamingContext = getStreamingContext(null, appName, null, pollTime);
         // persist events
         final Persister persister = new Persister();
         persister.persistEvents(getJavaDStream(kinesisEndpoint, streamName, pollTime, streamingContext),
-                dynamoDBEndpoint, null);
+                dynamoDBEndpoint, dynamoPrefix);
         // Start the streaming context and await termination
         streamingContext.start();
         streamingContext.awaitTermination();
