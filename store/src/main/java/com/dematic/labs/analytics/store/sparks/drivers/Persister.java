@@ -38,7 +38,7 @@ public final class Persister implements Serializable {
         final String kinesisEndpoint = args[0];
         final String streamName = args[1];
         final String dynamoDBEndpoint = args[2];
-        final String dynamoPrefix = args.length == 4 ? args[0] : null;
+        final String dynamoPrefix = args.length == 4 ? args[3] : null;
         final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? RAW_EVENT_LEASE_TABLE_NAME :
                 String.format("%s_%s",dynamoPrefix, RAW_EVENT_LEASE_TABLE_NAME);
 
