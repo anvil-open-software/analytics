@@ -40,7 +40,7 @@ public final class Persister implements Serializable {
         final String dynamoDBEndpoint = args[2];
         final String dynamoPrefix = args.length == 4 ? args[3] : null;
         final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? RAW_EVENT_LEASE_TABLE_NAME :
-                String.format("%s_%s",dynamoPrefix, RAW_EVENT_LEASE_TABLE_NAME);
+                String.format("%s%s",dynamoPrefix, RAW_EVENT_LEASE_TABLE_NAME);
 
         // create the table, if it does not exist
         createDynamoTable(dynamoDBEndpoint, Event.class, dynamoPrefix);
