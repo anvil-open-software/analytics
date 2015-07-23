@@ -29,7 +29,7 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
 public final class Persister implements Serializable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Persister.class);
+    private transient static final Logger LOGGER = LoggerFactory.getLogger(Persister.class);
 
     public static final String RAW_EVENT_LEASE_TABLE_NAME = "Raw_Event_LT";
 
@@ -90,6 +90,8 @@ public final class Persister implements Serializable {
         // save by partition
         eventStream.foreachRDD(rdd -> {
             rdd.foreachPartition(eventIterator -> {
+                final long start = System.currentTimeMillis();
+
                 final AmazonDynamoDBClient amazonDynamoDBClient = Connections.getAmazonDynamoDBClient(dynamoDBEndpoint);
                 final DynamoDBMapper dynamoDBMapper = StringUtils.isNullOrEmpty(tablePrefix) ?
                         new DynamoDBMapper(amazonDynamoDBClient) :
@@ -98,10 +100,13 @@ public final class Persister implements Serializable {
                 final List<Event> collect = stream(spliteratorUnknownSize(eventIterator, Spliterator.CONCURRENT), true)
                         .collect(Collectors.<Event>toList());
                 final List<DynamoDBMapper.FailedBatch> failedBatches = dynamoDBMapper.batchSave(collect);
-                // todo: fix, for now i want to see failed batches
+                // todo: fix, for now i want to see failed batchesx
                 if (failedBatches != null && failedBatches.size() > 0) {
                     throw new IllegalArgumentException("---- " + failedBatches.size());
                 }
+                final long total = System.currentTimeMillis() - start;
+
+                LOGGER.info(" ------- " + total);
             });
             return null;
         });
