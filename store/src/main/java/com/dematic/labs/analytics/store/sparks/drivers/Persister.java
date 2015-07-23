@@ -90,6 +90,8 @@ public final class Persister implements Serializable {
         // save by partition
         eventStream.foreachRDD(rdd -> {
             rdd.foreachPartition(eventIterator -> {
+                final long start = System.currentTimeMillis();
+
                 final AmazonDynamoDBClient amazonDynamoDBClient = Connections.getAmazonDynamoDBClient(dynamoDBEndpoint);
                 final DynamoDBMapper dynamoDBMapper = StringUtils.isNullOrEmpty(tablePrefix) ?
                         new DynamoDBMapper(amazonDynamoDBClient) :
@@ -102,6 +104,9 @@ public final class Persister implements Serializable {
                 if (failedBatches != null && failedBatches.size() > 0) {
                     throw new IllegalArgumentException("---- " + failedBatches.size());
                 }
+                final long total = System.currentTimeMillis() - start;
+
+                LOGGER.info(" ------- " + total);
             });
             return null;
         });
