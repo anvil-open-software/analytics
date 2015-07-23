@@ -12,6 +12,8 @@ import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;
@@ -27,25 +29,45 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
 public final class Persister implements Serializable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Persister.class);
+
     public static final String RAW_EVENT_LEASE_TABLE_NAME = "Raw_Event_LT";
 
+    /**
+     * Arguments:
+     * <p/>
+     * Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint, DynamoDB Table Prefix, and PollTime
+     * <p/>
+     * or
+     * <p/>
+     * Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint, and PollTime
+     */
     public static void main(final String[] args) {
-        if (args.length < 3) {
-            throw new IllegalArgumentException("Driver requires Kinesis Endpoint and Kinesis StreamName and DynamoDB " +
-                    "Endpoint and optional dynamo prefix");
+        if (args.length < 4) {
+            throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint,"
+                    + "optional DynamoDB Prefix, and driver PollTime");
         }
         // url and stream name to pull events
         final String kinesisEndpoint = args[0];
         final String streamName = args[1];
         final String dynamoDBEndpoint = args[2];
-        final String dynamoPrefix = args.length == 4 ? args[3] : null;
+
+        final String dynamoPrefix;
+        final Duration pollTime;
+        if (args.length == 4) {
+            dynamoPrefix = null;
+            pollTime = Durations.seconds(Integer.valueOf(args[3]));
+        } else {
+            dynamoPrefix = args[3];
+            pollTime = Durations.seconds(Integer.valueOf(args[4]));
+        }
+
         final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? RAW_EVENT_LEASE_TABLE_NAME :
-                String.format("%s%s",dynamoPrefix, RAW_EVENT_LEASE_TABLE_NAME);
+                String.format("%s%s", dynamoPrefix, RAW_EVENT_LEASE_TABLE_NAME);
 
         // create the table, if it does not exist
         createDynamoTable(dynamoDBEndpoint, Event.class, dynamoPrefix);
-        // make Duration configurable
-        final Duration pollTime = Durations.seconds(2);
+
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext = getStreamingContext(null, appName, null, pollTime);
         // persist events
@@ -53,6 +75,7 @@ public final class Persister implements Serializable {
         persister.persistEvents(getJavaDStream(kinesisEndpoint, streamName, pollTime, streamingContext),
                 dynamoDBEndpoint, dynamoPrefix);
         // Start the streaming context and await termination
+        LOGGER.info("starting Persister Driver with master URL >{}<", streamingContext.sc().master());
         streamingContext.start();
         streamingContext.awaitTermination();
     }
