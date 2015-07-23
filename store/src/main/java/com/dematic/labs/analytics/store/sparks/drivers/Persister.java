@@ -3,6 +3,7 @@ package com.dematic.labs.analytics.store.sparks.drivers;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
+import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.amazonaws.util.StringUtils;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.Event;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.stream.Collectors;
 
@@ -99,16 +101,28 @@ public final class Persister implements Serializable {
                 // turn the eventIterator to a list of events and batch save
                 final List<Event> collect = stream(spliteratorUnknownSize(eventIterator, Spliterator.CONCURRENT), true)
                         .collect(Collectors.<Event>toList());
+                final int events = collect.size();
                 final List<DynamoDBMapper.FailedBatch> failedBatches = dynamoDBMapper.batchSave(collect);
-                // todo: fix, for now i want to see failed batchesx
+                // todo: figure out correct solution
                 if (failedBatches != null && failedBatches.size() > 0) {
-                    throw new IllegalArgumentException("---- " + failedBatches.size());
+                    for (final DynamoDBMapper.FailedBatch failedBatch : failedBatches) {
+                        LOGGER.error("failed to save to dynamo because " + failedBatch.getException() + " " + failedBatch.getUnprocessedItems() + " " + failedBatch.getUnprocessedItems().values().size());
+                    }
+
+                    throw new IllegalArgumentException("Unable to process all batch items " + failedBatches);
+
                 }
                 final long total = System.currentTimeMillis() - start;
-
-                LOGGER.info(" ------- " + total);
+                LOGGER.info("{} events in {} ms ", events, total);
             });
             return null;
+        });
+    }
+
+    //todo: implement
+    private void handleFailedDynamoBatchWrites(final List<DynamoDBMapper.FailedBatch> failedBatches) {
+        failedBatches.stream().forEach(failedBatch -> {
+            final Map<String, List<WriteRequest>> unprocessedItems = failedBatch.getUnprocessedItems();
         });
     }
 }
