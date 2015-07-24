@@ -94,6 +94,7 @@ public final class Persister implements Serializable {
             rdd.foreachPartition(eventIterator -> {
                 final long start = System.currentTimeMillis();
 
+
                 final AmazonDynamoDBClient amazonDynamoDBClient = Connections.getAmazonDynamoDBClient(dynamoDBEndpoint);
                 final DynamoDBMapper dynamoDBMapper = StringUtils.isNullOrEmpty(tablePrefix) ?
                         new DynamoDBMapper(amazonDynamoDBClient) :
@@ -102,7 +103,10 @@ public final class Persister implements Serializable {
                 final List<Event> collect = stream(spliteratorUnknownSize(eventIterator, Spliterator.CONCURRENT), true)
                         .collect(Collectors.<Event>toList());
                 final int events = collect.size();
+                final long bs = System.currentTimeMillis();
                 final List<DynamoDBMapper.FailedBatch> failedBatches = dynamoDBMapper.batchSave(collect);
+                final long be = System.currentTimeMillis() - bs;
+                LOGGER.info("batch save time {} ms ", be);
                 // todo: figure out correct solution
                 if (failedBatches != null && failedBatches.size() > 0) {
                     for (final DynamoDBMapper.FailedBatch failedBatch : failedBatches) {
@@ -113,7 +117,7 @@ public final class Persister implements Serializable {
 
                 }
                 final long total = System.currentTimeMillis() - start;
-                LOGGER.info("{} events in {} ms ", events, total);
+                LOGGER.info("total {} events in {} ms ", events, total);
             });
             return null;
         });
