@@ -12,6 +12,7 @@ import com.jayway.awaitility.Awaitility;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -42,7 +43,7 @@ public final class PersisterTest {
     public final TestRule systemPropertyRule =
             RuleChain.outerRule(new SystemPropertyRule()).around(kinesisStreamRule);
 
-    @Test
+    @Ignore
     public void persistEvents() throws IOException {
         // start sparks driver, running in the background
         final String kinesisEndpoint = System.getProperty("kinesisEndpoint");
