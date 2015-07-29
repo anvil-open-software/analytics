@@ -43,7 +43,7 @@ public final class PersisterTest {
     public final TestRule systemPropertyRule =
             RuleChain.outerRule(new SystemPropertyRule()).around(kinesisStreamRule);
 
-    @Ignore
+    @Test
     public void persistEvents() throws IOException {
         // start sparks driver, running in the background
         final String kinesisEndpoint = System.getProperty("kinesisEndpoint");
