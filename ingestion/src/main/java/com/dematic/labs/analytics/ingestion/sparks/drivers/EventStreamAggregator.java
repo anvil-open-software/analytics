@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.amazonaws.util.StringUtils;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.EventUtils;
+import com.google.common.base.Strings;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
@@ -28,6 +29,8 @@ import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 
 public final class EventStreamAggregator implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamAggregator.class);
+
+    public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_LT";
 
     // functions
     private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
@@ -55,7 +58,9 @@ public final class EventStreamAggregator implements Serializable {
             timeUnit = TimeUnit.valueOf(args[5]);
         }
 
-        final String appName = String.format("%s%s_LT", dynamoPrefix, EventAggregator.TABLE_NAME);
+        final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME :
+                String.format("%s%s", dynamoPrefix, EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME);
+
         // create the table, if it does not exist
         createDynamoTable(dynamoDBEndpoint, EventAggregator.class, dynamoPrefix);
         //todo: master url will be set using the spark submit driver command
