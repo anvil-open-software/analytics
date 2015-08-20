@@ -59,7 +59,7 @@ public final class EventStreamAggregator implements Serializable {
         // create the table, if it does not exist
         createDynamoTable(dynamoDBEndpoint, EventAggregator.class, dynamoPrefix);
         //todo: master url will be set using the spark submit driver command
-        final JavaStreamingContext streamingContext = getStreamingContext("local[*]", appName, null, pollTime);
+        final JavaStreamingContext streamingContext = getStreamingContext(null, appName, null, pollTime);
 
         // Start the streaming context and await termination
         LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sc().master());
