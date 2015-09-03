@@ -3,6 +3,7 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
 import com.amazonaws.util.StringUtils;
+import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.EventUtils;
 import com.google.common.base.Strings;

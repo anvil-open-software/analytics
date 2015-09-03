@@ -5,7 +5,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedScanList;
 import com.dematic.labs.analytics.common.sparks.DriverUtils;
-import com.dematic.labs.analytics.ingestion.sparks.drivers.EventAggregator;
+import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.EventStreamAggregator;
 import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
