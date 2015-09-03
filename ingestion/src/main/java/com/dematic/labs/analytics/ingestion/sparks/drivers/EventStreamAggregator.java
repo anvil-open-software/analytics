@@ -1,12 +1,18 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.datamodeling.*;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import com.amazonaws.util.StringUtils;
 import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
 import com.dematic.labs.toolkit.aws.Connections;
+import com.dematic.labs.toolkit.communication.Event;
 import com.dematic.labs.toolkit.communication.EventUtils;
 import com.google.common.base.Strings;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
@@ -77,19 +83,25 @@ public final class EventStreamAggregator implements Serializable {
         streamingContext.awaitTermination();
     }
 
-    public void aggregateEvents(final JavaDStream<byte[]> inputStream, final String dynamoDBEndpoint,
+    public void aggregateEvents(final JavaDStream<byte[]> byteStream, final String dynamoDBEndpoint,
                                 final String tablePrefix, final TimeUnit timeUnit) {
 
-        final JavaPairDStream<String, Long> pairs = inputStream.mapToPair(event -> {
+        // transform the byte[] (byte arrays are json) to a string to events, and ensure distinct within stream
+        final JavaDStream<Event> eventStream =
+                byteStream.map(
+                        event -> EventUtils.jsonToEvent(new String(event, Charset.defaultCharset()))
+                ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct);
+
+        // map to pairs and aggregate by key
+        final JavaPairDStream<String, Long> aggregates = eventStream.mapToPair(event -> {
             // Downsampling: where we reduce the event’s ISO 8601 timestamp down to timeUnit precision,
             // so for instance “2015-06-05T12:54:43.064528” becomes “2015-06-05T12:54:00.000000” for minute.
             // This downsampling gives us a fast way of bucketing or aggregating events via this downsampled key
-            return new Tuple2<String, Long>(EventUtils.jsonToEvent(
-                    new String(event, Charset.defaultCharset())).aggregateBy(timeUnit), 1L);
-        });
+            return new Tuple2<>(event.aggregateBy(timeUnit), 1L);
+        }).reduceByKey(SUM_REDUCER);
 
-        // aggregate by key
-        pairs.reduceByKey(SUM_REDUCER).foreachRDD(rdd -> {
+        // save counts
+        aggregates.foreachRDD(rdd -> {
             final AmazonDynamoDBClient amazonDynamoDBClient = Connections.getAmazonDynamoDBClient(dynamoDBEndpoint);
             final DynamoDBMapper dynamoDBMapper = StringUtils.isNullOrEmpty(tablePrefix) ?
                     new DynamoDBMapper(amazonDynamoDBClient) :
