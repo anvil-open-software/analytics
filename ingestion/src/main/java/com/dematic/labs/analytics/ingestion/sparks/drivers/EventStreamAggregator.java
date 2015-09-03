@@ -48,7 +48,7 @@ public final class EventStreamAggregator implements Serializable {
         final String dynamoPrefix;
         final Duration pollTime;
         final TimeUnit timeUnit;
-        if (args.length == 4) {
+        if (args.length == 5) {
             dynamoPrefix = null;
             pollTime = Durations.seconds(Integer.valueOf(args[3]));
             timeUnit = TimeUnit.valueOf(args[4]);
