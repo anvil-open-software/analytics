@@ -1,10 +1,11 @@
-package com.dematic.labs.analytics.ingestion.sparks.drivers;
+package com.dematic.labs.analytics.ingestion.sparks.tables;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 @SuppressWarnings("unused")
 @DynamoDBTable(tableName = EventAggregator.TABLE_NAME)
@@ -79,5 +80,37 @@ public final class EventAggregator implements Serializable {
 
     public void setCount(final long count) {
         this.count = count;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final EventAggregator that = (EventAggregator) o;
+        return Objects.equals(count, that.count) &&
+                Objects.equals(bucket, that.bucket) &&
+                Objects.equals(eventType, that.eventType) &&
+                Objects.equals(created, that.created) &&
+                Objects.equals(updated, that.updated);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(bucket, eventType, created, updated, count);
+    }
+
+    @Override
+    public String toString() {
+        return "EventAggregator{" +
+                "bucket='" + bucket + '\'' +
+                ", eventType='" + eventType + '\'' +
+                ", created='" + created + '\'' +
+                ", updated='" + updated + '\'' +
+                ", count=" + count +
+                '}';
     }
 }
