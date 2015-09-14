@@ -129,6 +129,7 @@ public final class EventStreamAggregator implements Serializable {
                     // create
                     eventAggregator = new EventAggregator(bucket._1(), null, now(), null, bucket._2());
                     dynamoDBMapper.save(eventAggregator);
+                    break;
                 } else {
                     // update
                     // only 1 should exists
@@ -136,6 +137,7 @@ public final class EventStreamAggregator implements Serializable {
                     eventAggregator.setUpdated(now());
                     eventAggregator.setCount(eventAggregator.getCount() + bucket._2());
                     dynamoDBMapper.save(eventAggregator);
+                    break;
                 }
             } catch (final Throwable any) {
                 LOGGER.error("unable to save >{}< trying again {}", eventAggregator, count, any);
