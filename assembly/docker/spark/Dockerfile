@@ -3,7 +3,7 @@ FROM dockerfile/java:oracle-java8
 
 MAINTAINER michael.mitchell@dematic.com
 
-ENV REFRESHED_AT 2015-07-08
+ENV REFRESHED_AT 2015-08-14
 
 # update env
 RUN apt-get update
