@@ -117,7 +117,7 @@ public final class EventStreamAggregator implements Serializable {
     }
 
     private static void createOrUpdate(final Tuple2<String, Long> bucket, final DynamoDBMapper dynamoDBMapper) {
-        int count = 0;
+        int count = 1;
         do {
             EventAggregator eventAggregator = null;
             try {
@@ -142,7 +142,7 @@ public final class EventStreamAggregator implements Serializable {
             } finally {
                 count++;
             }
-        } while (count < MAX_RETRY);
+        } while (count <= MAX_RETRY);
     }
 
     private static String now() {
