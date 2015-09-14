@@ -36,6 +36,7 @@ import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 
 public final class EventStreamAggregator implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamAggregator.class);
+    private static final int MAX_RETRY = 3;
 
     public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_LT";
 
@@ -74,12 +75,13 @@ public final class EventStreamAggregator implements Serializable {
         final JavaStreamingContext streamingContext = getStreamingContext(null, appName, null, pollTime);
 
         // Start the streaming context and await termination
-        LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sc().master());
+        LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
         EventStreamAggregator eventStreamAggregator = new EventStreamAggregator();
         eventStreamAggregator.aggregateEvents(getJavaDStream(kinesisEndpoint, streamName, pollTime, streamingContext),
                 dynamoDBEndpoint, dynamoPrefix, timeUnit);
 
         streamingContext.start();
+        LOGGER.info("spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();
     }
 
@@ -115,20 +117,34 @@ public final class EventStreamAggregator implements Serializable {
     }
 
     private static void createOrUpdate(final Tuple2<String, Long> bucket, final DynamoDBMapper dynamoDBMapper) {
-        final PaginatedQueryList<EventAggregator> query = dynamoDBMapper.query(EventAggregator.class,
-                new DynamoDBQueryExpression<EventAggregator>().withHashKeyValues(
-                        new EventAggregator().withBucket(bucket._1())));
-        if (query == null || query.isEmpty()) {
-            // create
-            dynamoDBMapper.save(new EventAggregator(bucket._1(), null, now(), null, bucket._2()));
-        } else {
-            // update
-            // only 1 should exists
-            final EventAggregator eventAggregator = query.get(0);
-            eventAggregator.setUpdated(now());
-            eventAggregator.setCount(eventAggregator.getCount() + bucket._2());
-            dynamoDBMapper.save(eventAggregator);
-        }
+        int count = 1;
+        do {
+            EventAggregator eventAggregator = null;
+            try {
+
+                final PaginatedQueryList<EventAggregator> query = dynamoDBMapper.query(EventAggregator.class,
+                        new DynamoDBQueryExpression<EventAggregator>().withHashKeyValues(
+                                new EventAggregator().withBucket(bucket._1())));
+                if (query == null || query.isEmpty()) {
+                    // create
+                    eventAggregator = new EventAggregator(bucket._1(), null, now(), null, bucket._2());
+                    dynamoDBMapper.save(eventAggregator);
+                    break;
+                } else {
+                    // update
+                    // only 1 should exists
+                    eventAggregator = query.get(0);
+                    eventAggregator.setUpdated(now());
+                    eventAggregator.setCount(eventAggregator.getCount() + bucket._2());
+                    dynamoDBMapper.save(eventAggregator);
+                    break;
+                }
+            } catch (final Throwable any) {
+                LOGGER.error("unable to save >{}< trying again {}", eventAggregator, count, any);
+            } finally {
+                count++;
+            }
+        } while (count <= MAX_RETRY);
     }
 
     private static String now() {
