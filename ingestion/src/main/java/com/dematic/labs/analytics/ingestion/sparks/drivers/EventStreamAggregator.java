@@ -138,7 +138,7 @@ public final class EventStreamAggregator implements Serializable {
                     dynamoDBMapper.save(eventAggregator);
                 }
             } catch (final Throwable any) {
-                LOGGER.error("unable to save >{}< trying again {}", eventAggregator, count);
+                LOGGER.error("unable to save >{}< trying again {}", eventAggregator, count, any);
             } finally {
                 count++;
             }
