@@ -3,6 +3,7 @@ package com.dematic.labs.analytics.ingestion.sparks.tables;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBVersionAttribute;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -18,13 +19,14 @@ public final class EventAggregator implements Serializable {
     private String created;
     private String updated;
 
-    private long count;
+    private Long count;
+    private Long version;
 
     public EventAggregator() {
     }
 
     public EventAggregator(final String bucket, final String eventType, final String created, final String updated,
-                           final long count) {
+                           final Long count) {
         this.bucket = bucket;
         this.eventType = eventType;
         this.created = created;
@@ -74,13 +76,18 @@ public final class EventAggregator implements Serializable {
     }
 
     @DynamoDBAttribute
-    public long getCount() {
+    public Long getCount() {
         return count;
     }
 
-    public void setCount(final long count) {
+    public void setCount(final Long count) {
         this.count = count;
     }
+
+    @DynamoDBVersionAttribute
+    public Long getVersion() { return version; }
+
+    public void setVersion(final Long version) { this.version = version;}
 
     @Override
     public boolean equals(final Object o) {
@@ -90,8 +97,9 @@ public final class EventAggregator implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        final EventAggregator that = (EventAggregator) o;
+        EventAggregator that = (EventAggregator) o;
         return Objects.equals(count, that.count) &&
+                Objects.equals(version, that.version) &&
                 Objects.equals(bucket, that.bucket) &&
                 Objects.equals(eventType, that.eventType) &&
                 Objects.equals(created, that.created) &&
@@ -100,7 +108,7 @@ public final class EventAggregator implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(bucket, eventType, created, updated, count);
+        return Objects.hash(bucket, eventType, created, updated, count, version);
     }
 
     @Override
@@ -111,6 +119,7 @@ public final class EventAggregator implements Serializable {
                 ", created='" + created + '\'' +
                 ", updated='" + updated + '\'' +
                 ", count=" + count +
+                ", version=" + version +
                 '}';
     }
 }
