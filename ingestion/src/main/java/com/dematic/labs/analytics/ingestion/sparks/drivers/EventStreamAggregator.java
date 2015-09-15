@@ -92,7 +92,7 @@ public final class EventStreamAggregator implements Serializable {
         final JavaDStream<Event> eventStream =
                 byteStream.map(
                         event -> EventUtils.jsonToEvent(new String(event, Charset.defaultCharset()))
-                ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct);
+                );
 
         // map to pairs and aggregate by key
         final JavaPairDStream<String, Long> aggregates = eventStream.mapToPair(event -> {
