@@ -56,7 +56,7 @@ public final class DriverUtils {
         for (int i = 0; i < shards; i++) {
             streamsList.add(
                     KinesisUtils.createStream(streamingContext, streamName, awsEndpointUrl, pollTime,
-                            InitialPositionInStream.LATEST, StorageLevel.MEMORY_ONLY())
+                            InitialPositionInStream.TRIM_HORIZON, StorageLevel.MEMORY_ONLY())
             );
         }
         // Union all the streams if there is more than 1 stream
