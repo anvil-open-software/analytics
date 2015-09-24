@@ -102,7 +102,7 @@ public final class EventStreamAggregator implements Serializable {
                 ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct).filter(event -> {
                     final String uuid = event.getEventId().toString();
                     if (CACHE.contains(uuid)) {
-                        LOGGER.info("cache contains UUID >{}<", uuid);
+                        LOGGER.info("cache contains UUID >{}< : size >{}<", uuid, CACHE.getSize());
                         return false;
                     } else {
                         CACHE.put(uuid, uuid);
