@@ -10,8 +10,6 @@ import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.Event;
 import com.dematic.labs.toolkit.communication.EventUtils;
-import com.google.code.simplelrucache.ConcurrentLruCache;
-import com.google.code.simplelrucache.LruCache;
 import com.google.common.base.Strings;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -44,11 +42,6 @@ public final class EventStreamAggregator implements Serializable {
 
     // functions
     private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
-
-    private static final int capacity = 10000000;
-    private static final long ttl = 60 * 60 * 1000; //1 hour
-
-    private static final LruCache<String, String> CACHE = new ConcurrentLruCache<>(capacity, ttl);
 
     public static void main(final String[] args) {
         if (args.length < 5) {
@@ -99,17 +92,7 @@ public final class EventStreamAggregator implements Serializable {
         final JavaDStream<Event> eventStream =
                 byteStream.map(
                         event -> EventUtils.jsonToEvent(new String(event, Charset.defaultCharset()))
-                ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct).filter(event -> {
-                    final String uuid = event.getEventId().toString();
-                    if (CACHE.contains(uuid)) {
-                        LOGGER.info("cache contains UUID >{}< : size >{}<", uuid, CACHE.getSize());
-                        return false;
-                    } else {
-                        LOGGER.info("cache -- {}", CACHE);
-                        CACHE.put(uuid, uuid);
-                        return true;
-                    }
-                });
+                ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct);
 
         // map to pairs and aggregate by key
         final JavaPairDStream<String, Long> aggregates = eventStream.mapToPair(event -> {
