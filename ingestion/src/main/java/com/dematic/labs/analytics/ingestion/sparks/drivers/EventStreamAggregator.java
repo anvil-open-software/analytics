@@ -105,6 +105,7 @@ public final class EventStreamAggregator implements Serializable {
                         LOGGER.info("cache contains UUID >{}< : size >{}<", uuid, CACHE.getSize());
                         return false;
                     } else {
+                        LOGGER.info("cache -- {}", CACHE);
                         CACHE.put(uuid, uuid);
                         return true;
                     }
