@@ -9,7 +9,6 @@ import com.amazonaws.util.StringUtils;
 import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.Event;
-import com.dematic.labs.toolkit.communication.EventUtils;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import org.apache.spark.api.java.JavaRDD;
@@ -21,7 +20,7 @@ import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.joda.time.DateTime;
+import org.joda.time.Minutes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -35,9 +34,12 @@ import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfi
 import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
 import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
+import static com.dematic.labs.toolkit.communication.EventUtils.*;
 
 public final class EventStreamAggregator implements Serializable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamAggregator.class);
 
+    // function class
     public static final class RunningEventDuplicates implements Function2<List<Tuple2<Long, Boolean>>,
             Optional<Tuple2<Long, Boolean>>, Optional<Tuple2<Long, Boolean>>> {
         @Override
@@ -47,13 +49,12 @@ public final class EventStreamAggregator implements Serializable {
             if (!values.isEmpty() && !state.isPresent()) {
                 return Optional.of(values.get(0));
             }
-
+            //todo: might have to deal w the entire list
             // existing event, no new event, time expires or not, if time expires remove from state
             if (values.isEmpty() && state.isPresent()) {
                 final long eventTime = state.get()._1();
-                return eventExpired(eventTime) ? Optional.absent() : Optional.of(new Tuple2<>(state.get()._1(), true));
+                return eventExpiredInMinutes(eventTime) ? Optional.absent() : Optional.of(new Tuple2<>(state.get()._1(), true));
             }
-
             // duplicate
             return Optional.of(new Tuple2<>(state.get()._1(), true));
         }
@@ -82,8 +83,6 @@ public final class EventStreamAggregator implements Serializable {
     // functions
     private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
 
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamAggregator.class);
     private static final int MAX_RETRY = 3;
 
     public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_LT";
@@ -94,6 +93,12 @@ public final class EventStreamAggregator implements Serializable {
             throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint,"
                     + "optional DynamoDB Prefix, driver PollTime, and aggregation by time {MINUTES,DAYS}");
         }
+        // checkpoint dir comes from the jvm params
+        final String checkPointDir = System.getProperty("spark.checkpoint.dir");
+        if (Strings.isNullOrEmpty(checkPointDir)) {
+            throw new IllegalArgumentException("'spark.checkpoint.dir' jvm parameter needs to be set");
+        }
+        LOGGER.info("using >{}< checkpoint dir", checkPointDir);
         // url and stream name to pull events
         final String kinesisEndpoint = args[0];
         final String streamName = args[1];
@@ -117,8 +122,8 @@ public final class EventStreamAggregator implements Serializable {
 
         // create the table, if it does not exist
         createDynamoTable(dynamoDBEndpoint, EventAggregator.class, dynamoPrefix);
-        //todo: master url will be set using the spark submit driver command, todo: fix dir
-        final JavaStreamingContext streamingContext = getStreamingContext(null, appName, "/tmp/mitchell/checkpoint", pollTime);
+        //master url will be set using the spark submit driver command
+        final JavaStreamingContext streamingContext = getStreamingContext(null, appName, checkPointDir, pollTime);
 
         // Start the streaming context and await termination
         LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
@@ -137,7 +142,7 @@ public final class EventStreamAggregator implements Serializable {
         // transform the byte[] (byte arrays are json) to a string to events, and ensure distinct within stream
         final JavaDStream<Event> eventStream =
                 byteStream.map(
-                        event -> EventUtils.jsonToEvent(new String(event, Charset.defaultCharset()))).
+                        event -> jsonToEvent(new String(event, Charset.defaultCharset()))).
                         transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct);
 
         // will map to pairs of (event, eventTimestamp, processedFlag) and filter out processed events
@@ -162,12 +167,6 @@ public final class EventStreamAggregator implements Serializable {
             }
             return null;
         });
-
-    }
-
-    private static boolean eventExpired(long eventTime) {
-        //todo: fix time
-        return eventTime < 2;
     }
 
     private static void createOrUpdate(final Tuple2<String, Long> bucket, final DynamoDBMapper dynamoDBMapper) {
@@ -181,14 +180,14 @@ public final class EventStreamAggregator implements Serializable {
                                 new EventAggregator().withBucket(bucket._1())));
                 if (query == null || query.isEmpty()) {
                     // create
-                    eventAggregator = new EventAggregator(bucket._1(), null, now(), null, bucket._2());
+                    eventAggregator = new EventAggregator(bucket._1(), null, nowString(), null, bucket._2());
                     dynamoDBMapper.save(eventAggregator);
                     break;
                 } else {
                     // update
                     // only 1 should exists
                     eventAggregator = query.get(0);
-                    eventAggregator.setUpdated(now());
+                    eventAggregator.setUpdated(nowString());
                     eventAggregator.setCount(eventAggregator.getCount() + bucket._2());
                     dynamoDBMapper.save(eventAggregator);
                     break;
@@ -201,7 +200,8 @@ public final class EventStreamAggregator implements Serializable {
         } while (count <= MAX_RETRY);
     }
 
-    private static String now() {
-        return DateTime.now().toDateTimeISO().toString();
+    private static boolean eventExpiredInMinutes(final long eventTime) {
+        // todo: make configurable
+        return Minutes.minutesBetween(dateTime(eventTime), now()).getMinutes() > 3;
     }
 }
