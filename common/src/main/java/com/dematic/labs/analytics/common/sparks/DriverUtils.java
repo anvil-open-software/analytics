@@ -7,6 +7,7 @@ import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
+import org.apache.spark.streaming.Minutes;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.api.java.JavaStreamingContextFactory;
@@ -14,7 +15,6 @@ import org.apache.spark.streaming.kinesis.KinesisUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-
 
 //todo: nullable/non-nullable
 public final class DriverUtils {
@@ -49,13 +49,13 @@ public final class DriverUtils {
     }
 
     public static JavaDStream<byte[]> getJavaDStream(final String awsEndpointUrl, final String streamName,
-                                                     final Duration pollTime, final JavaStreamingContext streamingContext) {
+                                                     final JavaStreamingContext streamingContext) {
         final int shards = getNumberOfShards(awsEndpointUrl, streamName);
         // create 1 Kinesis Worker/Receiver/DStream for each shard
         final List<JavaDStream<byte[]>> streamsList = new ArrayList<>(shards);
         for (int i = 0; i < shards; i++) {
             streamsList.add(
-                    KinesisUtils.createStream(streamingContext, streamName, awsEndpointUrl, pollTime,
+                    KinesisUtils.createStream(streamingContext, streamName, awsEndpointUrl, Minutes.apply(5),
                             InitialPositionInStream.TRIM_HORIZON, StorageLevel.MEMORY_ONLY())
             );
         }
@@ -64,7 +64,6 @@ public final class DriverUtils {
         if (streamsList.size() > 1) {
             unionStreams = streamingContext.union(streamsList.get(0), streamsList.subList(1, streamsList.size()));
         } else {
-
             unionStreams = streamsList.get(0);
         }
         return unionStreams;
