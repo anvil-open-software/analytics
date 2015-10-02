@@ -69,7 +69,7 @@ public final class EventStreamAggregator implements Serializable {
 
     public static final class EventFilter implements Function<Tuple2<Event, Tuple2<Long, Boolean>>, Boolean> {
         @Override
-        public Boolean call(Tuple2<Event, Tuple2<Long, Boolean>> duplicate) throws Exception {
+        public Boolean call(final Tuple2<Event, Tuple2<Long, Boolean>> duplicate) throws Exception {
             return !duplicate._2()._2();
         }
     }
@@ -86,7 +86,6 @@ public final class EventStreamAggregator implements Serializable {
     private static final int MAX_RETRY = 3;
 
     public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_LT";
-
 
     public static void main(final String[] args) {
         if (args.length < 5) {
@@ -128,7 +127,7 @@ public final class EventStreamAggregator implements Serializable {
         // Start the streaming context and await termination
         LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
         EventStreamAggregator eventStreamAggregator = new EventStreamAggregator();
-        eventStreamAggregator.aggregateEvents(getJavaDStream(kinesisEndpoint, streamName, pollTime, streamingContext),
+        eventStreamAggregator.aggregateEvents(getJavaDStream(kinesisEndpoint, streamName, streamingContext),
                 dynamoDBEndpoint, dynamoPrefix, timeUnit);
 
         streamingContext.start();

@@ -76,7 +76,7 @@ public final class EventStreamAggregatorTest {
             executorService.submit(() -> {
                 // call the driver to consume events and store in dynamoDB
                 eventStreamAggregator.aggregateEvents(
-                        getJavaDStream(kinesisEndpoint, kinesisInputStream, pollTime, streamingContext),
+                        getJavaDStream(kinesisEndpoint, kinesisInputStream, streamingContext),
                         dynamoDBEndpoint, userNamePrefix, TimeUnit.MINUTES);
                 streamingContext.start();
                 streamingContext.awaitTermination();

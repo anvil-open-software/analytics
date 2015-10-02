@@ -74,7 +74,7 @@ public final class Persister implements Serializable {
         final JavaStreamingContext streamingContext = getStreamingContext(null, appName, null, pollTime);
         // persist events
         final Persister persister = new Persister();
-        persister.persistEvents(getJavaDStream(kinesisEndpoint, streamName, pollTime, streamingContext),
+        persister.persistEvents(getJavaDStream(kinesisEndpoint, streamName, streamingContext),
                 dynamoDBEndpoint, dynamoPrefix);
         // Start the streaming context and await termination
         LOGGER.info("starting Persister Driver with master URL >{}<", streamingContext.sc().master());

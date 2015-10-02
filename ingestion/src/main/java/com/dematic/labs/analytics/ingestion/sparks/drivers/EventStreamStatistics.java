@@ -78,7 +78,7 @@ public class EventStreamStatistics {
         // calculate stream statistics
         final EventStreamStatistics stats = new EventStreamStatistics();
 
-        final JavaDStream<byte[]> javaDStream = getJavaDStream(kinesisEndpoint, streamName, pollTime, streamingContext);
+        final JavaDStream<byte[]> javaDStream = getJavaDStream(kinesisEndpoint, streamName, streamingContext);
 
         stats.calculate(javaDStream);
 

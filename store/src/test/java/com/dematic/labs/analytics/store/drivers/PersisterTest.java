@@ -12,7 +12,6 @@ import com.jayway.awaitility.Awaitility;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -70,8 +69,8 @@ public final class PersisterTest {
             executorService.submit(() -> {
                 // call the driver to consume events and store in dynamoDB
                 persister.persistEvents(
-                        getJavaDStream(kinesisEndpoint, kinesisInputStream, pollTime, streamingContext),
-                        dynamoDBEndpoint, userNamePrefix);
+                        getJavaDStream(kinesisEndpoint, kinesisInputStream, streamingContext), dynamoDBEndpoint,
+                        userNamePrefix);
                 streamingContext.start();
                 streamingContext.awaitTermination();
             });
