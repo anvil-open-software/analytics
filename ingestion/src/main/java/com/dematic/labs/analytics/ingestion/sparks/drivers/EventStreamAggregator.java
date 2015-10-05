@@ -76,7 +76,7 @@ public final class EventStreamAggregator implements Serializable {
         // Start the streaming context and await termination
         LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
         EventStreamAggregator eventStreamAggregator = new EventStreamAggregator();
-        eventStreamAggregator.aggregateEvents(getJavaDStream(kinesisEndpoint, streamName, pollTime, streamingContext),
+        eventStreamAggregator.aggregateEvents(getJavaDStream(kinesisEndpoint, streamName, streamingContext),
                 dynamoDBEndpoint, dynamoPrefix, timeUnit);
 
         streamingContext.start();
