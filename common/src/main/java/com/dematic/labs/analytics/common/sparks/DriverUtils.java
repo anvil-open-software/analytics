@@ -55,7 +55,7 @@ public final class DriverUtils {
         final List<JavaDStream<byte[]>> streamsList = new ArrayList<>(shards);
         for (int i = 0; i < shards; i++) {
             streamsList.add(
-                    KinesisUtils.createStream(streamingContext, streamName, awsEndpointUrl, Minutes.apply(5),
+                    KinesisUtils.createStream(streamingContext, streamName, awsEndpointUrl, Minutes.apply(10),
                             InitialPositionInStream.TRIM_HORIZON, StorageLevel.MEMORY_ONLY())
             );
         }
