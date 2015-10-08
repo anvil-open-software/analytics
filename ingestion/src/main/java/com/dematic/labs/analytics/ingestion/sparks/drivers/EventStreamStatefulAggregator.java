@@ -127,7 +127,7 @@ public final class EventStreamStatefulAggregator implements Serializable {
         // Start the streaming context and await termination
         LOGGER.info("starting Event stateful Aggregator Driver with master URL >{}<",
                 streamingContext.sparkContext().master());
-        EventStreamStatefulAggregator eventStreamAggregator = new EventStreamStatefulAggregator();
+        final EventStreamStatefulAggregator eventStreamAggregator = new EventStreamStatefulAggregator();
         eventStreamAggregator.aggregateEvents(getJavaDStream(kinesisEndpoint, streamName, streamingContext),
                 dynamoDBEndpoint, dynamoPrefix, timeUnit);
 
@@ -180,7 +180,7 @@ public final class EventStreamStatefulAggregator implements Serializable {
                                 new EventAggregator().withBucket(bucket._1())));
                 if (query == null || query.isEmpty()) {
                     // create
-                    eventAggregator = new EventAggregator(bucket._1(), null, nowString(), null, bucket._2());
+                    eventAggregator = new EventAggregator(bucket._1(), null, nowString(), null, bucket._2(), null);
                     dynamoDBMapper.save(eventAggregator);
                     break;
                 } else {
