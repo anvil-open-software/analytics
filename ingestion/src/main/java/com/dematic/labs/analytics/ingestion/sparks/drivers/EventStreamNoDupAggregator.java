@@ -174,8 +174,7 @@ public final class EventStreamNoDupAggregator {
                         saveBuckets(chunks._1(), dynamoDBMapper);
                     } else {
                         // save aggregation
-                        dynamoDBMapper.save(new EventAggregator(bucket, null, nowString(), null,
-                                (long) eventsToCount.size(), null));
+                        dynamoDBMapper.save(new EventAggregator(bucket, null, nowString(), null, (long) eventsToCount.size(), 1L));
                         // save bucket
                         dynamoDBMapper.save(new EventAggregatorBucket(bucketKey(bucket, 1), compress(eventsToCount)));
                     }
@@ -212,7 +211,7 @@ public final class EventStreamNoDupAggregator {
                     break;
                 }
             } catch (final Throwable any) {
-                //  LOGGER.error("unable to save >{}< trying again {}", eventAggregator, newCount, any);
+                  LOGGER.error("unexpected error trying to create or update aggregates", any);
             } finally {
                 count++;
             }
