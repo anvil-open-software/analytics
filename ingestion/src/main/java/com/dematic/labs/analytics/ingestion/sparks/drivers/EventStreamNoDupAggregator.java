@@ -11,7 +11,7 @@ import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregatorBucket;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Iterables;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
@@ -31,8 +31,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,15 +55,16 @@ public final class EventStreamNoDupAggregator {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamNoDupAggregator.class);
 
     // functions
-    public static final class AggregateEvents implements Function2<List<String>, List<String>, List<String>> {
+    public static final class AggregateEvents implements Function2<Collection<String>, Collection<String>,
+            Collection<String>> {
         @Override
-        public List<String> call(final List<String> aggregateEventsOne, final List<String> aggregateEventsTwo)
-                throws Exception {
-            return Stream.concat(aggregateEventsOne.stream(), aggregateEventsTwo.stream()).collect(Collectors.toList());
+        public Collection<String> call(final Collection<String> aggregateEventsOne,
+                                       final Collection<String> aggregateEventsTwo) throws Exception {
+            return Stream.concat(aggregateEventsOne.stream(), aggregateEventsTwo.stream()).collect(Collectors.toSet());
         }
     }
 
-    public static final class AggregateEvent implements PairFunction<Event, String, List<String>> {
+    public static final class AggregateEvent implements PairFunction<Event, String, Collection<String>> {
         private final TimeUnit timeUnit;
 
         public AggregateEvent(final TimeUnit timeUnit) {
@@ -69,8 +75,8 @@ public final class EventStreamNoDupAggregator {
         // so for instance “2015-06-05T12:54:43.064528” becomes “2015-06-05T12:54:00.000000” for minute.
         // This downsampling gives us a fast way of bucketing or aggregating events via this downsampled key
         @Override
-        public Tuple2<String, List<String>> call(final Event event) throws Exception {
-            return new Tuple2<>(event.aggregateBy(timeUnit), Collections.singletonList(event.getEventId().toString()));
+        public Tuple2<String, Collection<String>> call(final Event event) throws Exception {
+            return new Tuple2<>(event.aggregateBy(timeUnit), Collections.singleton(event.getEventId().toString()));
         }
     }
 
@@ -133,7 +139,7 @@ public final class EventStreamNoDupAggregator {
                 ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct);
 
         // map to pairs and aggregate by key
-        final JavaPairDStream<String, List<String>> aggregateBucket =
+        final JavaPairDStream<String, Collection<String>> aggregateBucket =
                 eventStream.mapToPair(new AggregateEvent(timeUnit)).reduceByKey(new AggregateEvents());
 
         // save counts
@@ -148,31 +154,28 @@ public final class EventStreamNoDupAggregator {
         });
     }
 
-    private static void createOrUpdate(final String bucket, final List<String> eventsToCount,
+    private static void createOrUpdate(final String bucket, final Collection<String> eventsToCount,
                                        final DynamoDBMapper dynamoDBMapper) {
         int count = 1;
         do {
             try {
+
                 final PaginatedQueryList<EventAggregator> query = dynamoDBMapper.query(EventAggregator.class,
                         new DynamoDBQueryExpression<EventAggregator>().withHashKeyValues(
                                 new EventAggregator().withBucket(bucket)));
                 // todo: deal with multiple table updates
                 if (query == null || query.isEmpty()) {
                     if (eventsToCount.size() > MAX_CHUNK_SIZE) {
-                        int chunkCount = 1;
-                        final List<List<String>> chunks = Lists.partition(eventsToCount, MAX_CHUNK_SIZE);
+                        // break events into chunks of events and save
+                        final Tuple2<List<EventAggregatorBucket>, Long> chunks = chunkEvents(bucket, eventsToCount);
                         // save aggregation
                         dynamoDBMapper.save(new EventAggregator(bucket, null, nowString(), null,
-                                (long) eventsToCount.size(), (long) chunks.size()));
-                        for (final List<String> chunk : chunks) {
-                            // save bucket
-                            dynamoDBMapper.save(new EventAggregatorBucket(bucketKey(bucket, chunkCount++),
-                                    compress(chunk)));
-                        }
+                                (long) eventsToCount.size(), chunks._2()));
+                        saveBuckets(chunks._1(), dynamoDBMapper);
                     } else {
                         // save aggregation
                         dynamoDBMapper.save(new EventAggregator(bucket, null, nowString(), null,
-                                  (long) eventsToCount.size(), null));
+                                (long) eventsToCount.size(), null));
                         // save bucket
                         dynamoDBMapper.save(new EventAggregatorBucket(bucketKey(bucket, 1), compress(eventsToCount)));
                     }
@@ -181,24 +184,106 @@ public final class EventStreamNoDupAggregator {
                     // update
                     // only 1 should exists
                     final EventAggregator eventAggregator = query.get(0);
-                    eventAggregator.setUpdated(nowString());
-                 //   eventAggregator.setCount(eventAggregator.getCount() + bucket._2());
-                    dynamoDBMapper.save(eventAggregator);
+                    // get existing events and new events to get accurate count
+                    @SuppressWarnings("unchecked") final Set<String> noDupUUIDs =
+                            newCount(eventAggregator, (Collection)eventsToCount, dynamoDBMapper);
+                    // determine if we need to chuck events
+                    if (noDupUUIDs.size() > MAX_CHUNK_SIZE) {
+                        final Tuple2<List<EventAggregatorBucket>, Long> chunks = chunkEvents(bucket, noDupUUIDs);
+                        eventAggregator.setUpdated(nowString());
+                        // new count
+                        eventAggregator.setCount((long) noDupUUIDs.size());
+                        // new chunk size
+                        eventAggregator.setChunk(chunks._2());
+                        // save aggregation
+                        dynamoDBMapper.save(eventAggregator);
+                        // save buckets
+                        saveBuckets(chunks._1(), dynamoDBMapper);
+
+                    } else {
+                        eventAggregator.setUpdated(nowString());
+                        // new count
+                        eventAggregator.setCount((long) noDupUUIDs.size());
+                        // save aggregation
+                        dynamoDBMapper.save(eventAggregator);
+                        // save bucket, just override existing
+                        dynamoDBMapper.save(new EventAggregatorBucket(bucketKey(bucket, 1), compress(noDupUUIDs)));
+                    }
                     break;
                 }
             } catch (final Throwable any) {
-              //  LOGGER.error("unable to save >{}< trying again {}", eventAggregator, count, any);
+                //  LOGGER.error("unable to save >{}< trying again {}", eventAggregator, newCount, any);
             } finally {
                 count++;
             }
         } while (count <= MAX_RETRY);
     }
 
-    private static String bucketKey(final String key, final int count) {
+    private static Tuple2<List<EventAggregatorBucket>, Long> chunkEvents(final String bucket,
+                                                                         final Collection<String> eventsToCount)
+            throws IOException {
+        int chunkCount = 1;
+        final Iterable<List<String>> chunks = Iterables.partition(eventsToCount, MAX_CHUNK_SIZE);
+        final int chuckSize = Iterables.size(chunks);
+
+        final List<EventAggregatorBucket> eventAggregatorBuckets = new ArrayList<>(chuckSize);
+        // todo: looking making function
+        for (final List<String> chunk : chunks) {
+            eventAggregatorBuckets.add(new EventAggregatorBucket(bucketKey(bucket, chunkCount++), compress(chunk)));
+        }
+        return new Tuple2<>(eventAggregatorBuckets, (long) chunkCount);
+    }
+
+    private static void saveBuckets(final List<EventAggregatorBucket> aggregatorBuckets,
+                                    final DynamoDBMapper dynamoDBMapper) {
+        int count = 0;
+        List<DynamoDBMapper.FailedBatch> failedBatches;
+        do {
+            failedBatches = dynamoDBMapper.batchSave(aggregatorBuckets);
+        } while (!failedBatches.isEmpty() && count++ < MAX_RETRY);
+
+        //todo: figure out what to do
+        if (!failedBatches.isEmpty()) {
+            throw new IllegalStateException(String.format("unable to save the Event Aggregate Buckets >%s<",
+                    failedBatches));
+        }
+    }
+
+    // only called for updates when chunk exist
+    private static Set<String> newCount(final EventAggregator eventAggregator, final Collection<Object> eventsToCount,
+                                        final DynamoDBMapper dynamoDBMapper) {
+        final String bucket = eventAggregator.getBucket();
+        final long chunk = eventAggregator.getChunk();
+        // create the keys and Objects to load
+        final List<Object> eventAggregatorBuckets = new ArrayList<>((int) chunk);
+        for (int i = 1; i <= chunk; i++) {
+            eventAggregatorBuckets.add(new EventAggregatorBucket(bucketKey(bucket, i), null));
+        }
+        // load existing uuids
+        final Map<String, List<Object>> uuidMap = dynamoDBMapper.batchLoad(eventAggregatorBuckets);
+        // existing uuids
+        @SuppressWarnings("unchecked")
+        final Collection<List<EventAggregatorBucket>> eventAggregatorBucketList = (Collection) uuidMap.values();
+        // collect all the eventAggregatorBuckets and transform to a set and add new uuids
+        return eventAggregatorBucketList.stream().map(eventAggregatorBucket -> {
+            @SuppressWarnings("unchecked") final Set<String> uuidChunks = new HashSet<>((Collection) eventsToCount);
+            eventAggregatorBucket.forEach(uuidChunk -> {
+                try {
+                    uuidChunks.addAll(uncompress(uuidChunk.getUuids()));
+                } catch (final Throwable any) {
+                    throw new IllegalStateException("Unexpected Exception getting existing UUID's", any);
+                }
+            });
+            return uuidChunks;
+            // return the new set without duplicates
+        }).flatMap(Collection::stream).collect(Collectors.toSet());
+    }
+
+    private static String bucketKey(final String key, final long count) {
         return String.format("%s#%s", key, count);
     }
 
-    private static byte[] compress(final List<String> uuidChunk) throws IOException {
+    private static byte[] compress(final Collection<String> uuidChunk) throws IOException {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final GZIPOutputStream gzipOut = new GZIPOutputStream(baos);
         try (ObjectOutputStream objectOut = new ObjectOutputStream(gzipOut)) {
@@ -210,13 +295,13 @@ public final class EventStreamNoDupAggregator {
         return baos.toByteArray();
     }
 
-    private static List<String> uncompress(final byte[] uuidChunk) throws IOException, ClassNotFoundException {
+    private static Collection<String> uncompress(final byte[] uuidChunk) throws IOException, ClassNotFoundException {
         final ByteArrayInputStream bais = new ByteArrayInputStream(uuidChunk);
         final GZIPInputStream gzipIn = new GZIPInputStream(bais);
-        final List<String> uncompressed;
+        final Collection<String> uncompressed;
         try (ObjectInputStream objectIn = new ObjectInputStream(gzipIn)) {
             //noinspection unchecked
-            uncompressed  = (List<String>) objectIn.readObject();
+            uncompressed = (Collection<String>) objectIn.readObject();
         }
         return uncompressed;
     }
