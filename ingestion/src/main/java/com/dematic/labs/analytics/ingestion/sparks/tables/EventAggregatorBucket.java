@@ -15,7 +15,7 @@ public final class EventAggregatorBucket implements Serializable {
     private String bucketId;
     private byte[] uuids;
 
-
+    @SuppressWarnings("unused") // needed by dynamo
     public EventAggregatorBucket() {
     }
 
