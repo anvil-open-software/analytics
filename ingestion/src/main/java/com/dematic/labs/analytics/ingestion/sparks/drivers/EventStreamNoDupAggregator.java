@@ -198,7 +198,6 @@ public final class EventStreamNoDupAggregator {
                         dynamoDBMapper.save(eventAggregator);
                         // save buckets
                         saveBuckets(chunks._1(), dynamoDBMapper);
-
                     } else {
                         eventAggregator.setUpdated(nowString());
                         // new count
@@ -230,7 +229,7 @@ public final class EventStreamNoDupAggregator {
         for (final List<String> chunk : chunks) {
             eventAggregatorBuckets.add(new EventAggregatorBucket(bucketKey(bucket, chunkCount++), compress(chunk)));
         }
-        return new Tuple2<>(eventAggregatorBuckets, (long) chunkCount);
+        return new Tuple2<>(eventAggregatorBuckets, (long) chunkCount - 1);
     }
 
     private static void saveBuckets(final List<EventAggregatorBucket> aggregatorBuckets,
@@ -283,10 +282,11 @@ public final class EventStreamNoDupAggregator {
     }
 
     private static byte[] compress(final Collection<String> uuidChunk) throws IOException {
+        final HashSet<String> uuidSet = new HashSet<>(uuidChunk);
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final GZIPOutputStream gzipOut = new GZIPOutputStream(baos);
         try (ObjectOutputStream objectOut = new ObjectOutputStream(gzipOut)) {
-            objectOut.writeObject(uuidChunk);
+            objectOut.writeObject(uuidSet);
         } finally {
             gzipOut.finish();
             baos.flush();
