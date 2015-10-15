@@ -23,6 +23,7 @@ import org.joda.time.Seconds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 import scala.Tuple2;
 
 import java.io.Serializable;
@@ -34,7 +35,7 @@ import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfi
 import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
 import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
-import static com.dematic.labs.toolkit.aws.Connections.getCacheClient;
+import static com.dematic.labs.toolkit.aws.Connections.getCacheClientPool;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 import static com.dematic.labs.toolkit.communication.EventUtils.nowString;
 
@@ -64,9 +65,10 @@ public final class EventStreamCacheAggregator implements Serializable {
     public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Cache_LT";
 
     public static void main(final String[] args) {
-        if (args.length < 5) {
+        if (args.length < 7) {
             throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint,"
-                    + "optional DynamoDB Prefix, driver PollTime, and aggregation by time {MINUTES,DAYS}");
+                    + "optional DynamoDB Prefix, driver PollTime, and aggregation by time {MINUTES,DAYS}, Cache URL," +
+                    " Cache Port");
         }
         // url and stream name to pull events
         final String kinesisEndpoint = args[0];
@@ -76,14 +78,20 @@ public final class EventStreamCacheAggregator implements Serializable {
         final String dynamoPrefix;
         final Duration pollTime;
         final TimeUnit timeUnit;
-        if (args.length == 5) {
+        final String cacheUrl;
+        final int cachePort;
+        if (args.length == 7) {
             dynamoPrefix = null;
             pollTime = Durations.seconds(Integer.valueOf(args[3]));
             timeUnit = TimeUnit.valueOf(args[4]);
+            cacheUrl = args[5];
+            cachePort = Integer.parseInt(args[6]);
         } else {
             dynamoPrefix = args[3];
             pollTime = Durations.seconds(Integer.valueOf(args[4]));
             timeUnit = TimeUnit.valueOf(args[5]);
+            cacheUrl = args[6];
+            cachePort = Integer.parseInt(args[7]);
         }
 
         final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME :
@@ -91,14 +99,16 @@ public final class EventStreamCacheAggregator implements Serializable {
 
         // create the table, if it does not exist
         createDynamoTable(dynamoDBEndpoint, EventAggregator.class, dynamoPrefix);
-        //todo: master url will be set using the spark submit driver command
+        // create the cache pool
+        final JedisPool cachePool = getCacheClientPool(cacheUrl, cachePort);
+        // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext = getStreamingContext(null, appName, null, pollTime);
 
         // Start the streaming context and await termination
         LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
         final EventStreamCacheAggregator eventStreamAggregator = new EventStreamCacheAggregator();
         eventStreamAggregator.aggregateEvents(getJavaDStream(kinesisEndpoint, streamName, streamingContext),
-                dynamoDBEndpoint, dynamoPrefix, timeUnit);
+                dynamoDBEndpoint, dynamoPrefix, timeUnit, cachePool);
 
         streamingContext.start();
         LOGGER.info("spark state: {}", streamingContext.getState().name());
@@ -106,7 +116,7 @@ public final class EventStreamCacheAggregator implements Serializable {
     }
 
     public void aggregateEvents(final JavaDStream<byte[]> byteStream, final String dynamoDBEndpoint,
-                                final String tablePrefix, final TimeUnit timeUnit) {
+                                final String tablePrefix, final TimeUnit timeUnit, final JedisPool pool) {
 
         // transform the byte[] (byte arrays are json) to a string to events, and ensure distinct within stream and
         // filter against cache to ensure no duplicates
@@ -115,13 +125,15 @@ public final class EventStreamCacheAggregator implements Serializable {
                         event -> jsonToEvent(new String(event, Charset.defaultCharset()))
                 ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct)
                         .filter(event -> {
-                            final Jedis cacheClient = getCacheClient("", 1234);
-                            final String uuid = event.getEventId().toString();
-                            if (cacheClient.exists(uuid)) {
-                                return false;
-                            } else {
-                                cacheClient.set(uuid, uuid, "NX", "EX", Seconds.seconds(3600).getSeconds());
-                                return true;
+                            try (final Jedis cacheClient = pool.getResource()) {
+                                final String uuid = event.getEventId().toString();
+                                if (cacheClient.exists(uuid)) {
+                                    return false;
+                                } else {
+                                    // keys will stay in the cache or 1 hr
+                                    cacheClient.set(uuid, uuid, "NX", "EX", Seconds.seconds(3600).getSeconds());
+                                    return true;
+                                }
                             }
                         });
 
