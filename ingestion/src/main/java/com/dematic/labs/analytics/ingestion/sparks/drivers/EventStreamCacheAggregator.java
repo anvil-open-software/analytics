@@ -47,7 +47,7 @@ public final class EventStreamCacheAggregator implements Serializable {
 
     static {
         final String host = System.getProperty("spark.dematic.cache.host");
-        final String port = System.getProperty("spark.dematic.cache.port");
+        final String port = "6379";//System.getProperty("spark.dematic.cache.port");
         if (Strings.isNullOrEmpty(host) || Strings.isNullOrEmpty(port)) {
             throw new IllegalStateException(
                     String.format("'spark.dematic.cache.host'=%s or 'spark.dematic.cache.port'=%s is not set", host,
