@@ -49,7 +49,8 @@ public final class EventStreamCacheAggregator implements Serializable {
         final String host = System.getProperty("spark.cache.host");
         final String port = System.getProperty("spark.cache.port");
         if (Strings.isNullOrEmpty(host) || Strings.isNullOrEmpty(port)) {
-            throw new IllegalStateException(String.format("'cache.host'=%s or 'cache.port'=%s is not set", host, port));
+            throw new IllegalStateException(String.format("'spark.cache.host'=%s or 'spark.cache.port'=%s is not set",
+                    host, port));
         }
         POOL = getCacheClientPool(host, Integer.parseInt(port));
     }
