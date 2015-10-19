@@ -19,7 +19,6 @@ import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.joda.time.Seconds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -132,13 +131,7 @@ public final class EventStreamCacheAggregator implements Serializable {
                         .filter(event -> {
                             try (final Jedis cacheClient = POOL.getResource()) {
                                 final String uuid = event.getEventId().toString();
-                                if (cacheClient.exists(uuid)) {
-                                    return false;
-                                } else {
-                                    // keys will stay in the cache or 1 hr
-                                    cacheClient.set(uuid, uuid, "NX", "EX", Seconds.seconds(3600).getSeconds());
-                                    return true;
-                                }
+                                return cacheClient.getSet(uuid, uuid) == null;
                             }
                         });
 
