@@ -45,8 +45,8 @@ public final class EventStreamCacheAggregator implements Serializable {
     private static final JedisPool POOL;
 
     static {
-        final String host = "jenkins-test.csmtbm.0001.use1.cache.amazonaws.com";//System.getProperty("spark.dematic.cache.host");
-        final String port = "6379";//System.getProperty("spark.dematic.cache.port");
+        final String host = System.getProperty("spark.dematic.cache.host", "jenkins-test.csmtbm.0001.use1.cache.amazonaws.com");
+        final String port = System.getProperty("spark.dematic.cache.port", "6379");
         if (Strings.isNullOrEmpty(host) || Strings.isNullOrEmpty(port)) {
             throw new IllegalStateException(
                     String.format("'spark.dematic.cache.host'=%s or 'spark.dematic.cache.port'=%s is not set", host,
@@ -54,7 +54,6 @@ public final class EventStreamCacheAggregator implements Serializable {
         }
         POOL = getCacheClientPool(host, Integer.parseInt(port));
     }
-
 
     // functions
     public static final class AggregateEvent implements PairFunction<Event, String, Long> {
