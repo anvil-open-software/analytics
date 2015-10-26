@@ -61,13 +61,8 @@ public final class EventStreamCheckpointedAggregator implements Serializable {
 
         // create the table, if it does not exist
         createDynamoTable(dynamoDBEndpoint, EventAggregator.class, dynamoPrefix);
-        final JavaStreamingContext streamingContext = initializeCheckpointedSparkSession(session, null, pollTime);
-
-        // Start the streaming context and await termination
-        LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
-        final EventStreamAggregator eventStreamAggregator = new EventStreamAggregator();
-        LOGGER.info("DStreams: " + session.getDStreams().toString());
-        eventStreamAggregator.aggregateEvents(session.getDStreams(), dynamoDBEndpoint, dynamoPrefix, timeUnit);
+        final JavaStreamingContext streamingContext = initializeCheckpointedSparkSession(session, null, pollTime,
+                dynamoDBEndpoint, dynamoPrefix, timeUnit);
 
         streamingContext.start();
         LOGGER.info("spark state: {}", streamingContext.getState().name());
@@ -79,7 +74,9 @@ public final class EventStreamCheckpointedAggregator implements Serializable {
      */
     public static JavaStreamingContext initializeCheckpointedSparkSession(final DematicSparkSession session,
                                                                           final String masterUrl,
-                                                                          final Duration pollTime) {
+                                                                          final Duration pollTime,
+                                                                          final String dynamoDBEndpoint,
+                                                                          final String dynamoPrefix, final TimeUnit timeUnit) {
         final String checkPointDir = session.getCheckPointDir();
         final JavaStreamingContextFactory factory = () -> {
             // Spark config
@@ -95,6 +92,12 @@ public final class EventStreamCheckpointedAggregator implements Serializable {
             JavaDStream kinesisDStream = DriverUtils.getJavaDStream(session.getAwsEndPoint(), session.getStreamName(), streamingContext);
             session.setDStreams(kinesisDStream);
             LOGGER.warn("Created DStream:  " + kinesisDStream);
+
+            // Start the streaming context and await termination
+            LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
+            final EventStreamAggregator eventStreamAggregator = new EventStreamAggregator();
+            LOGGER.info("DStreams: " + session.getDStreams().toString());
+            eventStreamAggregator.aggregateEvents(kinesisDStream, dynamoDBEndpoint, dynamoPrefix, timeUnit);
 
             LOGGER.warn("Checkpointing to " + checkPointDir);
             streamingContext.checkpoint(checkPointDir);
