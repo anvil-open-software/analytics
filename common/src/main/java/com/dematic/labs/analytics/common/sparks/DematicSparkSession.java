@@ -39,11 +39,12 @@ public class DematicSparkSession {
         this.streamingContext = streamingContext;
     }
 
-    public JavaDStream<byte[]> getdStreams() {
+    public JavaDStream<byte[]> getDStreams() {
         return dStreams;
     }
 
     public void setDStreams(JavaDStream<byte[]> dStreams) {
+        LOGGER.info("Setting DStreams + " + dStreams);
         this.dStreams = dStreams;
     }
 
@@ -64,12 +65,11 @@ public class DematicSparkSession {
      * @param failIfNotSet if true, will throw exception if property does not exist
      */
     public void setCheckPointDirectoryFromSystemProperties(boolean failIfNotSet) {
-        String checkPointDir = System.getProperty("spark.checkpoint.dir");
+        this.checkPointDir = System.getProperty("spark.checkpoint.dir");
         if (Strings.isNullOrEmpty(checkPointDir) && failIfNotSet) {
             throw new IllegalArgumentException("'spark.checkpoint.dir' jvm parameter needs to be set");
         }
         LOGGER.info("using >{}< checkpoint dir", checkPointDir);
-
     }
 
 }

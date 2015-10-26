@@ -13,12 +13,16 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.api.java.JavaStreamingContextFactory;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 //todo: nullable/non-nullable
 public final class DriverUtils {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DriverUtils.class);
     private DriverUtils() {
     }
 
@@ -89,14 +93,19 @@ public final class DriverUtils {
             }
             final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, pollTime);
             // we must now create kinesis streams before we checkpoint
+            LOGGER.info("Creating Kinesis DStreams for " + session.getStreamName());
             JavaDStream kinesisDStream = getJavaDStream(session.getAwsEndPoint(), session.getStreamName(), streamingContext);
             session.setDStreams(kinesisDStream);
+            LOGGER.info("Created DStream:  " + kinesisDStream);
 
+            LOGGER.info("Checkpointing to " + checkPointDir);
             streamingContext.checkpoint(checkPointDir);
             return streamingContext;
         };
         return Strings.isNullOrEmpty(checkPointDir) ? factory.create() :
                 JavaStreamingContext.getOrCreate(checkPointDir, factory);
     }
+
+
 
 }

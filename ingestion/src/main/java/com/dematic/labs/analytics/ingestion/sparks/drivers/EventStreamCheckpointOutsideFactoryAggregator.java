@@ -1,47 +1,25 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
-import com.amazonaws.util.StringUtils;
 import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
-import com.dematic.labs.toolkit.aws.Connections;
-import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Strings;
-import org.apache.spark.api.java.JavaRDD;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Tuple2;
 
 import java.io.Serializable;
-import java.nio.charset.Charset;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
 import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
 import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
-import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
-import static com.dematic.labs.toolkit.communication.EventUtils.nowString;
 
 public final class EventStreamCheckpointOutsideFactoryAggregator implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamCheckpointOutsideFactoryAggregator.class);
-    private static final int MAX_RETRY = 3;
 
     public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Checkpoint_Outside_LT";
-
-    // functions
-    private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
 
     public static void main(final String[] args) {
         if (args.length < 5) {
