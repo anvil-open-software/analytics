@@ -91,12 +91,12 @@ public final class EventStreamCheckpointedAggregator implements Serializable {
             }
             final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, pollTime);
             // we must now create kinesis streams before we checkpoint
-            LOGGER.info("Creating Kinesis DStreams for " + session.getStreamName());
+            LOGGER.warn("Creating Kinesis DStreams for " + session.getStreamName());
             JavaDStream kinesisDStream = DriverUtils.getJavaDStream(session.getAwsEndPoint(), session.getStreamName(), streamingContext);
             session.setDStreams(kinesisDStream);
-            LOGGER.info("Created DStream:  " + kinesisDStream);
+            LOGGER.warn("Created DStream:  " + kinesisDStream);
 
-            LOGGER.info("Checkpointing to " + checkPointDir);
+            LOGGER.warn("Checkpointing to " + checkPointDir);
             streamingContext.checkpoint(checkPointDir);
             return streamingContext;
         };
