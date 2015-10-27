@@ -8,7 +8,7 @@ import java.io.Serializable;
  * Generic interface so the same launch utility can be used
  */
 
-public interface IEventStreamProcessor extends Serializable {
+public interface EventStreamProcessor extends Serializable {
 
      void processEvents(DematicSparkSession inSession);
 }

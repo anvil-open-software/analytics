@@ -30,7 +30,7 @@ public class AggregationDriverUtils {
      */
     public static JavaStreamingContext initializeCheckpointedSparkSession(final DematicSparkSession session,
                                                                           final String masterUrl,
-                                                                          IEventStreamProcessor aggregator) {
+                                                                          EventStreamProcessor aggregator) {
         final String checkPointDir = session.getCheckPointDir();
         final JavaStreamingContextFactory factory = () -> {
             // Spark config

@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
-public final class SimpleEventStreamAggregator implements Serializable, IEventStreamProcessor {
+public final class SimpleEventStreamAggregator implements Serializable, EventStreamProcessor {
 
     private static final long serialVersionUID = 8408398636569114334L;
 
