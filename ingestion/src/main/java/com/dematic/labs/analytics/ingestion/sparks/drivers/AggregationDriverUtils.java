@@ -3,7 +3,7 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
-import com.dematic.labs.analytics.common.sparks.DematicSparkSession;
+import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.analytics.common.sparks.DriverUtils;
 import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
 import com.google.common.base.Strings;
@@ -28,7 +28,7 @@ public class AggregationDriverUtils {
     /**
      * To checkpoint, need to create the stream inside the factory before calling checkpoint.
      */
-    public static JavaStreamingContext initializeCheckpointedSparkSession(final DematicSparkSession session,
+    public static JavaStreamingContext initializeCheckpointedSparkSession(final DriverConfig session,
                                                                           final String masterUrl,
                                                                           EventStreamProcessor aggregator) {
         final String checkPointDir = session.getCheckPointDir();
@@ -45,16 +45,15 @@ public class AggregationDriverUtils {
             LOGGER.warn("Creating Kinesis DStreams for " + session.getStreamName());
             JavaDStream kinesisDStream = DriverUtils.getJavaDStream(session.getKinesisEndpoint(),
                     session.getStreamName(), streamingContext);
-            session.setDStreams(kinesisDStream);
-            LOGGER.warn("Created DStream:  " + kinesisDStream);
 
             // Start the streaming context and await termination
             LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
+            aggregator.processEvents(session,kinesisDStream);
 
-            aggregator.processEvents(session);
-
+            // we checkpoint last because if we try to run it before processing the stream, we end up with more events than the first run.
             LOGGER.warn("Checkpointing to " + checkPointDir);
             streamingContext.checkpoint(checkPointDir);
+
             return streamingContext;
         };
         return Strings.isNullOrEmpty(checkPointDir) ? factory.create() :

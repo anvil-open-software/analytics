@@ -4,7 +4,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.util.StringUtils;
-import com.dematic.labs.analytics.common.sparks.DematicSparkSession;
+import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.Event;
 import org.apache.spark.api.java.JavaRDD;
@@ -14,7 +14,6 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import scala.Tuple2;
 
-import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -22,18 +21,18 @@ import java.util.concurrent.TimeUnit;
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
-public final class SimpleEventStreamAggregator implements Serializable, EventStreamProcessor {
+public final class SimpleEventStreamAggregator implements EventStreamProcessor<byte[]> {
 
     private static final long serialVersionUID = 8408398636569114334L;
 
     // functions
     private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
 
-    public void processEvents(DematicSparkSession session) {
+    public void processEvents(final DriverConfig session, final JavaDStream<byte[]>  javaDStream) {
 
         // transform the byte[] (byte arrays are json) to a string to events, and ensure distinct within stream
         final JavaDStream<Event> eventStream =
-                session.getDStreams().map(
+                javaDStream.map(
                         event -> jsonToEvent(new String(event, Charset.defaultCharset()))
                 ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct);
         final TimeUnit timeUnit = session.getTimeUnit();

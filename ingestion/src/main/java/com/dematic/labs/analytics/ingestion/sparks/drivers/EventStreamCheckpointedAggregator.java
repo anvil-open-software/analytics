@@ -1,6 +1,6 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers;
 
-import com.dematic.labs.analytics.common.sparks.DematicSparkSession;
+import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ public final class EventStreamCheckpointedAggregator implements Serializable {
 
     public static void main(final String[] args) {
 
-        DematicSparkSession session = new DematicSparkSession(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME,args);
+        DriverConfig session = new DriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME,args);
         session.setCheckPointDirectoryFromSystemProperties(true);
 
         // create the table, if it does not exist

@@ -3,7 +3,6 @@ package com.dematic.labs.analytics.common.sparks;
 import com.google.common.base.Strings;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
-import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,13 +11,12 @@ import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Holder for spark driver session details including input parameters, dstream
+ * Holder for spark driver session details including input parameters
  */
-public class DematicSparkSession implements Serializable {
+public class DriverConfig implements Serializable {
 
 
     private JavaStreamingContext streamingContext;
-    private JavaDStream<byte[]> dStreams;
 
     private String appName;
     private String uniqueAppSuffix;
@@ -34,9 +32,9 @@ public class DematicSparkSession implements Serializable {
 
     private String checkPointDir;
     private static final long serialVersionUID = 1896518324147474596L;
-    private static final Logger LOGGER = LoggerFactory.getLogger(DematicSparkSession.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DriverConfig.class);
 
-    public DematicSparkSession(String uniqueAppSuffix, String args[]) {
+    public DriverConfig(String uniqueAppSuffix, String args[]) {
         // used to formulate app name
         this.uniqueAppSuffix=uniqueAppSuffix;
         setParametersFromArguments(args);
@@ -96,16 +94,6 @@ public class DematicSparkSession implements Serializable {
     public void setStreamingContext(JavaStreamingContext streamingContext) {
         this.streamingContext = streamingContext;
     }
-
-    public JavaDStream<byte[]> getDStreams() {
-        return dStreams;
-    }
-
-    public void setDStreams(JavaDStream<byte[]> dStreams) {
-        LOGGER.info("Setting DStreams + " + dStreams);
-        this.dStreams = dStreams;
-    }
-
 
     public String getStreamName() {
         return streamName;
