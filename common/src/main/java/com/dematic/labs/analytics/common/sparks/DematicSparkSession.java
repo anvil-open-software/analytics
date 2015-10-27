@@ -120,9 +120,9 @@ public class DematicSparkSession implements Serializable {
      * @param failIfNotSet if true, will throw exception if property does not exist
      */
     public void setCheckPointDirectoryFromSystemProperties(boolean failIfNotSet) {
-        this.checkPointDir = System.getProperty("spark.checkpoint.dir");
+        this.checkPointDir = System.getProperty(DriverConsts.SPARK_CHECKPOINT_DIR);
         if (Strings.isNullOrEmpty(checkPointDir) && failIfNotSet) {
-            throw new IllegalArgumentException("'spark.checkpoint.dir' jvm parameter needs to be set");
+            throw new IllegalArgumentException(DriverConsts.SPARK_CHECKPOINT_DIR + " jvm parameter needs to be set");
         }
         LOGGER.info("using >{}< checkpoint dir", checkPointDir);
     }
