@@ -74,38 +74,5 @@ public final class DriverUtils {
         return unionStreams;
     }
 
-    /**
-     *
-     * To checkpoint, need to create the stream inside the factory before calling checkpoint.
-     */
-
-    public static JavaStreamingContext initializeCheckpointedSparkSession(final DematicSparkSession session,
-                                                                          final String masterUrl,
-                                                                          final Duration pollTime) {
-        final String checkPointDir = session.getCheckPointDir();
-        final JavaStreamingContextFactory factory = () -> {
-            // Spark config
-            final SparkConf configuration = new SparkConf().
-                    // sets the lease manager table name
-                            setAppName(session.getAppName());
-            if (!Strings.isNullOrEmpty(masterUrl)) {
-                configuration.setMaster(masterUrl);
-            }
-            final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, pollTime);
-            // we must now create kinesis streams before we checkpoint
-            LOGGER.info("Creating Kinesis DStreams for " + session.getStreamName());
-            JavaDStream kinesisDStream = getJavaDStream(session.getAwsEndPoint(), session.getStreamName(), streamingContext);
-            session.setDStreams(kinesisDStream);
-            LOGGER.info("Created DStream:  " + kinesisDStream);
-
-            LOGGER.info("Checkpointing to " + checkPointDir);
-            streamingContext.checkpoint(checkPointDir);
-            return streamingContext;
-        };
-        return Strings.isNullOrEmpty(checkPointDir) ? factory.create() :
-                JavaStreamingContext.getOrCreate(checkPointDir, factory);
-    }
-
-
 
 }

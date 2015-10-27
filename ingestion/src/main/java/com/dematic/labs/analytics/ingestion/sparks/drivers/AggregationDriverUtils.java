@@ -1,0 +1,94 @@
+package com.dematic.labs.analytics.ingestion.sparks.drivers;
+
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
+import com.dematic.labs.analytics.common.sparks.DematicSparkSession;
+import com.dematic.labs.analytics.common.sparks.DriverUtils;
+import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
+import com.google.common.base.Strings;
+import org.apache.spark.SparkConf;
+import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.api.java.JavaStreamingContextFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scala.Tuple2;
+
+import static com.dematic.labs.toolkit.communication.EventUtils.nowString;
+
+/**
+ *  Shared
+ */
+public class AggregationDriverUtils {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AggregationDriverUtils.class);
+    private static final int MAX_RETRY = 3;
+
+
+    /**
+     * To checkpoint, need to create the stream inside the factory before calling checkpoint.
+     */
+    public static JavaStreamingContext initializeCheckpointedSparkSession(final DematicSparkSession session,
+                                                                          final String masterUrl,
+                                                                          IEventStreamProcessor aggregator) {
+        final String checkPointDir = session.getCheckPointDir();
+        final JavaStreamingContextFactory factory = () -> {
+            // Spark config
+            final SparkConf configuration = new SparkConf().
+                    // sets the lease manager table name
+                            setAppName(session.getAppName());
+            if (!Strings.isNullOrEmpty(masterUrl)) {
+                configuration.setMaster(masterUrl);
+            }
+            final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, session.getPollTime());
+            // we must now create kinesis streams before we checkpoint
+            LOGGER.warn("Creating Kinesis DStreams for " + session.getStreamName());
+            JavaDStream kinesisDStream = DriverUtils.getJavaDStream(session.getKinesisEndpoint(),
+                    session.getStreamName(), streamingContext);
+            session.setDStreams(kinesisDStream);
+            LOGGER.warn("Created DStream:  " + kinesisDStream);
+
+            // Start the streaming context and await termination
+            LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
+
+            aggregator.processEvents(session);
+
+            LOGGER.warn("Checkpointing to " + checkPointDir);
+            streamingContext.checkpoint(checkPointDir);
+            return streamingContext;
+        };
+        return Strings.isNullOrEmpty(checkPointDir) ? factory.create() :
+                JavaStreamingContext.getOrCreate(checkPointDir, factory);
+    }
+
+    public static void createOrUpdateDynamoDBBucket(final Tuple2<String, Long> bucket, final DynamoDBMapper dynamoDBMapper) {
+        int count = 1;
+        do {
+            EventAggregator eventAggregator = null;
+            try {
+
+                final PaginatedQueryList<EventAggregator> query = dynamoDBMapper.query(EventAggregator.class,
+                        new DynamoDBQueryExpression<EventAggregator>().withHashKeyValues(
+                                new EventAggregator().withBucket(bucket._1())));
+                if (query == null || query.isEmpty()) {
+                    // create
+                    eventAggregator = new EventAggregator(bucket._1(), null, nowString(), null, bucket._2(), null);
+                    dynamoDBMapper.save(eventAggregator);
+                    break;
+                } else {
+                    // update
+                    // only 1 should exists
+                    eventAggregator = query.get(0);
+                    eventAggregator.setUpdated(nowString());
+                    eventAggregator.setCount(eventAggregator.getCount() + bucket._2());
+                    dynamoDBMapper.save(eventAggregator);
+                    break;
+                }
+            } catch (final Throwable any) {
+                LOGGER.error("unable to save >{}< trying again {}", eventAggregator, count, any);
+            } finally {
+                count++;
+            }
+        } while (count <= MAX_RETRY);
+    }
+}
