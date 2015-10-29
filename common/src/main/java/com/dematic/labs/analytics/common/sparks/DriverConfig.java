@@ -3,7 +3,6 @@ package com.dematic.labs.analytics.common.sparks;
 import com.google.common.base.Strings;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
-import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,8 +14,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class DriverConfig implements Serializable {
 
-
-    private JavaStreamingContext streamingContext;
 
     private String appName;
     private String uniqueAppSuffix;
@@ -87,13 +84,6 @@ public class DriverConfig implements Serializable {
         return appName;
     }
 
-    public JavaStreamingContext getStreamingContext() {
-        return streamingContext;
-    }
-
-    public void setStreamingContext(JavaStreamingContext streamingContext) {
-        this.streamingContext = streamingContext;
-    }
 
     public String getStreamName() {
         return streamName;
