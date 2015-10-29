@@ -1,8 +1,6 @@
 package com.dematic.labs.analytics.common.sparks;
 
-import com.amazonaws.services.kinesis.AmazonKinesisClient;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
-import com.dematic.labs.toolkit.aws.Connections;
 import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
 import org.apache.spark.storage.StorageLevel;
@@ -18,24 +16,19 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-//todo: nullable/non-nullable
+import static com.dematic.labs.toolkit.aws.Connections.getNumberOfShards;
+
 public final class DriverUtils {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(DriverUtils.class);
-    private DriverUtils() {
-    }
 
-    public static int getNumberOfShards(final String awsEndpointUrl, final String streamName) {
-        final AmazonKinesisClient amazonKinesisClient = Connections.getAmazonKinesisClient(awsEndpointUrl);
-        // Determine the number of shards from the stream and create 1 Kinesis Worker/Receiver/DStream for each shard
-        return amazonKinesisClient.describeStream(streamName).getStreamDescription().getShards().size();
+    private DriverUtils() {
     }
 
     public static JavaStreamingContext getStreamingContext(final String masterUrl, final String applicationName,
                                                            final String checkPointDir,
                                                            final Duration pollTime) {
         final JavaStreamingContextFactory factory = () -> {
-            // Spark config
+            // Spark configuration
             final SparkConf configuration = new SparkConf().
                     // sets the lease manager table name
                             setAppName(applicationName);
@@ -71,8 +64,6 @@ public final class DriverUtils {
 
     public static JavaDStream<byte[]> getJavaDStream(final String awsEndpointUrl, final String streamName,
                                                      final JavaStreamingContext streamingContext) {
-
-
         final int shards = getNumberOfShards(awsEndpointUrl, streamName);
         // create 1 Kinesis Worker/Receiver/DStream for each shard
         final List<JavaDStream<byte[]>> streamsList = new ArrayList<>(shards);
@@ -92,6 +83,4 @@ public final class DriverUtils {
         }
         return unionStreams;
     }
-
-
 }

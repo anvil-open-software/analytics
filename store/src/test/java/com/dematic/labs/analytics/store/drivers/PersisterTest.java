@@ -3,7 +3,6 @@ package com.dematic.labs.analytics.store.drivers;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
-import com.dematic.labs.analytics.common.sparks.DriverUtils;
 import com.dematic.labs.analytics.store.sparks.drivers.Persister;
 import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
@@ -60,7 +59,7 @@ public final class PersisterTest {
         // make Duration configurable
         final Duration pollTime = Durations.seconds(2);
         // Must add 1 more thread than the number of receivers or the output won't show properly from the driver
-        final int numSparkThreads = DriverUtils.getNumberOfShards(kinesisEndpoint, kinesisInputStream) + 1;
+        final int numSparkThreads = getNumberOfShards(kinesisEndpoint, kinesisInputStream) + 1;
         final JavaStreamingContext streamingContext = getStreamingContext("local[" + numSparkThreads + "]",
                 leaseTable, null, pollTime);
 
