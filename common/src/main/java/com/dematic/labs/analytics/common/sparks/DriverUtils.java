@@ -28,7 +28,7 @@ public final class DriverUtils {
                                                            final String checkPointDir,
                                                            final Duration pollTime) {
         final JavaStreamingContextFactory factory = () -> {
-            // Spark config
+            // Spark configuration
             final SparkConf configuration = new SparkConf().
                     // sets the lease manager table name
                             setAppName(applicationName);
