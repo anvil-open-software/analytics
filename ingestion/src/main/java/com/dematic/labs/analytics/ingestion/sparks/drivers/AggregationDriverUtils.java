@@ -18,19 +18,22 @@ import scala.Tuple2;
 import static com.dematic.labs.toolkit.communication.EventUtils.nowString;
 
 /**
- *  Shared
+ * Shared
  */
-public class AggregationDriverUtils {
+public final class AggregationDriverUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(AggregationDriverUtils.class);
     private static final int MAX_RETRY = 3;
 
+    private AggregationDriverUtils() {
+        /* util class */
+    }
 
     /**
      * To checkpoint, need to create the stream inside the factory before calling checkpoint.
      */
     public static JavaStreamingContext initializeCheckpointedSparkSession(final DriverConfig session,
                                                                           final String masterUrl,
-                                                                          EventStreamProcessor aggregator) {
+                                                                          final EventStreamProcessor aggregator) {
         final String checkPointDir = session.getCheckPointDir();
         final JavaStreamingContextFactory factory = () -> {
             // Spark config
@@ -48,7 +51,8 @@ public class AggregationDriverUtils {
 
             // Start the streaming context and await termination
             LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
-            aggregator.processEvents(session,kinesisDStream);
+            //noinspection unchecked
+            aggregator.processEvents(session, kinesisDStream);
 
             // we checkpoint last because if we try to run it before processing the stream, we end up with more events than the first run.
             LOGGER.warn("Checkpointing to " + checkPointDir);
@@ -60,7 +64,8 @@ public class AggregationDriverUtils {
                 JavaStreamingContext.getOrCreate(checkPointDir, factory);
     }
 
-    public static void createOrUpdateDynamoDBBucket(final Tuple2<String, Long> bucket, final DynamoDBMapper dynamoDBMapper) {
+    public static void createOrUpdateDynamoDBBucket(final Tuple2<String, Long> bucket,
+                                                    final DynamoDBMapper dynamoDBMapper) {
         int count = 1;
         do {
             EventAggregator eventAggregator = null;

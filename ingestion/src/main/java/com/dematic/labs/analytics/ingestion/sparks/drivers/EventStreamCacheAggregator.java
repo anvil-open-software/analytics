@@ -3,22 +3,24 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
+import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.amazonaws.util.StringUtils;
+import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
-import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Strings;
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.streaming.Duration;
-import org.apache.spark.streaming.Durations;
+import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.kinesis.KinesisUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -27,20 +29,20 @@ import scala.Tuple2;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
-import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
-import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
-import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
-import static com.dematic.labs.toolkit.aws.Connections.getCacheClientPool;
+import static com.dematic.labs.analytics.common.sparks.DriverUtils.getKinesisCheckpointWindow;
+import static com.dematic.labs.analytics.ingestion.sparks.drivers.AggregationDriverUtils.createOrUpdateDynamoDBBucket;
+import static com.dematic.labs.toolkit.aws.Connections.*;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
-import static com.dematic.labs.toolkit.communication.EventUtils.nowString;
 
 public final class EventStreamCacheAggregator implements Serializable {
+    public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Cache_LT";
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamCacheAggregator.class);
-    private static final int MAX_RETRY = 3;
+
     // cache pool
     private static final JedisPool POOL;
 
@@ -55,10 +57,12 @@ public final class EventStreamCacheAggregator implements Serializable {
     }
 
     // functions
-    public static final class AggregateEvent implements PairFunction<Event, String, Long> {
+    private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
+
+    private static final class AggregateEventToBucketFunction implements PairFunction<Event, String, Long> {
         private final TimeUnit timeUnit;
 
-        public AggregateEvent(final TimeUnit timeUnit) {
+        public AggregateEventToBucketFunction(final TimeUnit timeUnit) {
             this.timeUnit = timeUnit;
         }
 
@@ -71,115 +75,126 @@ public final class EventStreamCacheAggregator implements Serializable {
         }
     }
 
-    private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
+    private static final class AggregateEventFunction implements VoidFunction<JavaDStream<byte[]>> {
+        private final DriverConfig driverConfig;
 
-    public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Cache_LT";
+        public AggregateEventFunction(final DriverConfig driverConfig) {
+            this.driverConfig = driverConfig;
+        }
+
+        @Override
+        public void call(JavaDStream<byte[]> javaDStream) throws Exception {
+            // transform the byte[] (byte arrays are json) to a string to events, and ensure distinct within stream and
+            // filter against cache to ensure no duplicates
+            final JavaDStream<Event> eventStream =
+                    javaDStream.map(
+                            event -> jsonToEvent(new String(event, Charset.defaultCharset()))
+                    ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct)
+                            .filter(event -> {
+                                try (final Jedis cacheClient = POOL.getResource()) {
+                                    final String uuid = event.getEventId().toString();
+                                    return cacheClient.getSet(uuid, uuid) == null;
+                                }
+                            });
+
+            // map to pairs and aggregate by key
+            final JavaPairDStream<String, Long> aggregates = eventStream
+                    .mapToPair(new AggregateEventToBucketFunction(driverConfig.getTimeUnit()))
+                    .reduceByKey(SUM_REDUCER);
+
+            // save counts
+            aggregates.foreachRDD(rdd -> {
+                final AmazonDynamoDBClient amazonDynamoDBClient =
+                        getAmazonDynamoDBClient(driverConfig.getDynamoDBEndpoint());
+                final DynamoDBMapper dynamoDBMapper = StringUtils.isNullOrEmpty(driverConfig.getDynamoPrefix()) ?
+                        new DynamoDBMapper(amazonDynamoDBClient) :
+                        new DynamoDBMapper(amazonDynamoDBClient,
+                                new DynamoDBMapperConfig(withTableNamePrefix(driverConfig.getDynamoPrefix())));
+                final List<Tuple2<String, Long>> collect = rdd.collect();
+                for (final Tuple2<String, Long> bucket : collect) {
+                    createOrUpdateDynamoDBBucket(bucket, dynamoDBMapper);
+                }
+                return null;
+            });
+        }
+    }
+
+    private static final class CreateDStreamFunction implements Function0<JavaDStream<byte[]>> {
+        private final DriverConfig driverConfig;
+        private final JavaStreamingContext streamingContext;
+
+        public CreateDStreamFunction(final DriverConfig driverConfig, final JavaStreamingContext streamingContext) {
+            this.driverConfig = driverConfig;
+            this.streamingContext = streamingContext;
+        }
+
+        @Override
+        public JavaDStream<byte[]> call() throws Exception {
+            final String kinesisEndpoint = driverConfig.getKinesisEndpoint();
+            final String streamName = driverConfig.getStreamName();
+            // create the dstreamelitetest360
+            final int shards = getNumberOfShards(kinesisEndpoint, streamName);
+            // create 1 Kinesis Worker/Receiver/DStream for each shard
+            final List<JavaDStream<byte[]>> streamsList = new ArrayList<>(shards);
+            for (int i = 0; i < shards; i++) {
+                streamsList.add(
+                        KinesisUtils.createStream(streamingContext, streamName, kinesisEndpoint,
+                                getKinesisCheckpointWindow(), InitialPositionInStream.TRIM_HORIZON,
+                                StorageLevel.MEMORY_ONLY())
+                );
+            }
+            // Union all the streams if there is more than 1 stream
+            final JavaDStream<byte[]> unionStreams;
+            if (streamsList.size() > 1) {
+                unionStreams = streamingContext.union(streamsList.get(0), streamsList.subList(1, streamsList.size()));
+            } else {
+                unionStreams = streamsList.get(0);
+            }
+            return unionStreams;
+        }
+    }
+
+    private static final class CreateStreamingContextFunction implements Function0<JavaStreamingContext> {
+        private final DriverConfig driverConfig;
+
+        public CreateStreamingContextFunction(final DriverConfig driverConfig) {
+            this.driverConfig = driverConfig;
+        }
+
+        @Override
+        public JavaStreamingContext call() throws Exception {
+            // create spark configure
+            final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName());
+            // create the streaming context
+            final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
+                    driverConfig.getPollTime());
+            streamingContext.checkpoint(driverConfig.getCheckPointDir());
+
+            // create the dstream
+            final JavaDStream<byte[]> dStream =
+                    new CreateDStreamFunction(driverConfig, streamingContext).call();
+            // work on the streams
+            new AggregateEventFunction(driverConfig).call(dStream);
+
+            // return the streaming context
+            return streamingContext;
+        }
+    }
 
     public static void main(final String[] args) {
-        if (args.length < 5) {
-            throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint,"
-                    + "optional DynamoDB Prefix, driver PollTime, and aggregation by time {MINUTES,DAYS}");
-        }
-        // url and stream name to pull events
-        final String kinesisEndpoint = args[0];
-        final String streamName = args[1];
-        final String dynamoDBEndpoint = args[2];
-
-        final String dynamoPrefix;
-        final Duration pollTime;
-        final TimeUnit timeUnit;
-        if (args.length == 7) {
-            dynamoPrefix = null;
-            pollTime = Durations.seconds(Integer.valueOf(args[3]));
-            timeUnit = TimeUnit.valueOf(args[4]);
-        } else {
-            dynamoPrefix = args[3];
-            pollTime = Durations.seconds(Integer.valueOf(args[4]));
-            timeUnit = TimeUnit.valueOf(args[5]);
-        }
-
-        final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME :
-                String.format("%s%s", dynamoPrefix, EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME);
-
+        // set the configuration and checkpoint dir
+        final DriverConfig config = new DriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME, args);
+        config.setCheckPointDirectoryFromSystemProperties(true);
         // create the table, if it does not exist
-        createDynamoTable(dynamoDBEndpoint, EventAggregator.class, dynamoPrefix);
+        createDynamoTable(config.getDynamoDBEndpoint(), EventAggregator.class, config.getDynamoPrefix());
         // master url will be set using the spark submit driver command
-        final JavaStreamingContext streamingContext = getStreamingContext(null, appName, null, pollTime);
+        final JavaStreamingContext streamingContext =
+                JavaStreamingContext.getOrCreate(config.getCheckPointDir(), new CreateStreamingContextFunction(config));
 
         // Start the streaming context and await termination
         LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
-        final EventStreamCacheAggregator eventStreamAggregator = new EventStreamCacheAggregator();
-        eventStreamAggregator.aggregateEvents(getJavaDStream(kinesisEndpoint, streamName, streamingContext),
-                dynamoDBEndpoint, dynamoPrefix, timeUnit);
-
         streamingContext.start();
         LOGGER.info("spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();
-    }
-
-    public void aggregateEvents(final JavaDStream<byte[]> byteStream, final String dynamoDBEndpoint,
-                                final String tablePrefix, final TimeUnit timeUnit) {
-
-        // transform the byte[] (byte arrays are json) to a string to events, and ensure distinct within stream and
-        // filter against cache to ensure no duplicates
-        final JavaDStream<Event> eventStream =
-                byteStream.map(
-                        event -> jsonToEvent(new String(event, Charset.defaultCharset()))
-                ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct)
-                        .filter(event -> {
-                            try (final Jedis cacheClient = POOL.getResource()) {
-                                final String uuid = event.getEventId().toString();
-                                return cacheClient.getSet(uuid, uuid) == null;
-                            }
-                        });
-
-        // map to pairs and aggregate by key
-        final JavaPairDStream<String, Long> aggregates = eventStream
-                .mapToPair(new AggregateEvent(timeUnit))
-                .reduceByKey(SUM_REDUCER);
-
-        // save counts
-        aggregates.foreachRDD(rdd -> {
-            final AmazonDynamoDBClient amazonDynamoDBClient = Connections.getAmazonDynamoDBClient(dynamoDBEndpoint);
-            final DynamoDBMapper dynamoDBMapper = StringUtils.isNullOrEmpty(tablePrefix) ?
-                    new DynamoDBMapper(amazonDynamoDBClient) :
-                    new DynamoDBMapper(amazonDynamoDBClient, new DynamoDBMapperConfig(withTableNamePrefix(tablePrefix)));
-            final List<Tuple2<String, Long>> collect = rdd.collect();
-            for (final Tuple2<String, Long> bucket : collect) {
-                createOrUpdate(bucket, dynamoDBMapper);
-            }
-            return null;
-        });
-    }
-
-    private static void createOrUpdate(final Tuple2<String, Long> bucket, final DynamoDBMapper dynamoDBMapper) {
-        int count = 1;
-        do {
-            EventAggregator eventAggregator = null;
-            try {
-
-                final PaginatedQueryList<EventAggregator> query = dynamoDBMapper.query(EventAggregator.class,
-                        new DynamoDBQueryExpression<EventAggregator>().withHashKeyValues(
-                                new EventAggregator().withBucket(bucket._1())));
-                if (query == null || query.isEmpty()) {
-                    // create
-                    eventAggregator = new EventAggregator(bucket._1(), null, nowString(), null, bucket._2(), null);
-                    dynamoDBMapper.save(eventAggregator);
-                    break;
-                } else {
-                    // update
-                    // only 1 should exists
-                    eventAggregator = query.get(0);
-                    eventAggregator.setUpdated(nowString());
-                    eventAggregator.setCount(eventAggregator.getCount() + bucket._2());
-                    dynamoDBMapper.save(eventAggregator);
-                    break;
-                }
-            } catch (final Throwable any) {
-                LOGGER.error("unable to save >{}< trying again {}", eventAggregator, count, any);
-            } finally {
-                count++;
-            }
-        } while (count <= MAX_RETRY);
     }
 }
