@@ -7,7 +7,6 @@ import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,67 +94,8 @@ public class EventStreamStatistics {
                 );
 
         // calculate statistics
+        //todo: left for history, removed because requirments changed.
 
-        // compute the count of events by node
-        eventsByNodeSummation(events);
-        // compute the moving average of values by node
-        eventsByNodeValueAverage(events);
-        // compute the count of events by order
-        eventsByOrderSummation(events);
-        // compute the moving average of values by order
-        eventsByOrderValueAverage(events);
-    }
-
-    public void eventsByNodeSummation(final JavaDStream<Event> events) {
-        final JavaPairDStream<Integer, Long> eventsByNode = events
-                .mapToPair(event -> Tuple2.apply(event.getNodeId(), 1L))
-                .reduceByKey(SUM_REDUCER)
-                .updateStateByKey(COMPUTE_RUNNING_SUM);
-
-        eventsByNode.foreachRDD(rdd -> {
-            LOGGER.info("node counts: {}", rdd.take(100));
-            System.out.println("node counts: " + rdd.take(100));
-            return null;
-        });
-    }
-
-    public void eventsByOrderSummation(final JavaDStream<Event> events) {
-        final JavaPairDStream<Integer, Long> eventsByOrder = events
-                .mapToPair(event -> Tuple2.apply(event.getOrderId(), 1L))
-                .reduceByKey(SUM_REDUCER)
-                .updateStateByKey(COMPUTE_RUNNING_SUM);
-
-        eventsByOrder.foreachRDD(rdd -> {
-            LOGGER.info("order counts: {}", rdd.take(100));
-            System.out.println("order counts: " + rdd.take(100));
-            return null;
-        });
-    }
-
-    public void eventsByNodeValueAverage(final JavaDStream<Event> events) {
-        final JavaPairDStream<Integer, Tuple2<Double, Long>> eventsByNode = events
-                .mapToPair(event -> Tuple2.apply(event.getNodeId(), new Tuple2<>(event.getValue(), 1L)))
-                .reduceByKey(SUM_AND_COUNT_REDUCER)
-                .updateStateByKey(COMPUTE_RUNNING_AVG);
-
-        eventsByNode.foreachRDD(rdd -> {
-            LOGGER.info("node average value: {}", rdd.take(100));
-            System.out.println("node average value: " + rdd.take(100));
-            return null;
-        });
-    }
-
-    public void eventsByOrderValueAverage(final JavaDStream<Event> events) {
-        final JavaPairDStream<Integer, Tuple2<Double, Long>> eventsByNode = events
-                .mapToPair(event -> Tuple2.apply(event.getOrderId(), new Tuple2<>(event.getValue(), 1L)))
-                .reduceByKey(SUM_AND_COUNT_REDUCER)
-                .updateStateByKey(COMPUTE_RUNNING_AVG);
-
-        eventsByNode.foreachRDD(rdd -> {
-            LOGGER.info("order average value: {}", rdd.take(100));
-            System.out.println("order average value: " + rdd.take(100));
-            return null;
-        });
     }
 }
 

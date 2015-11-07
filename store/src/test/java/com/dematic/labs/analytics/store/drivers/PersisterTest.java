@@ -80,7 +80,7 @@ public final class PersisterTest {
                     until(() -> assertTrue(Objects.equals("ACTIVE", streamingContext.ssc().getState().toString())));
 
             // generate events
-            kinesisStreamRule.pushEventsToKinesis(generateEvents(EVENT_COUNT, 10, 20));
+            kinesisStreamRule.pushEventsToKinesis(generateEvents(EVENT_COUNT, "UnitTestGenerated"));
             // set the defaults
             Awaitility.setDefaultTimeout(3, TimeUnit.MINUTES);
             // poll dynamoDB table and ensure all events received

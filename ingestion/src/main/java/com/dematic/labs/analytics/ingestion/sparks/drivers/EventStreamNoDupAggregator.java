@@ -76,7 +76,7 @@ public final class EventStreamNoDupAggregator {
         // This downsampling gives us a fast way of bucketing or aggregating events via this downsampled key
         @Override
         public Tuple2<String, Collection<String>> call(final Event event) throws Exception {
-            return new Tuple2<>(event.aggregateBy(timeUnit), Collections.singleton(event.getEventId().toString()));
+            return new Tuple2<>(event.aggregateBy(timeUnit), Collections.singleton(event.getId().toString()));
         }
     }
 

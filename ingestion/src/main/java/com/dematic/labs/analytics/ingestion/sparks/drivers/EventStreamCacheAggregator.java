@@ -92,7 +92,7 @@ public final class EventStreamCacheAggregator implements Serializable {
                     ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct)
                             .filter(event -> {
                                 try (final Jedis cacheClient = POOL.getResource()) {
-                                    final String uuid = event.getEventId().toString();
+                                    final String uuid = event.getId().toString();
                                     return cacheClient.getSet(uuid, uuid) == null;
                                 }
                             });
