@@ -55,23 +55,19 @@ public final class EventStreamCheckpointOutsideFactoryAggregator implements Seri
         }
         LOGGER.info("using >{}< checkpoint dir", checkPointDir);
 
-
         // create the table, if it does not exist
         createDynamoTable(dynamoDBEndpoint, EventAggregator.class, dynamoPrefix);
         //todo: master url will be set using the spark submit driver command
         // DO NOT PASS IN checkpoint here, do it after...
         final JavaStreamingContext streamingContext = getStreamingContext(null, appName, null, pollTime);
+        // checkpoint after stream created
+        streamingContext.checkpoint(checkPointDir);
 
         // Start the streaming context and await termination
         LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
         final EventStreamAggregator eventStreamAggregator = new EventStreamAggregator();
         JavaDStream<byte[]> javaDStream = getJavaDStream(kinesisEndpoint, streamName, streamingContext);
-
-        // checkpoint after stream created
-        streamingContext.checkpoint(checkPointDir);
-
         eventStreamAggregator.aggregateEvents(javaDStream, dynamoDBEndpoint, dynamoPrefix, timeUnit);
-
 
         streamingContext.start();
         LOGGER.info("spark state: {}", streamingContext.getState().name());
