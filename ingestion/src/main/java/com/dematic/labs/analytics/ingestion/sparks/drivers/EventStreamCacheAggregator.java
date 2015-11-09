@@ -132,7 +132,7 @@ public final class EventStreamCacheAggregator implements Serializable {
         public JavaDStream<byte[]> call() throws Exception {
             final String kinesisEndpoint = driverConfig.getKinesisEndpoint();
             final String streamName = driverConfig.getStreamName();
-            // create the dstreamelitetest360
+            // create the dstream
             final int shards = getNumberOfShards(kinesisEndpoint, streamName);
             // create 1 Kinesis Worker/Receiver/DStream for each shard
             final List<JavaDStream<byte[]>> streamsList = new ArrayList<>(shards);
