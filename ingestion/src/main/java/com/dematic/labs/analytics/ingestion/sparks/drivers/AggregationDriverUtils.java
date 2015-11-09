@@ -43,7 +43,9 @@ public final class AggregationDriverUtils {
             if (!Strings.isNullOrEmpty(masterUrl)) {
                 configuration.setMaster(masterUrl);
             }
+
             final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, session.getPollTime());
+
             // we must now create kinesis streams before we checkpoint
             LOGGER.warn("Creating Kinesis DStreams for " + session.getStreamName());
             JavaDStream kinesisDStream = DriverUtils.getJavaDStream(session.getKinesisEndpoint(),
@@ -54,9 +56,14 @@ public final class AggregationDriverUtils {
             //noinspection unchecked
             aggregator.processEvents(session, kinesisDStream);
 
+            // we put this after stream creation and processing as per Tagatha Das screen:
+            // from http://www.slideshare.net/Typesafe_Inc/four-things-to-know-about-reliable-spark-streaming-with-typesafe-and-databricks
+            // http://image.slidesharecdn.com/fourthingstoknowaboutreliablesparkstreamingwithtypesafeanddatabricks-150708170748-lva1-app6891/95/four-things-to-know-about-reliable-spark-streaming-with-typesafe-and-databricks-35-638.jpg?cb=1441879864
+            streamingContext.checkpoint(checkPointDir);
+
             // we checkpoint last because if we try to run it before processing the stream, we end up with more events than the first run.
             LOGGER.warn("Checkpointing to " + checkPointDir);
-            streamingContext.checkpoint(checkPointDir);
+
 
             return streamingContext;
         };
