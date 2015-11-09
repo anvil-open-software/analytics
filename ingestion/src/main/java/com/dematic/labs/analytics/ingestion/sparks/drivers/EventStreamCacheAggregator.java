@@ -168,7 +168,6 @@ public final class EventStreamCacheAggregator implements Serializable {
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTime());
-            streamingContext.checkpoint(driverConfig.getCheckPointDir());
 
             // create the dstream
             final JavaDStream<byte[]> dStream =
@@ -176,6 +175,7 @@ public final class EventStreamCacheAggregator implements Serializable {
             // work on the streams
             new AggregateEventFunction(driverConfig).call(dStream);
 
+            streamingContext.checkpoint(driverConfig.getCheckPointDir());
             // return the streaming context
             return streamingContext;
         }
