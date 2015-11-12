@@ -43,7 +43,9 @@ public final class AggregationDriverUtils {
             if (!Strings.isNullOrEmpty(masterUrl)) {
                 configuration.setMaster(masterUrl);
             }
+
             final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, session.getPollTime());
+
             // we must now create kinesis streams before we checkpoint
             LOGGER.warn("Creating Kinesis DStreams for " + session.getStreamName());
             JavaDStream kinesisDStream = DriverUtils.getJavaDStream(session.getKinesisEndpoint(),

@@ -92,7 +92,7 @@ public final class EventStreamCacheAggregator implements Serializable {
                     ).transform((Function<JavaRDD<Event>, JavaRDD<Event>>) JavaRDD::distinct)
                             .filter(event -> {
                                 try (final Jedis cacheClient = POOL.getResource()) {
-                                    final String uuid = event.getId().toString();
+                                    final String uuid = event.getEventId().toString();
                                     return cacheClient.getSet(uuid, uuid) == null;
                                 }
                             });
@@ -132,7 +132,7 @@ public final class EventStreamCacheAggregator implements Serializable {
         public JavaDStream<byte[]> call() throws Exception {
             final String kinesisEndpoint = driverConfig.getKinesisEndpoint();
             final String streamName = driverConfig.getStreamName();
-            // create the dstream
+            // create the dstreamelitetest360
             final int shards = getNumberOfShards(kinesisEndpoint, streamName);
             // create 1 Kinesis Worker/Receiver/DStream for each shard
             final List<JavaDStream<byte[]>> streamsList = new ArrayList<>(shards);
@@ -168,12 +168,13 @@ public final class EventStreamCacheAggregator implements Serializable {
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTime());
+
             // create the dstream
             final JavaDStream<byte[]> dStream =
                     new CreateDStreamFunction(driverConfig, streamingContext).call();
             // work on the streams
             new AggregateEventFunction(driverConfig).call(dStream);
-            // set the checkpoint dir
+
             streamingContext.checkpoint(driverConfig.getCheckPointDir());
             // return the streaming context
             return streamingContext;
