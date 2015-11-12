@@ -9,7 +9,6 @@ import java.io.IOException;
 
 @Ignore // place holder
 public final class EventProcessingWorkflowIT {
-    private final static int EVENT_COUNT = 10;
 
     // setup Kinesis
     @Rule
