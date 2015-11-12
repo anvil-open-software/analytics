@@ -45,7 +45,7 @@ public final class AggregationDriverUtils {
             }
 
             final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, session.getPollTime());
-            streamingContext.checkpoint(checkPointDir);
+
             // we must now create kinesis streams before we checkpoint
             LOGGER.warn("Creating Kinesis DStreams for " + session.getStreamName());
             JavaDStream kinesisDStream = DriverUtils.getJavaDStream(session.getKinesisEndpoint(),
@@ -58,7 +58,7 @@ public final class AggregationDriverUtils {
 
             // we checkpoint last because if we try to run it before processing the stream, we end up with more events than the first run.
             LOGGER.warn("Checkpointing to " + checkPointDir);
-
+            streamingContext.checkpoint(checkPointDir);
 
             return streamingContext;
         };
