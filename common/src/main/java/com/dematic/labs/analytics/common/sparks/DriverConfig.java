@@ -37,6 +37,7 @@ public class DriverConfig implements Serializable {
         setParametersFromArguments(args);
     }
 
+    //todo: fix
     public void setParametersFromArguments(String args[]) {
         if (args.length < 5) {
             throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint,"
