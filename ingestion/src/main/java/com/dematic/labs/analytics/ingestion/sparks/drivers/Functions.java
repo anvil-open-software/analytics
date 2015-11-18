@@ -93,7 +93,7 @@ public final class Functions {
         @Override
         public JavaStreamingContext call() throws Exception {
             // create spark configure
-            final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName());
+            final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName()).setMaster("local[*]");
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTime());
