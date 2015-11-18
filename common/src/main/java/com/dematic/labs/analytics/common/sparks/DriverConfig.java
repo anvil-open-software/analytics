@@ -12,9 +12,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Holder for spark driver session details including input parameters
  */
-public class DriverConfig implements Serializable {
-
-
+//todo: cleanup this class
+public final class DriverConfig implements Serializable {
     private String appName;
     private String uniqueAppSuffix;
 
@@ -31,13 +30,38 @@ public class DriverConfig implements Serializable {
     private static final long serialVersionUID = 1896518324147474596L;
     private static final Logger LOGGER = LoggerFactory.getLogger(DriverConfig.class);
 
-    public DriverConfig(String uniqueAppSuffix, String args[]) {
+    public DriverConfig(final String uniqueAppSuffix) {
         // used to formulate app name
         this.uniqueAppSuffix=uniqueAppSuffix;
-        setParametersFromArguments(args);
     }
 
-    public void setParametersFromArguments(String args[]) {
+    public DriverConfig(final String uniqueAppSuffix, final String args[]) {
+        // used to formulate app name
+        this.uniqueAppSuffix=uniqueAppSuffix;
+        setParametersFromArgumentsForAggregation(args);
+    }
+
+    public void setParametersFromArgumentsForInterArrivalTime(final String args[]) {
+        if (args.length < 4) {
+            throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint,"
+                    + "optional DynamoDB Prefix, driver PollTime");
+        }
+        this.kinesisEndpoint = args[0];
+        this.streamName = args[1];
+        this.dynamoDBEndpoint = args[2];
+
+        if (args.length == 5) {
+            dynamoPrefix = null;
+            pollTime = Durations.seconds(Integer.valueOf(args[3]));
+        } else {
+            dynamoPrefix = args[3];
+            pollTime = Durations.seconds(Integer.valueOf(args[4]));
+        }
+        appName = Strings.isNullOrEmpty(dynamoPrefix) ? uniqueAppSuffix :
+                String.format("%s%s", dynamoPrefix, uniqueAppSuffix);
+    }
+
+    public void setParametersFromArgumentsForAggregation(final String args[]) {
         if (args.length < 5) {
             throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint,"
                     + "optional DynamoDB Prefix, driver PollTime, and aggregation by time {MINUTES,DAYS}");
@@ -57,7 +81,6 @@ public class DriverConfig implements Serializable {
         }
         appName = Strings.isNullOrEmpty(dynamoPrefix) ? uniqueAppSuffix :
                       String.format("%s%s", dynamoPrefix, uniqueAppSuffix);
-
     }
 
     public String getKinesisEndpoint() {
@@ -84,7 +107,6 @@ public class DriverConfig implements Serializable {
         return appName;
     }
 
-
     public String getStreamName() {
         return streamName;
     }
@@ -97,13 +119,11 @@ public class DriverConfig implements Serializable {
      *
      * @param failIfNotSet if true, will throw exception if property does not exist
      */
-    public void setCheckPointDirectoryFromSystemProperties(boolean failIfNotSet) {
+    public void setCheckPointDirectoryFromSystemProperties(final boolean failIfNotSet) {
         this.checkPointDir = System.getProperty(DriverConsts.SPARK_CHECKPOINT_DIR);
         if (Strings.isNullOrEmpty(checkPointDir) && failIfNotSet) {
             throw new IllegalArgumentException(DriverConsts.SPARK_CHECKPOINT_DIR + " jvm parameter needs to be set");
         }
         LOGGER.info("using >{}< checkpoint dir", checkPointDir);
     }
-
-
 }
