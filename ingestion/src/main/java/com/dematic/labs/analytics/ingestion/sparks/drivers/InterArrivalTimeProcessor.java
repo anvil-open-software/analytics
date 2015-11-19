@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.dematic.labs.analytics.ingestion.sparks.drivers.Functions.CreateStreamingContextFunction;
+import static com.dematic.labs.analytics.ingestion.sparks.Functions.CreateStreamingContextFunction;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
@@ -50,8 +50,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                                     rdd.partitions().size()));
             // group by nodeId
             final JavaPairDStream<String, List<Event>> nodeToEventsPairs =
-                    eventStream.mapToPair(event -> new Tuple2<>(event.getNodeId(), Collections.singletonList(event))); // just a side effect of intellij lambda
-
+                    eventStream.mapToPair(event -> Tuple2.apply(event.getNodeId(), Collections.singletonList(event)));
             // todo: for now, we ar just going to print the inter arrival times
             final JavaPairDStream<String, List<Event>> nodeToEvents =
                     nodeToEventsPairs.reduceByKey((events1, events2) -> Stream.of(events1, events2)
