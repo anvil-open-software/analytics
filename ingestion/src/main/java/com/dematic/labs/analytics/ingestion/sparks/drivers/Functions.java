@@ -14,6 +14,7 @@ import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
 import scala.Tuple2;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 import static com.dematic.labs.analytics.common.sparks.DriverUtils.getKinesisCheckpointWindow;
 import static com.dematic.labs.toolkit.aws.Connections.getNumberOfShards;
 
-public final class Functions {
+public final class Functions implements Serializable {
     private Functions() {
     }
 
