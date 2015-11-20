@@ -3,6 +3,8 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
 import com.dematic.labs.toolkit.communication.Event;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.PeekingIterator;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
@@ -51,17 +53,33 @@ public final class InterArrivalTimeProcessor implements Serializable {
             // group by nodeId
             final JavaPairDStream<String, List<Event>> nodeToEventsPairs =
                     eventStream.mapToPair(event -> Tuple2.apply(event.getNodeId(), Collections.singletonList(event)));
-            // todo: for now, we ar just going to print the inter arrival times
+
+            // reduce all events to single node id
             final JavaPairDStream<String, List<Event>> nodeToEvents =
                     nodeToEventsPairs.reduceByKey((events1, events2) -> Stream.of(events1, events2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
 
+            // calculate inter-arrival time
             nodeToEvents.foreachRDD(rdd -> {
-                //todo: should calculate and save to db, for now print
-                rdd.collect().forEach(eventsByNode ->
-                        LOGGER.info("node {} : event size {}", eventsByNode._1(), eventsByNode._2().size()));
+                rdd.collect().forEach(eventsByNode -> {
+                    calculateInterArrivalTime(eventsByNode._1(), eventsByNode._2());
+                    LOGGER.info("node {} : event size {}", eventsByNode._1(), eventsByNode._2().size());
+                });
                 return null;
             });
+        }
+    }
+
+    private static void calculateInterArrivalTime(final String nodeId, final List<Event> orderedEvents) {
+        final PeekingIterator<Event> eventPeekingIterator = Iterators.peekingIterator(orderedEvents.iterator());
+        for (; eventPeekingIterator.hasNext(); ) {
+            final Event current = eventPeekingIterator.next();
+            if (eventPeekingIterator.hasNext()) {
+                // events r in order
+                final long interArrivalTime =
+                        eventPeekingIterator.peek().getTimestamp().getMillis() - current.getTimestamp().getMillis();
+                // save to db
+            }
         }
     }
 
