@@ -58,6 +58,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final JavaPairDStream<String, List<Event>> nodeToEvents =
                     nodeToEventsPairs.reduceByKey((events1, events2) -> Stream.of(events1, events2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
+            // look into update by key, last event date
 
             // calculate inter-arrival time
             nodeToEvents.foreachRDD(rdd -> {
