@@ -94,7 +94,7 @@ public final class Functions implements Serializable {
         @Override
         public JavaStreamingContext call() throws Exception {
             // create spark configure
-            final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName()).setMaster("local[*]");
+            final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName());
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTime());
