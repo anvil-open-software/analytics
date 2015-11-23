@@ -3,10 +3,12 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
 import com.dematic.labs.toolkit.communication.Event;
+import com.google.common.base.Optional;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
@@ -58,6 +60,39 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final JavaPairDStream<String, List<Event>> nodeToEvents =
                     nodeToEventsPairs.reduceByKey((events1, events2) -> Stream.of(events1, events2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
+
+
+            /**
+             *  public static Function2<List<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>>
+             COMPUTE_RUNNING_AVG = (sums, c urrent) -> {
+             Tuple2<Double, Long> avgAndCount = current.or(new Tuple2<>(0.0, 0L));
+
+             for (final Tuple2<Double, Long> sumAndCount : sums) {
+             final double avg = avgAndCount._1();
+             final long avgCount = avgAndCount._2();
+
+             final double sum = sumAndCount._1();
+             final long sumCount = sumAndCount._2();
+
+             final Long countTotal = avgCount + sumCount;
+             final Double newAvg = ((avgCount * avg) + (sumCount * sum / sumCount)) / countTotal;
+
+             avgAndCount = new Tuple2<>(newAvg, countTotal);
+             }
+             return Optional.of(avgAndCount);
+             };
+             */
+
+
+
+            nodeToEvents.updateStateByKey(new Function2<List<List<Event>>, Optional<Object>, Optional<Object>>() {
+
+                @Override
+                public Optional<Object> call(List<List<Event>> v1, Optional<Object> v2) throws Exception {
+                    return null;
+                }
+
+            });
             // look into update by key, last event date
 
             // calculate inter-arrival time
@@ -70,6 +105,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
             });
         }
     }
+
 
     private static void calculateInterArrivalTime(final String nodeId, final List<Event> orderedEvents) {
         final PeekingIterator<Event> eventPeekingIterator = Iterators.peekingIterator(orderedEvents.iterator());
