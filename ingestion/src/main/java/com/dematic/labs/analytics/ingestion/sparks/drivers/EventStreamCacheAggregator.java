@@ -106,7 +106,8 @@ public final class EventStreamCacheAggregator implements Serializable {
                         new CreateStreamingContextFunction(config, new AggregateEventFunction(config)));
 
         // Start the streaming context and await termination
-        LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());
+        LOGGER.info("starting Event Cache Aggregator Driver with master URL >{}<",
+                streamingContext.sparkContext().master());
         streamingContext.start();
         LOGGER.info("spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();

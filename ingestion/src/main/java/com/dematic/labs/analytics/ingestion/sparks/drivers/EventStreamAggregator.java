@@ -98,7 +98,7 @@ public final class EventStreamAggregator implements Serializable {
             // Downsampling: where we reduce the event’s ISO 8601 timestamp down to timeUnit precision,
             // so for instance “2015-06-05T12:54:43.064528” becomes “2015-06-05T12:54:00.000000” for minute.
             // This downsampling gives us a fast way of bucketing or aggregating events via this downsampled key
-            return new Tuple2<>(event.aggregateBy(timeUnit), 1L);
+            return Tuple2.apply(event.aggregateBy(timeUnit), 1L);
         }).reduceByKey(SUM_REDUCER);
 
         // save counts
