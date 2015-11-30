@@ -45,9 +45,8 @@ public final class InterArrivalTimeProcessorTest {
             final ExecutorService executorService = Executors.newCachedThreadPool();
             executorService.submit(() -> {
                 InterArrivalTimeProcessor.main(new String[]{kinesisEndpoint, kinesisInputStream, dynamoDBEndpoint,
-                        userNamePrefix, "3"});
+                        userNamePrefix, "local[*]", "3"});
             });
-
         } finally {
             // delete dynamo tables
             final AmazonDynamoDBClient amazonDynamoDBClient = getAmazonDynamoDBClient(dynamoDBEndpoint);
@@ -61,7 +60,6 @@ public final class InterArrivalTimeProcessorTest {
                 deleteDynamoTable(amazonDynamoDBClient, leaseTable);
             } catch (final Throwable ignore) {
             }
-
         }
     }
 }
