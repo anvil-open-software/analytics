@@ -14,30 +14,32 @@ import java.util.concurrent.TimeUnit;
  */
 //todo: cleanup this class
 public final class DriverConfig implements Serializable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DriverConfig.class);
+    private static final long serialVersionUID = 1896518324147474596L;
+
     private String appName;
     private String uniqueAppSuffix;
 
-    private String streamName;
+    private String kinesisStreamName;
     private String kinesisEndpoint;
 
     private String dynamoDBEndpoint;
     private String dynamoPrefix;
 
+    private String masterUrl;
     private Duration pollTime;
     private TimeUnit timeUnit;
 
     private String checkPointDir;
-    private static final long serialVersionUID = 1896518324147474596L;
-    private static final Logger LOGGER = LoggerFactory.getLogger(DriverConfig.class);
 
     public DriverConfig(final String uniqueAppSuffix) {
         // used to formulate app name
-        this.uniqueAppSuffix=uniqueAppSuffix;
+        this.uniqueAppSuffix = uniqueAppSuffix;
     }
 
     public DriverConfig(final String uniqueAppSuffix, final String args[]) {
         // used to formulate app name
-        this.uniqueAppSuffix=uniqueAppSuffix;
+        this.uniqueAppSuffix = uniqueAppSuffix;
         setParametersFromArgumentsForAggregation(args);
     }
 
@@ -47,7 +49,7 @@ public final class DriverConfig implements Serializable {
                     + "optional DynamoDB Prefix, driver PollTime");
         }
         this.kinesisEndpoint = args[0];
-        this.streamName = args[1];
+        this.kinesisStreamName = args[1];
         this.dynamoDBEndpoint = args[2];
 
         if (args.length == 5) {
@@ -67,7 +69,7 @@ public final class DriverConfig implements Serializable {
                     + "optional DynamoDB Prefix, driver PollTime, and aggregation by time {MINUTES,DAYS}");
         }
         this.kinesisEndpoint = args[0];
-        this.streamName = args[1];
+        this.kinesisStreamName = args[1];
         this.dynamoDBEndpoint = args[2];
 
         if (args.length == 5) {
@@ -80,7 +82,15 @@ public final class DriverConfig implements Serializable {
             timeUnit = TimeUnit.valueOf(args[5]);
         }
         appName = Strings.isNullOrEmpty(dynamoPrefix) ? uniqueAppSuffix :
-                      String.format("%s%s", dynamoPrefix, uniqueAppSuffix);
+                String.format("%s%s", dynamoPrefix, uniqueAppSuffix);
+    }
+
+    public String getAppName() {
+        return appName;
+    }
+
+    public String getKinesisStreamName() {
+        return kinesisStreamName;
     }
 
     public String getKinesisEndpoint() {
@@ -91,10 +101,6 @@ public final class DriverConfig implements Serializable {
         return dynamoDBEndpoint;
     }
 
-    public String getDynamoPrefix() {
-        return dynamoPrefix;
-    }
-
     public Duration getPollTime() {
         return pollTime;
     }
@@ -103,12 +109,16 @@ public final class DriverConfig implements Serializable {
         return timeUnit;
     }
 
-    public String getAppName() {
-        return appName;
+    public void setMasterUrl(final String masterUrl) {
+        this.masterUrl = masterUrl;
     }
 
-    public String getStreamName() {
-        return streamName;
+    public String getMasterUrl() {
+        return masterUrl;
+    }
+
+    public String getDynamoPrefix() {
+        return dynamoPrefix;
     }
 
     public String getCheckPointDir() {
@@ -116,7 +126,6 @@ public final class DriverConfig implements Serializable {
     }
 
     /**
-     *
      * @param failIfNotSet if true, will throw exception if property does not exist
      */
     public void setCheckPointDirectoryFromSystemProperties(final boolean failIfNotSet) {

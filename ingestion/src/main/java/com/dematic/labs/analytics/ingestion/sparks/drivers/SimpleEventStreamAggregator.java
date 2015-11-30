@@ -22,13 +22,12 @@ import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfi
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 public final class SimpleEventStreamAggregator implements EventStreamProcessor<byte[]> {
-
     private static final long serialVersionUID = 8408398636569114334L;
 
     // functions
     private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
 
-    public void processEvents(final DriverConfig session, final JavaDStream<byte[]>  javaDStream) {
+    public void processEvents(final DriverConfig session, final JavaDStream<byte[]> javaDStream) {
 
         // transform the byte[] (byte arrays are json) to a string to events, and ensure distinct within stream
         final JavaDStream<Event> eventStream =
@@ -58,5 +57,4 @@ public final class SimpleEventStreamAggregator implements EventStreamProcessor<b
             return null;
         });
     }
-
 }

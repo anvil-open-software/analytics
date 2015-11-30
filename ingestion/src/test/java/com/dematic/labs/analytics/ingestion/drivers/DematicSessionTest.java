@@ -35,11 +35,11 @@ public final class DematicSessionTest {
     public void testKinesisWindowProperties() {
         System.clearProperty(DriverConsts.SPARK_KINESIS_CHECKPOINT_WINDOW_IN_SECONDS);
         Duration defaultDuration = DriverUtils.getKinesisCheckpointWindow();
-        assertEquals(defaultDuration.milliseconds(), 30 * 1000l);
+        assertEquals(defaultDuration.milliseconds(), 30 * 1000L);
 
         System.setProperty(DriverConsts.SPARK_KINESIS_CHECKPOINT_WINDOW_IN_SECONDS, "47");
         Duration newDuration = DriverUtils.getKinesisCheckpointWindow();
-        assertEquals(newDuration.milliseconds(), 47 * 1000l);
+        assertEquals(newDuration.milliseconds(), 47 * 1000L);
     }
 
 }

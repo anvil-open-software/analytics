@@ -47,9 +47,9 @@ public final class AggregationDriverUtils {
             final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, session.getPollTime());
 
             // we must now create kinesis streams before we checkpoint
-            LOGGER.warn("Creating Kinesis DStreams for " + session.getStreamName());
+            LOGGER.warn("Creating Kinesis DStreams for " + session.getKinesisStreamName());
             JavaDStream kinesisDStream = DriverUtils.getJavaDStream(session.getKinesisEndpoint(),
-                    session.getStreamName(), streamingContext);
+                    session.getKinesisStreamName(), streamingContext);
 
             // Start the streaming context and await termination
             LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());

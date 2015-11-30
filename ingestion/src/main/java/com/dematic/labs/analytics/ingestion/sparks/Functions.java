@@ -4,6 +4,7 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionIn
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.Function2;
@@ -91,7 +92,7 @@ public final class Functions implements Serializable {
         @Override
         public JavaDStream<byte[]> call() throws Exception {
             final String kinesisEndpoint = driverConfig.getKinesisEndpoint();
-            final String streamName = driverConfig.getStreamName();
+            final String streamName = driverConfig.getKinesisStreamName();
             // create the dstream
             final int shards = getNumberOfShards(kinesisEndpoint, streamName);
             // create 1 Kinesis Worker/Receiver/DStream for each shard
@@ -127,7 +128,12 @@ public final class Functions implements Serializable {
         @Override
         public JavaStreamingContext call() throws Exception {
             // create spark configure
-            final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName()).setMaster("local[*]");
+            final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName());
+            // if master url set, apply
+            if (!Strings.isNullOrEmpty(driverConfig.getMasterUrl())) {
+                sparkConfiguration.setMaster(driverConfig.getMasterUrl());
+            }
+
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTime());
