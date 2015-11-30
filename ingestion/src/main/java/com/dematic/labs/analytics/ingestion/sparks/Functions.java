@@ -133,7 +133,6 @@ public final class Functions implements Serializable {
             if (!Strings.isNullOrEmpty(driverConfig.getMasterUrl())) {
                 sparkConfiguration.setMaster(driverConfig.getMasterUrl());
             }
-
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTime());
