@@ -2,8 +2,10 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers;
 
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
+import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 import org.apache.spark.api.java.function.Function2;
@@ -29,7 +31,6 @@ import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 public final class InterArrivalTimeProcessor implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(InterArrivalTimeProcessor.class);
-
     public static final String INTER_ARRIVAL_TIME_LEASE_TABLE_NAME = InterArrivalTimeBucket.TABLE_NAME + "_LT";
 
     // event stream processing function
@@ -75,38 +76,82 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 return null;
             });
         }
-    }
 
-    private static void calculateInterArrivalTime(final String nodeId, final List<Event> orderedEvents) {
-        final PeekingIterator<Event> eventPeekingIterator = Iterators.peekingIterator(orderedEvents.iterator());
-        for (; eventPeekingIterator.hasNext(); ) {
-            final Event current = eventPeekingIterator.next();
-            if (eventPeekingIterator.hasNext()) {
-                // events r in order
-                final long interArrivalTime =
-                        eventPeekingIterator.peek().getTimestamp().getMillis() - current.getTimestamp().getMillis();
-                // save to db
+        private static void calculateInterArrivalTime(final String nodeId, final List<Event> orderedEvents) {
+            final PeekingIterator<Event> eventPeekingIterator = Iterators.peekingIterator(orderedEvents.iterator());
+            for (; eventPeekingIterator.hasNext(); ) {
+                final Event current = eventPeekingIterator.next();
+                if (eventPeekingIterator.hasNext()) {
+                    // events r in order
+                    final long interArrivalTime =
+                            eventPeekingIterator.peek().getTimestamp().getMillis() - current.getTimestamp().getMillis();
+                    // save to db
+                }
             }
         }
     }
 
     // functions
     public static void main(final String[] args) {
-        // set the configuration and checkpoint dir
-        final DriverConfig config = new DriverConfig(INTER_ARRIVAL_TIME_LEASE_TABLE_NAME);
-        config.setParametersFromArgumentsForInterArrivalTime(args);
-        config.setCheckPointDirectoryFromSystemProperties(true);
+        // master url is only set for testing or running locally
+        if (args.length < 4) {
+            throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB " +
+                    "Endpoint, optional DynamoDB Prefix, optional driver MasterUrl, driver PollTime");
+        }
+        final String kinesisEndpoint = args[0];
+        final String kinesisStreamName = args[1];
+        final String dynamoDBEndpoint = args[2];
+        final String dynamoPrefix;
+        final String masterUrl;
+        final String pollTime;
+        if (args.length == 6) {
+            dynamoPrefix = args[3];
+            masterUrl = args[4];
+            pollTime = args[5];
+        } else if (args.length == 5) {
+            // no master url
+            dynamoPrefix = args[3];
+            masterUrl = null;
+            pollTime = args[4];
+        } else {
+            // no prefix or master url
+            dynamoPrefix = null;
+            masterUrl = null;
+            pollTime = args[3];
+        }
+
+        final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? INTER_ARRIVAL_TIME_LEASE_TABLE_NAME :
+                String.format("%s%s", dynamoPrefix, INTER_ARRIVAL_TIME_LEASE_TABLE_NAME);
+        // create the driver configuration and checkpoint dir
+        final DriverConfig driverConfig = configure(appName, kinesisEndpoint, kinesisStreamName, dynamoDBEndpoint,
+                dynamoPrefix, masterUrl, pollTime);
+        driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // create the table, if it does not exist
-        createDynamoTable(config.getDynamoDBEndpoint(), InterArrivalTimeBucket.class, config.getDynamoPrefix());
+        createDynamoTable(driverConfig.getDynamoDBEndpoint(), InterArrivalTimeBucket.class,
+                driverConfig.getDynamoPrefix());
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext =
-                JavaStreamingContext.getOrCreate(config.getCheckPointDir(), new CreateStreamingContextFunction(config,
-                        new InterArrivalTimeFunction(config)));
+                JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
+                        new CreateStreamingContextFunction(driverConfig, new InterArrivalTimeFunction(driverConfig)));
 
         // Start the streaming context and await termination
         LOGGER.info("starting Inter-ArrivalTime Driver with master URL >{}<", streamingContext.sparkContext().master());
         streamingContext.start();
         LOGGER.info("spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();
+    }
+
+    private static DriverConfig configure(final String appName, final String kinesisEndpoint,
+                                          final String kinesisStreamName, final String dynamoDBEndpoint,
+                                          final String dynamoPrefix, final String masterUrl, final String pollTime) {
+        return GenericBuilder.of(DriverConfig::new)
+                .with(DriverConfig::setAppName, appName)
+                .with(DriverConfig::setKinesisEndpoint, kinesisEndpoint)
+                .with(DriverConfig::setKinesisStreamName, kinesisStreamName)
+                .with(DriverConfig::setDynamoDBEndpoint, dynamoDBEndpoint)
+                .with(DriverConfig::setDynamoPrefix, dynamoPrefix)
+                .with(DriverConfig::setMasterUrl, masterUrl)
+                .with(DriverConfig::setPollTime, pollTime)
+                .build();
     }
 }

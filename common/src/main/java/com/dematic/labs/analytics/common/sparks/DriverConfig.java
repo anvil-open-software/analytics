@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Holder for spark driver session details including input parameters
  */
-//todo: cleanup this class
+// todo: still needs more cleanup
 public final class DriverConfig implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(DriverConfig.class);
     private static final long serialVersionUID = 1896518324147474596L;
@@ -32,35 +32,13 @@ public final class DriverConfig implements Serializable {
 
     private String checkPointDir;
 
-    public DriverConfig(final String uniqueAppSuffix) {
-        // used to formulate app name
-        this.uniqueAppSuffix = uniqueAppSuffix;
+    public DriverConfig() {
     }
 
     public DriverConfig(final String uniqueAppSuffix, final String args[]) {
         // used to formulate app name
         this.uniqueAppSuffix = uniqueAppSuffix;
         setParametersFromArgumentsForAggregation(args);
-    }
-
-    public void setParametersFromArgumentsForInterArrivalTime(final String args[]) {
-        if (args.length < 4) {
-            throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint,"
-                    + "optional DynamoDB Prefix, driver PollTime");
-        }
-        this.kinesisEndpoint = args[0];
-        this.kinesisStreamName = args[1];
-        this.dynamoDBEndpoint = args[2];
-
-        if (args.length == 5) {
-            dynamoPrefix = null;
-            pollTime = Durations.seconds(Integer.valueOf(args[3]));
-        } else {
-            dynamoPrefix = args[3];
-            pollTime = Durations.seconds(Integer.valueOf(args[4]));
-        }
-        appName = Strings.isNullOrEmpty(dynamoPrefix) ? uniqueAppSuffix :
-                String.format("%s%s", dynamoPrefix, uniqueAppSuffix);
     }
 
     public void setParametersFromArgumentsForAggregation(final String args[]) {
@@ -109,10 +87,6 @@ public final class DriverConfig implements Serializable {
         return timeUnit;
     }
 
-    public void setMasterUrl(final String masterUrl) {
-        this.masterUrl = masterUrl;
-    }
-
     public String getMasterUrl() {
         return masterUrl;
     }
@@ -123,6 +97,42 @@ public final class DriverConfig implements Serializable {
 
     public String getCheckPointDir() {
         return checkPointDir;
+    }
+
+    public void setAppName(final String appName) {
+        this.appName = appName;
+    }
+
+    public void setKinesisStreamName(final String kinesisStreamName) {
+        this.kinesisStreamName = kinesisStreamName;
+    }
+
+    public void setKinesisEndpoint(final String kinesisEndpoint) {
+        this.kinesisEndpoint = kinesisEndpoint;
+    }
+
+    public void setDynamoDBEndpoint(final String dynamoDBEndpoint) {
+        this.dynamoDBEndpoint = dynamoDBEndpoint;
+    }
+
+    public void setDynamoPrefix(final String dynamoPrefix) {
+        this.dynamoPrefix = dynamoPrefix;
+    }
+
+    public void setMasterUrl(final String masterUrl) {
+        this.masterUrl = masterUrl;
+    }
+
+    public void setPollTime(final String pollTime) {
+        this.pollTime = Durations.seconds(Integer.valueOf(pollTime));
+    }
+
+    public void setTimeUnit(final TimeUnit timeUnit) {
+        this.timeUnit = timeUnit;
+    }
+
+    public void setCheckPointDir(final String checkPointDir) {
+        this.checkPointDir = checkPointDir;
     }
 
     /**
