@@ -1,14 +1,19 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
-import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
+import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
-import com.google.common.base.Optional;
 import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
-import org.apache.spark.api.java.function.Function2;
+import com.google.common.collect.Sets;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
@@ -21,24 +26,37 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
 import static com.dematic.labs.analytics.ingestion.sparks.Functions.CreateStreamingContextFunction;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
+import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 public final class InterArrivalTimeProcessor implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(InterArrivalTimeProcessor.class);
-    public static final String INTER_ARRIVAL_TIME_LEASE_TABLE_NAME = InterArrivalTimeBucket.TABLE_NAME + "_LT";
+    public static final String INTER_ARRIVAL_TIME_LEASE_TABLE_NAME = InterArrivalTime.TABLE_NAME + "_LT";
 
     // event stream processing function
     private static final class InterArrivalTimeFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
+        private final DynamoDBMapper dynamoDBMapper;
 
         public InterArrivalTimeFunction(final DriverConfig driverConfig) {
             this.driverConfig = driverConfig;
+            final AmazonDynamoDBClient dynamoDBClient = getAmazonDynamoDBClient(driverConfig.getDynamoDBEndpoint());
+            dynamoDBMapper = Strings.isNullOrEmpty(driverConfig.getDynamoPrefix()) ?
+                    new DynamoDBMapper(dynamoDBClient) : new DynamoDBMapper(dynamoDBClient,
+                    new DynamoDBMapperConfig(withTableNamePrefix(driverConfig.getDynamoPrefix())));
         }
 
         @Override
@@ -56,38 +74,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
             // reduce all events to single node id and determine error cases
             final JavaPairDStream<String, List<Event>> nodeToEvents =
                     nodeToEventsPairs.reduceByKey((events1, events2) -> Stream.of(events1, events2)
-                            .flatMap(Collection::stream).collect(Collectors.toList()))
-                            .updateStateByKey(
-                                    (Function2<List<List<Event>>, Optional<List<Event>>, Optional<List<Event>>>)
-                                            (currentEvents, existingEvent) -> {
-                                                //todo : ensure in order
-                                                // current events r in order
-                                                final List<Event> totalCurrent = currentEvents.stream()
-                                                        .flatMap(Collection::stream).collect(Collectors.toList());
-                                                // no existing event
-                                                if (currentEvents.isEmpty()) {
-                                                    // todo: do we just return the existing
-                                                    return existingEvent.isPresent() ? existingEvent : Optional.absent();
-                                                }
-                                                if (!existingEvent.isPresent()) {
-                                                    // no existing, just save the last event
-                                                    return Optional.of(Collections.singletonList(
-                                                            totalCurrent.get(totalCurrent.size() - 1)));
-                                                }
-                                                // ensure all current events are after existing, otherwise error case
-
-                                                final Event firstCurrent = totalCurrent.get(0);
-
-
-                                                System.out.println(currentEvents);
-                                                System.out.println(totalCurrent);
-                                                System.out.println(existingEvent);
-
-                                                System.out.println();
-                                                return Optional.of(Collections.emptyList());
-                                            });
-            // look into update by key, last event date
-
+                            .flatMap(Collection::stream).collect(Collectors.toList()));
+            //todo: look into update by key, last event date, when spark 1.6 is out
             // calculate inter-arrival time
             nodeToEvents.foreachRDD(rdd -> {
                 rdd.collect().forEach(eventsByNode -> {
@@ -98,19 +86,93 @@ public final class InterArrivalTimeProcessor implements Serializable {
             });
         }
 
-        private static void calculateInterArrivalTime(final String nodeId, final List<Event> orderedEvents) {
-            final PeekingIterator<Event> eventPeekingIterator = Iterators.peekingIterator(orderedEvents.iterator());
+        private void calculateInterArrivalTime(final String nodeId, final List<Event> orderedEvents) {
+            // remove and count all errors, that is, events that should have been processed with the last batch
+            final List<Event> eventsWithoutErrors = errorChecker(nodeId, orderedEvents, dynamoDBMapper);
+            // add all inter arrival times to buckets
+
+
+            // create and populate buckets
+            final Map<Set<Integer>, Long> buckets =
+                    createBuckets(Integer.valueOf(driverConfig.getMediumInterArrivalTime()));
+            // populate buckets
+            final PeekingIterator<Event> eventPeekingIterator = Iterators.peekingIterator(eventsWithoutErrors.iterator());
             for (; eventPeekingIterator.hasNext(); ) {
                 final Event current = eventPeekingIterator.next();
                 if (eventPeekingIterator.hasNext()) {
                     // events r in order
                     final long interArrivalTime =
                             eventPeekingIterator.peek().getTimestamp().getMillis() - current.getTimestamp().getMillis();
-                    // save to db
+                    addToBucket(interArrivalTime, buckets);
+                } else {
+                    // deal with last event
                 }
             }
         }
+
+        private static List<Event> errorChecker(final String nodeId, final List<Event> unprocessedEvents,
+                                                final DynamoDBMapper dynamoDBMapper) {
+            // todo: might have to move query
+            // lookup buckets by nodeId
+            final PaginatedQueryList<InterArrivalTime> query =
+                    dynamoDBMapper.query(InterArrivalTime.class,
+                            new DynamoDBQueryExpression<InterArrivalTime>()
+                                    .withHashKeyValues(new InterArrivalTime(nodeId)));
+            if (query == null || query.isEmpty()) {
+                // nothing to check against
+                return unprocessedEvents;
+            }
+            // get the last event timestamp
+            // only 1 should exists
+            final InterArrivalTime interArrivalTime = query.get(0);
+            final Long lastEventTime = interArrivalTime.getLastEventTime();
+
+            // last event is before new events, just return
+            if (lastEventTime == null || lastEventTime < unprocessedEvents.get(0).getTimestamp().getMillis()) {
+                return unprocessedEvents;
+            }
+
+            // find the fist event in the list that is after the last processed event time
+            final Optional<Event> firstUnprocessedEvent = unprocessedEvents.stream().filter(new Predicate<Event>() {
+                @Override
+                public boolean test(final Event event) {
+                    return lastEventTime < event.getTimestamp().getMillis();
+                }
+            }).findFirst();
+
+            if (firstUnprocessedEvent.isPresent()) {
+                // remove from the list all events that should have been processed, these are errors
+                return unprocessedEvents.subList(unprocessedEvents.indexOf(firstUnprocessedEvent.get()),
+                        unprocessedEvents.size());
+            }
+
+            return unprocessedEvents;
+        }
+
+        private static Map<Set<Integer>, Long> createBuckets(final int avgInterArrivalTime) {
+            final Map<Set<Integer>, Long> buckets =
+                    new TreeMap<>((Comparator<Set<Integer>>) (one, two)
+                            -> Iterables.getLast(one).compareTo(Iterables.getLast(two)));
+            // see https://docs.google.com/document/d/1J9mSW8EbxTwbsGGeZ7b8TVkF5lm8-bnjy59KpHCVlBA/edit# for specs
+            for (int i = 0; i < avgInterArrivalTime * 2; i++) {
+                final int low = i * avgInterArrivalTime / 5;
+                final int high = (i + 1) * avgInterArrivalTime / 5;
+
+                if (high > avgInterArrivalTime * 2) {
+                    // add the last bucket
+                    buckets.put(Sets.newHashSet(high, Integer.MAX_VALUE), 0L);
+                    break;
+                }
+                buckets.put(Sets.newHashSet(low, high), 0L);
+            }
+            return buckets;
+        }
+
+        private static void addToBucket(final long intervalTime, final Map<Set<Integer>, Long> buckets) {
+
+        }
     }
+
 
     // functions
     public static void main(final String[] args) {
@@ -153,7 +215,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 dynamoPrefix, masterUrl, pollTime, mediumInterArrivalTime);
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // create the table, if it does not exist
-        createDynamoTable(driverConfig.getDynamoDBEndpoint(), InterArrivalTimeBucket.class, driverConfig.getDynamoPrefix());
+        createDynamoTable(driverConfig.getDynamoDBEndpoint(), InterArrivalTime.class, driverConfig.getDynamoPrefix());
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext =
                 JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
