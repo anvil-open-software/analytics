@@ -33,8 +33,8 @@ public final class Functions implements Serializable {
     public static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
 
     public static Function2<List<Long>, Optional<Long>, Optional<Long>> COMPUTE_RUNNING_SUM
-            = (nums, current) -> {
-        long sum = current.or(0L);
+            = (nums, existing) -> {
+        long sum = existing.or(0L);
         for (long i : nums) {
             sum += i;
         }
@@ -45,8 +45,8 @@ public final class Functions implements Serializable {
             = (x, y) -> new Tuple2<>(x._1() + y._1(), x._2() + y._2());
 
     public static Function2<List<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>>
-            COMPUTE_RUNNING_AVG = (sums, current) -> {
-        Tuple2<Double, Long> avgAndCount = current.or(new Tuple2<>(0.0, 0L));
+            COMPUTE_RUNNING_AVG = (sums, existing) -> {
+        Tuple2<Double, Long> avgAndCount = existing.or(new Tuple2<>(0.0, 0L));
 
         for (final Tuple2<Double, Long> sumAndCount : sums) {
             final double avg = avgAndCount._1();

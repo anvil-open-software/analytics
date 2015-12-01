@@ -57,14 +57,35 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final JavaPairDStream<String, List<Event>> nodeToEvents =
                     nodeToEventsPairs.reduceByKey((events1, events2) -> Stream.of(events1, events2)
                             .flatMap(Collection::stream).collect(Collectors.toList()))
-                            .updateStateByKey(new Function2<List<List<Event>>, Optional<List<Event>>, Optional<List<Event>>>() {
+                            .updateStateByKey(
+                                    (Function2<List<List<Event>>, Optional<List<Event>>, Optional<List<Event>>>)
+                                            (currentEvents, existingEvent) -> {
+                                                //todo : ensure in order
+                                                // current events r in order
+                                                final List<Event> totalCurrent = currentEvents.stream()
+                                                        .flatMap(Collection::stream).collect(Collectors.toList());
+                                                // no existing event
+                                                if (currentEvents.isEmpty()) {
+                                                    // todo: do we just return the existing
+                                                    return existingEvent.isPresent() ? existingEvent : Optional.absent();
+                                                }
+                                                if (!existingEvent.isPresent()) {
+                                                    // no existing, just save the last event
+                                                    return Optional.of(Collections.singletonList(
+                                                            totalCurrent.get(totalCurrent.size() - 1)));
+                                                }
+                                                // ensure all current events are after existing, otherwise error case
 
-                                @Override
-                                public Optional<List<Event>> call(List<List<Event>> existingEvents, Optional<List<Event>> currentEvents) throws Exception {
-                                    return Optional.of(Collections.emptyList());
-                                }
+                                                final Event firstCurrent = totalCurrent.get(0);
 
-                            });
+
+                                                System.out.println(currentEvents);
+                                                System.out.println(totalCurrent);
+                                                System.out.println(existingEvent);
+
+                                                System.out.println();
+                                                return Optional.of(Collections.emptyList());
+                                            });
             // look into update by key, last event date
 
             // calculate inter-arrival time
@@ -94,9 +115,10 @@ public final class InterArrivalTimeProcessor implements Serializable {
     // functions
     public static void main(final String[] args) {
         // master url is only set for testing or running locally
-        if (args.length < 4) {
+        if (args.length < 5) {
             throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB " +
-                    "Endpoint, optional DynamoDB Prefix, optional driver MasterUrl, driver PollTime");
+                    "Endpoint, optional DynamoDB Prefix, optional driver MasterUrl, driver PollTime, and " +
+                    "MediumInterArrivalTime");
         }
         final String kinesisEndpoint = args[0];
         final String kinesisStreamName = args[1];
@@ -104,31 +126,34 @@ public final class InterArrivalTimeProcessor implements Serializable {
         final String dynamoPrefix;
         final String masterUrl;
         final String pollTime;
-        if (args.length == 6) {
+        final String mediumInterArrivalTime;
+        if (args.length == 7) {
             dynamoPrefix = args[3];
             masterUrl = args[4];
             pollTime = args[5];
-        } else if (args.length == 5) {
+            mediumInterArrivalTime = args[6];
+        } else if (args.length == 6) {
             // no master url
             dynamoPrefix = args[3];
             masterUrl = null;
             pollTime = args[4];
+            mediumInterArrivalTime = args[5];
         } else {
             // no prefix or master url
             dynamoPrefix = null;
             masterUrl = null;
             pollTime = args[3];
+            mediumInterArrivalTime = args[4];
         }
 
         final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? INTER_ARRIVAL_TIME_LEASE_TABLE_NAME :
                 String.format("%s%s", dynamoPrefix, INTER_ARRIVAL_TIME_LEASE_TABLE_NAME);
         // create the driver configuration and checkpoint dir
         final DriverConfig driverConfig = configure(appName, kinesisEndpoint, kinesisStreamName, dynamoDBEndpoint,
-                dynamoPrefix, masterUrl, pollTime);
+                dynamoPrefix, masterUrl, pollTime, mediumInterArrivalTime);
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // create the table, if it does not exist
-        createDynamoTable(driverConfig.getDynamoDBEndpoint(), InterArrivalTimeBucket.class,
-                driverConfig.getDynamoPrefix());
+        createDynamoTable(driverConfig.getDynamoDBEndpoint(), InterArrivalTimeBucket.class, driverConfig.getDynamoPrefix());
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext =
                 JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
@@ -143,7 +168,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
 
     private static DriverConfig configure(final String appName, final String kinesisEndpoint,
                                           final String kinesisStreamName, final String dynamoDBEndpoint,
-                                          final String dynamoPrefix, final String masterUrl, final String pollTime) {
+                                          final String dynamoPrefix, final String masterUrl, final String pollTime,
+                                          final String mediumInterArrivalTime) {
         return GenericBuilder.of(DriverConfig::new)
                 .with(DriverConfig::setAppName, appName)
                 .with(DriverConfig::setKinesisEndpoint, kinesisEndpoint)
@@ -152,6 +178,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 .with(DriverConfig::setDynamoPrefix, dynamoPrefix)
                 .with(DriverConfig::setMasterUrl, masterUrl)
                 .with(DriverConfig::setPollTime, pollTime)
+                .with(DriverConfig::setMediumInterArrivalTime, mediumInterArrivalTime)
                 .build();
     }
 }

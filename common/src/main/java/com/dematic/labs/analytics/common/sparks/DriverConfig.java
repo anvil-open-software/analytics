@@ -30,6 +30,8 @@ public final class DriverConfig implements Serializable {
     private Duration pollTime;
     private TimeUnit timeUnit;
 
+    private String mediumInterArrivalTime;
+
     private String checkPointDir;
 
     public DriverConfig() {
@@ -79,6 +81,14 @@ public final class DriverConfig implements Serializable {
         return dynamoDBEndpoint;
     }
 
+    public String getDynamoPrefix() {
+        return dynamoPrefix;
+    }
+
+    public String getMasterUrl() {
+        return masterUrl;
+    }
+
     public Duration getPollTime() {
         return pollTime;
     }
@@ -87,12 +97,8 @@ public final class DriverConfig implements Serializable {
         return timeUnit;
     }
 
-    public String getMasterUrl() {
-        return masterUrl;
-    }
-
-    public String getDynamoPrefix() {
-        return dynamoPrefix;
+    public String getMediumInterArrivalTime() {
+        return mediumInterArrivalTime;
     }
 
     public String getCheckPointDir() {
@@ -131,6 +137,10 @@ public final class DriverConfig implements Serializable {
         this.timeUnit = timeUnit;
     }
 
+    public void setMediumInterArrivalTime(final String mediumInterArrivalTime) {
+        this.mediumInterArrivalTime = mediumInterArrivalTime;
+    }
+
     public void setCheckPointDir(final String checkPointDir) {
         this.checkPointDir = checkPointDir;
     }
@@ -144,5 +154,22 @@ public final class DriverConfig implements Serializable {
             throw new IllegalArgumentException(DriverConsts.SPARK_CHECKPOINT_DIR + " jvm parameter needs to be set");
         }
         LOGGER.info("using >{}< checkpoint dir", checkPointDir);
+    }
+
+    @Override
+    public String toString() {
+        return "DriverConfig{" +
+                "appName='" + appName + '\'' +
+                ", uniqueAppSuffix='" + uniqueAppSuffix + '\'' +
+                ", kinesisStreamName='" + kinesisStreamName + '\'' +
+                ", kinesisEndpoint='" + kinesisEndpoint + '\'' +
+                ", dynamoDBEndpoint='" + dynamoDBEndpoint + '\'' +
+                ", dynamoPrefix='" + dynamoPrefix + '\'' +
+                ", masterUrl='" + masterUrl + '\'' +
+                ", pollTime=" + pollTime +
+                ", timeUnit=" + timeUnit +
+                ", mediumInterArrivalTime='" + mediumInterArrivalTime + '\'' +
+                ", checkPointDir='" + checkPointDir + '\'' +
+                '}';
     }
 }
