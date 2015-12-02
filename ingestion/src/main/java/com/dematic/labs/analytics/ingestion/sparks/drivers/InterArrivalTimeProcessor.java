@@ -37,13 +37,14 @@ import java.util.stream.Stream;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
 import static com.dematic.labs.analytics.ingestion.sparks.Functions.CreateStreamingContextFunction;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime.*;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 public final class InterArrivalTimeProcessor implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(InterArrivalTimeProcessor.class);
-    public static final String INTER_ARRIVAL_TIME_LEASE_TABLE_NAME = InterArrivalTime.TABLE_NAME + "_LT";
+    public static final String INTER_ARRIVAL_TIME_LEASE_TABLE_NAME = TABLE_NAME + "_LT";
 
     // event stream processing function
     private static final class InterArrivalTimeFunction implements VoidFunction<JavaDStream<byte[]>> {
@@ -186,9 +187,22 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 if (lastEventTimeInMillis != null) {
                     newInterArrivalTime.setLastEventTime(lastEventTimeInMillis);
                 }
-                // todo: do i need bucket id's
-            //    newInterArrivalTime.setBucketIds();
+                final Set<String> bucketsString = Sets.newHashSet();
+                buckets.entrySet().stream().forEach(bucket -> {
+                    bucketsString.add(bucketToJson(bucket.getKey(), bucket.getValue()));
+                });
+                newInterArrivalTime.setBuckets(bucketsString);
                 newInterArrivalTime.setErrorCount(errorCount);
+                dynamoDBMapper.save(newInterArrivalTime);
+            } else {
+                // update
+                if (lastEventTimeInMillis != null) {
+                    interArrivalTime.setLastEventTime(lastEventTimeInMillis);
+                }
+                //todo: deal with buckets
+                final Long existingErrorCount = interArrivalTime.getErrorCount();
+                interArrivalTime.setErrorCount(existingErrorCount + errorCount);
+                dynamoDBMapper.save(interArrivalTime);
             }
         }
     }

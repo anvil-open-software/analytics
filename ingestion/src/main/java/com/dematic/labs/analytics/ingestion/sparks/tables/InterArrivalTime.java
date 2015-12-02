@@ -1,6 +1,7 @@
 package com.dematic.labs.analytics.ingestion.sparks.tables;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.*;
+import com.google.common.collect.Iterables;
 
 import java.io.Serializable;
 import java.util.Set;
@@ -11,7 +12,7 @@ public final class InterArrivalTime implements Serializable {
     public static final String TABLE_NAME = "Inter_Arrival_Time";
 
     private String nodeId;
-    private Set<Integer> bucketIds;
+    private Set<String> buckets;
     private String eventType;
     private Long lastEventTime;
     private Long errorCount;
@@ -34,12 +35,12 @@ public final class InterArrivalTime implements Serializable {
     }
 
     @DynamoDBAttribute
-    public Set<Integer> getBucketIds() {
-        return bucketIds;
+    public Set<String> getBuckets() {
+        return buckets;
     }
 
-    public void setBucketIds(Set<Integer> bucketIds) {
-        this.bucketIds = bucketIds;
+    public void setBuckets(final Set<String> buckets) {
+        this.buckets = buckets;
     }
 
     @DynamoDBAttribute
@@ -75,5 +76,11 @@ public final class InterArrivalTime implements Serializable {
 
     public void setVersion(final Long version) {
         this.version = version;
+    }
+
+    public static String bucketToJson(final Set<Integer> bucket, final Long count) {
+        // todo: come up with a json format or something
+        return String.format("{ bucket: [%s, %s] , count: %s }", Iterables.get(bucket, 1), Iterables.get(bucket, 2),
+                count);
     }
 }
