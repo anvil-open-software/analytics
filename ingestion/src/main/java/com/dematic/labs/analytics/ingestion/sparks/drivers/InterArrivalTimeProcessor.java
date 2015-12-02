@@ -25,11 +25,7 @@ import scala.Tuple2;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -171,7 +167,17 @@ public final class InterArrivalTimeProcessor implements Serializable {
             return buckets;
         }
 
+        // todo: needs more testing
         private static void addToBucket(final long intervalTime, final List<InterArrivalTimeBucket> buckets) {
+            final Optional<InterArrivalTimeBucket> first = buckets.stream()
+                    .filter(bucket -> bucket.isWithinBucket(intervalTime)).findFirst();
+            if (!first.isPresent()) {
+                throw new IllegalStateException(String.format("InterArrivalTime - Unexpected Error: intervalTime >%s<" +
+                        " not contained within buckets >%s<", intervalTime, buckets)); //todo: better logging
+            }
+            final InterArrivalTimeBucket interArrivalTimeBucket = first.get();
+            interArrivalTimeBucket.incrementCount();
+            buckets.add(interArrivalTimeBucket);
         }
 
         private static void createOrUpdate(final InterArrivalTime interArrivalTime, final String nodeId,

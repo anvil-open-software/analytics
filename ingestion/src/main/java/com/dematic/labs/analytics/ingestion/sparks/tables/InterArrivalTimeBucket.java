@@ -30,10 +30,17 @@ public final class InterArrivalTimeBucket implements Serializable {
         return Iterables.get(pair, 2);
     }
 
+    public boolean isWithinBucket(final long interArrivalTime) {
+        return getLowerBoundry() < interArrivalTime && getUpperBoundry() > interArrivalTime;
+    }
+
     public long getCount() {
         return count;
     }
 
+    public void incrementCount() {
+        setCount(count++);
+    }
     public void setCount(final long count) {
         this.count = count;
     }
