@@ -3,9 +3,12 @@ package com.dematic.labs.analytics.ingestion.sparks.tables;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Set;
+
+import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeUtils.*;
 
 @SuppressWarnings("unused")
 public final class InterArrivalTimeBucket implements Serializable {
@@ -41,16 +44,25 @@ public final class InterArrivalTimeBucket implements Serializable {
     public void incrementCount() {
         setCount(count++);
     }
+
     public void setCount(final long count) {
         this.count = count;
     }
 
     public String toJson() {
-        return "";
+        try {
+            return interArrivalTimeBucketToJson(this);
+        } catch (final IOException ioe) {
+            throw new IllegalStateException(ioe);
+        }
     }
 
     public static InterArrivalTimeBucket toInterArrivalTimeBucket(final String json) {
-        return new InterArrivalTimeBucket(1, 1, 1);
+        try {
+            return jsonToInterArrivalTimeBucket(json);
+        } catch (final IOException ioe) {
+            throw new IllegalStateException(ioe);
+        }
     }
 
     @Override
