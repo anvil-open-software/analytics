@@ -44,14 +44,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
     // event stream processing function
     private static final class InterArrivalTimeFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
-        private final DynamoDBMapper dynamoDBMapper;
-
         public InterArrivalTimeFunction(final DriverConfig driverConfig) {
             this.driverConfig = driverConfig;
-            final AmazonDynamoDBClient dynamoDBClient = getAmazonDynamoDBClient(driverConfig.getDynamoDBEndpoint());
-            dynamoDBMapper = Strings.isNullOrEmpty(driverConfig.getDynamoPrefix()) ?
-                    new DynamoDBMapper(dynamoDBClient) : new DynamoDBMapper(dynamoDBClient,
-                    new DynamoDBMapperConfig(withTableNamePrefix(driverConfig.getDynamoPrefix())));
         }
 
         @Override
@@ -82,6 +76,12 @@ public final class InterArrivalTimeProcessor implements Serializable {
         }
 
         private void calculateInterArrivalTime(final String nodeId, final List<Event> events) {
+            final AmazonDynamoDBClient dynamoDBClient = getAmazonDynamoDBClient(driverConfig.getDynamoDBEndpoint());
+            final DynamoDBMapper dynamoDBMapper = Strings.isNullOrEmpty(driverConfig.getDynamoPrefix()) ?
+                    new DynamoDBMapper(dynamoDBClient) : new DynamoDBMapper(dynamoDBClient,
+                    new DynamoDBMapperConfig(withTableNamePrefix(driverConfig.getDynamoPrefix())));
+
+
             // find inter arrival time from dynamo, used for business logic
             final InterArrivalTime interArrivalTime = findInterArrivalTime(nodeId, dynamoDBMapper);
             // remove and count all errors, that is, events that should have been processed with the last batch

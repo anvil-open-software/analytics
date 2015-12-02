@@ -26,11 +26,11 @@ public final class InterArrivalTimeBucket implements Serializable {
     }
 
     public int getLowerBoundry() {
-        return Iterables.get(pair, 1);
+        return Iterables.get(pair, 0);
     }
 
     public int getUpperBoundry() {
-        return Iterables.get(pair, 2);
+        return Iterables.get(pair, 1);
     }
 
     public boolean isWithinBucket(final long interArrivalTime) {
