@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -86,67 +85,75 @@ public final class InterArrivalTimeProcessor implements Serializable {
             });
         }
 
-        private void calculateInterArrivalTime(final String nodeId, final List<Event> orderedEvents) {
+        private void calculateInterArrivalTime(final String nodeId, final List<Event> events) {
+            // find inter arrival time from dynamo, used for business logic
+            final InterArrivalTime interArrivalTime = findInterArrivalTime(nodeId, dynamoDBMapper);
             // remove and count all errors, that is, events that should have been processed with the last batch
-            final List<Event> eventsWithoutErrors = errorChecker(nodeId, orderedEvents, dynamoDBMapper);
-            // add all inter arrival times to buckets
-
-
+            final List<Event> eventsWithoutErrors = errorChecker(events, interArrivalTime);
+            // calculate errors
+            final long errorCount = events.size() - eventsWithoutErrors.size();
+            // calculate the new lastEventTimeInMillis
+            final Long newLastEventTimeInMillis = errorCount == events.size() ? null :
+                    events.get(events.size() - 1).getTimestamp().getMillis();
             // create and populate buckets
             final Map<Set<Integer>, Long> buckets =
                     createBuckets(Integer.valueOf(driverConfig.getMediumInterArrivalTime()));
-            // populate buckets
-            final PeekingIterator<Event> eventPeekingIterator = Iterators.peekingIterator(eventsWithoutErrors.iterator());
+            // populate buckets, add all inter arrival times to buckets
+            final PeekingIterator<Event> eventPeekingIterator =
+                    Iterators.peekingIterator(eventsWithoutErrors.iterator());
             for (; eventPeekingIterator.hasNext(); ) {
                 final Event current = eventPeekingIterator.next();
                 if (eventPeekingIterator.hasNext()) {
                     // events r in order
-                    final long interArrivalTime =
+                    final long interArrivalTimeValue =
                             eventPeekingIterator.peek().getTimestamp().getMillis() - current.getTimestamp().getMillis();
-                    addToBucket(interArrivalTime, buckets);
+                    addToBucket(interArrivalTimeValue, buckets);
                 } else {
                     // deal with last event
+                    //todo: implement
+                    LOGGER.error("still need to calculate last event inter arrival time");
                 }
             }
+            // create or update
+
+            createOrUpdate(interArrivalTime, nodeId, buckets, newLastEventTimeInMillis, errorCount, dynamoDBMapper);
         }
 
-        private static List<Event> errorChecker(final String nodeId, final List<Event> unprocessedEvents,
-                                                final DynamoDBMapper dynamoDBMapper) {
-            // todo: might have to move query
+        private static InterArrivalTime findInterArrivalTime(final String nodeId, final DynamoDBMapper dynamoDBMapper) {
             // lookup buckets by nodeId
-            final PaginatedQueryList<InterArrivalTime> query =
-                    dynamoDBMapper.query(InterArrivalTime.class,
-                            new DynamoDBQueryExpression<InterArrivalTime>()
-                                    .withHashKeyValues(new InterArrivalTime(nodeId)));
+            final PaginatedQueryList<InterArrivalTime> query = dynamoDBMapper.query(InterArrivalTime.class,
+                    new DynamoDBQueryExpression<InterArrivalTime>()
+                            .withHashKeyValues(new InterArrivalTime(nodeId)));
             if (query == null || query.isEmpty()) {
+                return null;
+            }
+            // only 1 should exists
+            return query.get(0);
+        }
+
+        private static List<Event> errorChecker(final List<Event> unprocessedEvents,
+                                                final InterArrivalTime interArrivalTime) {
+            if (interArrivalTime == null) {
                 // nothing to check against
                 return unprocessedEvents;
             }
             // get the last event timestamp
-            // only 1 should exists
-            final InterArrivalTime interArrivalTime = query.get(0);
             final Long lastEventTime = interArrivalTime.getLastEventTime();
-
             // last event is before new events, just return
             if (lastEventTime == null || lastEventTime < unprocessedEvents.get(0).getTimestamp().getMillis()) {
                 return unprocessedEvents;
             }
-
             // find the fist event in the list that is after the last processed event time
-            final Optional<Event> firstUnprocessedEvent = unprocessedEvents.stream().filter(new Predicate<Event>() {
-                @Override
-                public boolean test(final Event event) {
-                    return lastEventTime < event.getTimestamp().getMillis();
-                }
-            }).findFirst();
+            final Optional<Event> firstUnprocessedEvent = unprocessedEvents.stream()
+                    .filter(event -> lastEventTime < event.getTimestamp().getMillis()).findFirst();
 
             if (firstUnprocessedEvent.isPresent()) {
                 // remove from the list all events that should have been processed, these are errors
                 return unprocessedEvents.subList(unprocessedEvents.indexOf(firstUnprocessedEvent.get()),
                         unprocessedEvents.size());
             }
-
-            return unprocessedEvents;
+            // all error, just return empty list
+            return Collections.emptyList();
         }
 
         private static Map<Set<Integer>, Long> createBuckets(final int avgInterArrivalTime) {
@@ -157,7 +164,6 @@ public final class InterArrivalTimeProcessor implements Serializable {
             for (int i = 0; i < avgInterArrivalTime * 2; i++) {
                 final int low = i * avgInterArrivalTime / 5;
                 final int high = (i + 1) * avgInterArrivalTime / 5;
-
                 if (high > avgInterArrivalTime * 2) {
                     // add the last bucket
                     buckets.put(Sets.newHashSet(high, Integer.MAX_VALUE), 0L);
@@ -169,10 +175,23 @@ public final class InterArrivalTimeProcessor implements Serializable {
         }
 
         private static void addToBucket(final long intervalTime, final Map<Set<Integer>, Long> buckets) {
+        }
 
+        private static void createOrUpdate(final InterArrivalTime interArrivalTime, final String nodeId,
+                                           final Map<Set<Integer>, Long> buckets, final Long lastEventTimeInMillis,
+                                           final Long errorCount, final DynamoDBMapper dynamoDBMapper) {
+            if (interArrivalTime == null) {
+                // create
+                final InterArrivalTime newInterArrivalTime = new InterArrivalTime(nodeId);
+                if (lastEventTimeInMillis != null) {
+                    newInterArrivalTime.setLastEventTime(lastEventTimeInMillis);
+                }
+                // todo: do i need bucket id's
+            //    newInterArrivalTime.setBucketIds();
+                newInterArrivalTime.setErrorCount(errorCount);
+            }
         }
     }
-
 
     // functions
     public static void main(final String[] args) {
