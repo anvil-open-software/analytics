@@ -12,7 +12,7 @@ import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTim
 
 @SuppressWarnings("unused")
 public final class InterArrivalTimeBucket implements Serializable {
-    private final Set<Integer> pair = Sets.newHashSet();
+    private final Set<Integer> pair = Sets.newLinkedHashSet();
     private long count;
 
     public InterArrivalTimeBucket(final int low, final int high, final long count) {

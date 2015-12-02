@@ -159,7 +159,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 final int high = (i + 1) * avgInterArrivalTime / 5;
                 if (high > avgInterArrivalTime * 2) {
                     // add the last bucket
-                    buckets.add(new InterArrivalTimeBucket(high, Integer.MAX_VALUE, 0L));
+                    buckets.add(new InterArrivalTimeBucket(low, Integer.MAX_VALUE, 0L));
                     break;
                 }
                 buckets.add(new InterArrivalTimeBucket(low, high, 0L));
