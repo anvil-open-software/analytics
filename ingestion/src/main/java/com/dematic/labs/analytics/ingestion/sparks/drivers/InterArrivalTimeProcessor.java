@@ -5,12 +5,13 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
+import com.clearspring.analytics.util.Lists;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
+import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
@@ -26,18 +27,16 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
 import static com.dematic.labs.analytics.ingestion.sparks.Functions.CreateStreamingContextFunction;
-import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime.*;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime.TABLE_NAME;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket.*;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
@@ -97,7 +96,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final Long newLastEventTimeInMillis = errorCount == events.size() ? null :
                     events.get(events.size() - 1).getTimestamp().getMillis();
             // create and populate buckets
-            final Map<Set<Integer>, Long> buckets =
+            final List<InterArrivalTimeBucket> buckets =
                     createBuckets(Integer.valueOf(driverConfig.getMediumInterArrivalTime()));
             // populate buckets, add all inter arrival times to buckets
             final PeekingIterator<Event> eventPeekingIterator =
@@ -116,7 +115,6 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 }
             }
             // create or update
-
             createOrUpdate(interArrivalTime, nodeId, buckets, newLastEventTimeInMillis, errorCount, dynamoDBMapper);
         }
 
@@ -157,30 +155,29 @@ public final class InterArrivalTimeProcessor implements Serializable {
             return Collections.emptyList();
         }
 
-        private static Map<Set<Integer>, Long> createBuckets(final int avgInterArrivalTime) {
-            final Map<Set<Integer>, Long> buckets =
-                    new TreeMap<>((Comparator<Set<Integer>>) (one, two)
-                            -> Iterables.getLast(one).compareTo(Iterables.getLast(two)));
+        private static List<InterArrivalTimeBucket> createBuckets(final int avgInterArrivalTime) {
+            final List<InterArrivalTimeBucket> buckets = Lists.newArrayList();
             // see https://docs.google.com/document/d/1J9mSW8EbxTwbsGGeZ7b8TVkF5lm8-bnjy59KpHCVlBA/edit# for specs
             for (int i = 0; i < avgInterArrivalTime * 2; i++) {
                 final int low = i * avgInterArrivalTime / 5;
                 final int high = (i + 1) * avgInterArrivalTime / 5;
                 if (high > avgInterArrivalTime * 2) {
                     // add the last bucket
-                    buckets.put(Sets.newHashSet(high, Integer.MAX_VALUE), 0L);
+                    buckets.add(new InterArrivalTimeBucket(high, Integer.MAX_VALUE, 0L));
                     break;
                 }
-                buckets.put(Sets.newHashSet(low, high), 0L);
+                buckets.add(new InterArrivalTimeBucket(low, high, 0L));
             }
             return buckets;
         }
 
-        private static void addToBucket(final long intervalTime, final Map<Set<Integer>, Long> buckets) {
+        private static void addToBucket(final long intervalTime, final List<InterArrivalTimeBucket> buckets) {
         }
 
         private static void createOrUpdate(final InterArrivalTime interArrivalTime, final String nodeId,
-                                           final Map<Set<Integer>, Long> buckets, final Long lastEventTimeInMillis,
-                                           final Long errorCount, final DynamoDBMapper dynamoDBMapper) {
+                                           final List<InterArrivalTimeBucket> newBuckets,
+                                           final Long lastEventTimeInMillis, final Long errorCount,
+                                           final DynamoDBMapper dynamoDBMapper) {
             if (interArrivalTime == null) {
                 // create
                 final InterArrivalTime newInterArrivalTime = new InterArrivalTime(nodeId);
@@ -188,8 +185,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
                     newInterArrivalTime.setLastEventTime(lastEventTimeInMillis);
                 }
                 final Set<String> bucketsString = Sets.newHashSet();
-                buckets.entrySet().stream().forEach(bucket -> {
-                    bucketsString.add(bucketToJson(bucket.getKey(), bucket.getValue()));
+                newBuckets.stream().forEach(bucket -> {
+                    bucketsString.add(bucket.toJson());
                 });
                 newInterArrivalTime.setBuckets(bucketsString);
                 newInterArrivalTime.setErrorCount(errorCount);
@@ -199,7 +196,34 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 if (lastEventTimeInMillis != null) {
                     interArrivalTime.setLastEventTime(lastEventTimeInMillis);
                 }
-                //todo: deal with buckets
+
+                // add existing and new
+                final List<InterArrivalTimeBucket> updatedBuckets = Lists.newArrayList();
+                interArrivalTime.getBuckets().stream().forEach(bucket -> {
+                    updatedBuckets.add(toInterArrivalTimeBucket(bucket));
+                });
+
+                newBuckets.stream().forEach(newBucket -> {
+                    final int bucketIndex = updatedBuckets.indexOf(newBucket);
+                    if (bucketIndex > -1) {
+                        final InterArrivalTimeBucket existingInterArrivalTimeBucket = updatedBuckets.get(bucketIndex);
+                        // add the counts
+                        final long existingCount = existingInterArrivalTimeBucket.getCount();
+                        final long newCount = newBucket.getCount();
+                        existingInterArrivalTimeBucket.setCount(existingCount + newCount);
+                        updatedBuckets.add(existingInterArrivalTimeBucket);
+                    } else {
+                        // new bucket
+                        updatedBuckets.add(newBucket);
+                    }
+                });
+
+                final Set<String> bucketsString = Sets.newHashSet();
+                updatedBuckets.stream().forEach(bucket -> {
+                    bucketsString.add(bucket.toJson());
+                });
+
+                interArrivalTime.setBuckets(bucketsString);
                 final Long existingErrorCount = interArrivalTime.getErrorCount();
                 interArrivalTime.setErrorCount(existingErrorCount + errorCount);
                 dynamoDBMapper.save(interArrivalTime);

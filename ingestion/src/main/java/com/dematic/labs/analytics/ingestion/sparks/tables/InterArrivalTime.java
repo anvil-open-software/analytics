@@ -1,7 +1,9 @@
 package com.dematic.labs.analytics.ingestion.sparks.tables;
 
-import com.amazonaws.services.dynamodbv2.datamodeling.*;
-import com.google.common.collect.Iterables;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBVersionAttribute;
 
 import java.io.Serializable;
 import java.util.Set;
@@ -76,11 +78,5 @@ public final class InterArrivalTime implements Serializable {
 
     public void setVersion(final Long version) {
         this.version = version;
-    }
-
-    public static String bucketToJson(final Set<Integer> bucket, final Long count) {
-        // todo: come up with a json format or something
-        return String.format("{ bucket: [%s, %s] , count: %s }", Iterables.get(bucket, 1), Iterables.get(bucket, 2),
-                count);
     }
 }
