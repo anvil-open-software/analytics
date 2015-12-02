@@ -177,7 +177,6 @@ public final class InterArrivalTimeProcessor implements Serializable {
             }
             final InterArrivalTimeBucket interArrivalTimeBucket = first.get();
             interArrivalTimeBucket.incrementCount();
-            buckets.add(interArrivalTimeBucket);
         }
 
         private static void createOrUpdate(final InterArrivalTime interArrivalTime, final String nodeId,

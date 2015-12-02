@@ -42,7 +42,7 @@ public final class InterArrivalTimeBucket implements Serializable {
     }
 
     public void incrementCount() {
-        setCount(count++);
+        count++;
     }
 
     public void setCount(final long count) {
