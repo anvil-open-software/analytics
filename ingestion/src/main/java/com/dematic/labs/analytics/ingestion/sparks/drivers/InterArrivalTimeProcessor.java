@@ -185,9 +185,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                     newInterArrivalTime.setLastEventTime(lastEventTimeInMillis);
                 }
                 final Set<String> bucketsString = Sets.newHashSet();
-                newBuckets.stream().forEach(bucket -> {
-                    bucketsString.add(bucket.toJson());
-                });
+                newBuckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
                 newInterArrivalTime.setBuckets(bucketsString);
                 newInterArrivalTime.setErrorCount(errorCount);
                 dynamoDBMapper.save(newInterArrivalTime);
@@ -199,9 +197,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
 
                 // add existing and new
                 final List<InterArrivalTimeBucket> updatedBuckets = Lists.newArrayList();
-                interArrivalTime.getBuckets().stream().forEach(bucket -> {
-                    updatedBuckets.add(toInterArrivalTimeBucket(bucket));
-                });
+                interArrivalTime.getBuckets().stream()
+                        .forEach(bucket -> updatedBuckets.add(toInterArrivalTimeBucket(bucket)));
 
                 newBuckets.stream().forEach(newBucket -> {
                     final int bucketIndex = updatedBuckets.indexOf(newBucket);
@@ -219,9 +216,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 });
 
                 final Set<String> bucketsString = Sets.newHashSet();
-                updatedBuckets.stream().forEach(bucket -> {
-                    bucketsString.add(bucket.toJson());
-                });
+                updatedBuckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
 
                 interArrivalTime.setBuckets(bucketsString);
                 final Long existingErrorCount = interArrivalTime.getErrorCount();
