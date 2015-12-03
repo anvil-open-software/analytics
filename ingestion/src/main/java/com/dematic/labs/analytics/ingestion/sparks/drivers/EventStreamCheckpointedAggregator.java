@@ -23,14 +23,15 @@ public final class EventStreamCheckpointedAggregator implements Serializable {
 
     public static void main(final String[] args) {
 
-        DriverConfig session = new DriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME,args);
+        DriverConfig session = new DriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME, args);
         session.setCheckPointDirectoryFromSystemProperties(true);
 
         // create the table, if it does not exist
         createDynamoTable(session.getDynamoDBEndpoint(), EventAggregator.class, session.getDynamoPrefix());
 
         final SimpleEventStreamAggregator eventStreamAggregator = new SimpleEventStreamAggregator();
-        final JavaStreamingContext streamingContext = AggregationDriverUtils.initializeCheckpointedSparkSession(session, null,eventStreamAggregator);
+        final JavaStreamingContext streamingContext = AggregationDriverUtils.initializeCheckpointedSparkSession(session,
+                null, eventStreamAggregator);
         streamingContext.start();
         LOGGER.info("spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();

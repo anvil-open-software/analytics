@@ -12,53 +12,35 @@ import java.util.concurrent.TimeUnit;
 /**
  * Holder for spark driver session details including input parameters
  */
-//todo: cleanup this class
+// todo: still needs more cleanup
 public final class DriverConfig implements Serializable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DriverConfig.class);
+    private static final long serialVersionUID = 1896518324147474596L;
+
     private String appName;
     private String uniqueAppSuffix;
 
-    private String streamName;
+    private String kinesisStreamName;
     private String kinesisEndpoint;
 
     private String dynamoDBEndpoint;
     private String dynamoPrefix;
 
+    private String masterUrl;
     private Duration pollTime;
     private TimeUnit timeUnit;
 
-    private String checkPointDir;
-    private static final long serialVersionUID = 1896518324147474596L;
-    private static final Logger LOGGER = LoggerFactory.getLogger(DriverConfig.class);
+    private String mediumInterArrivalTime;
 
-    public DriverConfig(final String uniqueAppSuffix) {
-        // used to formulate app name
-        this.uniqueAppSuffix=uniqueAppSuffix;
+    private String checkPointDir;
+
+    public DriverConfig() {
     }
 
     public DriverConfig(final String uniqueAppSuffix, final String args[]) {
         // used to formulate app name
-        this.uniqueAppSuffix=uniqueAppSuffix;
+        this.uniqueAppSuffix = uniqueAppSuffix;
         setParametersFromArgumentsForAggregation(args);
-    }
-
-    public void setParametersFromArgumentsForInterArrivalTime(final String args[]) {
-        if (args.length < 4) {
-            throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint,"
-                    + "optional DynamoDB Prefix, driver PollTime");
-        }
-        this.kinesisEndpoint = args[0];
-        this.streamName = args[1];
-        this.dynamoDBEndpoint = args[2];
-
-        if (args.length == 5) {
-            dynamoPrefix = null;
-            pollTime = Durations.seconds(Integer.valueOf(args[3]));
-        } else {
-            dynamoPrefix = args[3];
-            pollTime = Durations.seconds(Integer.valueOf(args[4]));
-        }
-        appName = Strings.isNullOrEmpty(dynamoPrefix) ? uniqueAppSuffix :
-                String.format("%s%s", dynamoPrefix, uniqueAppSuffix);
     }
 
     public void setParametersFromArgumentsForAggregation(final String args[]) {
@@ -67,7 +49,7 @@ public final class DriverConfig implements Serializable {
                     + "optional DynamoDB Prefix, driver PollTime, and aggregation by time {MINUTES,DAYS}");
         }
         this.kinesisEndpoint = args[0];
-        this.streamName = args[1];
+        this.kinesisStreamName = args[1];
         this.dynamoDBEndpoint = args[2];
 
         if (args.length == 5) {
@@ -80,7 +62,15 @@ public final class DriverConfig implements Serializable {
             timeUnit = TimeUnit.valueOf(args[5]);
         }
         appName = Strings.isNullOrEmpty(dynamoPrefix) ? uniqueAppSuffix :
-                      String.format("%s%s", dynamoPrefix, uniqueAppSuffix);
+                String.format("%s%s", dynamoPrefix, uniqueAppSuffix);
+    }
+
+    public String getAppName() {
+        return appName;
+    }
+
+    public String getKinesisStreamName() {
+        return kinesisStreamName;
     }
 
     public String getKinesisEndpoint() {
@@ -95,6 +85,10 @@ public final class DriverConfig implements Serializable {
         return dynamoPrefix;
     }
 
+    public String getMasterUrl() {
+        return masterUrl;
+    }
+
     public Duration getPollTime() {
         return pollTime;
     }
@@ -103,20 +97,55 @@ public final class DriverConfig implements Serializable {
         return timeUnit;
     }
 
-    public String getAppName() {
-        return appName;
-    }
-
-    public String getStreamName() {
-        return streamName;
+    public String getMediumInterArrivalTime() {
+        return mediumInterArrivalTime;
     }
 
     public String getCheckPointDir() {
         return checkPointDir;
     }
 
+    public void setAppName(final String appName) {
+        this.appName = appName;
+    }
+
+    public void setKinesisStreamName(final String kinesisStreamName) {
+        this.kinesisStreamName = kinesisStreamName;
+    }
+
+    public void setKinesisEndpoint(final String kinesisEndpoint) {
+        this.kinesisEndpoint = kinesisEndpoint;
+    }
+
+    public void setDynamoDBEndpoint(final String dynamoDBEndpoint) {
+        this.dynamoDBEndpoint = dynamoDBEndpoint;
+    }
+
+    public void setDynamoPrefix(final String dynamoPrefix) {
+        this.dynamoPrefix = dynamoPrefix;
+    }
+
+    public void setMasterUrl(final String masterUrl) {
+        this.masterUrl = masterUrl;
+    }
+
+    public void setPollTime(final String pollTime) {
+        this.pollTime = Durations.seconds(Integer.valueOf(pollTime));
+    }
+
+    public void setTimeUnit(final TimeUnit timeUnit) {
+        this.timeUnit = timeUnit;
+    }
+
+    public void setMediumInterArrivalTime(final String mediumInterArrivalTime) {
+        this.mediumInterArrivalTime = mediumInterArrivalTime;
+    }
+
+    public void setCheckPointDir(final String checkPointDir) {
+        this.checkPointDir = checkPointDir;
+    }
+
     /**
-     *
      * @param failIfNotSet if true, will throw exception if property does not exist
      */
     public void setCheckPointDirectoryFromSystemProperties(final boolean failIfNotSet) {
@@ -125,5 +154,22 @@ public final class DriverConfig implements Serializable {
             throw new IllegalArgumentException(DriverConsts.SPARK_CHECKPOINT_DIR + " jvm parameter needs to be set");
         }
         LOGGER.info("using >{}< checkpoint dir", checkPointDir);
+    }
+
+    @Override
+    public String toString() {
+        return "DriverConfig{" +
+                "appName='" + appName + '\'' +
+                ", uniqueAppSuffix='" + uniqueAppSuffix + '\'' +
+                ", kinesisStreamName='" + kinesisStreamName + '\'' +
+                ", kinesisEndpoint='" + kinesisEndpoint + '\'' +
+                ", dynamoDBEndpoint='" + dynamoDBEndpoint + '\'' +
+                ", dynamoPrefix='" + dynamoPrefix + '\'' +
+                ", masterUrl='" + masterUrl + '\'' +
+                ", pollTime=" + pollTime +
+                ", timeUnit=" + timeUnit +
+                ", mediumInterArrivalTime='" + mediumInterArrivalTime + '\'' +
+                ", checkPointDir='" + checkPointDir + '\'' +
+                '}';
     }
 }

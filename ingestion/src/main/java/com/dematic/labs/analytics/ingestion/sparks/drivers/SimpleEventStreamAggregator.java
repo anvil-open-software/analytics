@@ -22,13 +22,12 @@ import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfi
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 public final class SimpleEventStreamAggregator implements EventStreamProcessor<byte[]> {
-
     private static final long serialVersionUID = 8408398636569114334L;
 
     // functions
     private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
 
-    public void processEvents(final DriverConfig session, final JavaDStream<byte[]>  javaDStream) {
+    public void processEvents(final DriverConfig session, final JavaDStream<byte[]> javaDStream) {
 
         // transform the byte[] (byte arrays are json) to a string to events, and ensure distinct within stream
         final JavaDStream<Event> eventStream =
@@ -41,7 +40,7 @@ public final class SimpleEventStreamAggregator implements EventStreamProcessor<b
             // Downsampling: where we reduce the event’s ISO 8601 timestamp down to timeUnit precision,
             // so for instance “2015-06-05T12:54:43.064528” becomes “2015-06-05T12:54:00.000000” for minute.
             // This downsampling gives us a fast way of bucketing or aggregating events via this downsampled key
-            return new Tuple2<>(event.aggregateBy(timeUnit), 1L);
+            return Tuple2.apply(event.aggregateBy(timeUnit), 1L);
         }).reduceByKey(SUM_REDUCER);
 
         // save counts
@@ -58,5 +57,4 @@ public final class SimpleEventStreamAggregator implements EventStreamProcessor<b
             return null;
         });
     }
-
 }

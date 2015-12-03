@@ -1,8 +1,10 @@
-package com.dematic.labs.analytics.ingestion.sparks.drivers;
+package com.dematic.labs.analytics.ingestion.sparks;
 
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.toolkit.communication.Event;
+import com.google.common.base.Optional;
+import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.Function2;
@@ -22,15 +24,47 @@ import java.util.concurrent.TimeUnit;
 import static com.dematic.labs.analytics.common.sparks.DriverUtils.getKinesisCheckpointWindow;
 import static com.dematic.labs.toolkit.aws.Connections.getNumberOfShards;
 
+@SuppressWarnings("unused")
 public final class Functions implements Serializable {
     private Functions() {
     }
 
     // Lambda Functions
-    static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
+    public static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
+
+    public static Function2<List<Long>, Optional<Long>, Optional<Long>> COMPUTE_RUNNING_SUM
+            = (nums, existing) -> {
+        long sum = existing.or(0L);
+        for (long i : nums) {
+            sum += i;
+        }
+        return Optional.of(sum);
+    };
+
+    public static Function2<Tuple2<Double, Long>, Tuple2<Double, Long>, Tuple2<Double, Long>> SUM_AND_COUNT_REDUCER
+            = (x, y) -> new Tuple2<>(x._1() + y._1(), x._2() + y._2());
+
+    public static Function2<List<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>>
+            COMPUTE_RUNNING_AVG = (sums, existing) -> {
+        Tuple2<Double, Long> avgAndCount = existing.or(new Tuple2<>(0.0, 0L));
+
+        for (final Tuple2<Double, Long> sumAndCount : sums) {
+            final double avg = avgAndCount._1();
+            final long avgCount = avgAndCount._2();
+
+            final double sum = sumAndCount._1();
+            final long sumCount = sumAndCount._2();
+
+            final Long countTotal = avgCount + sumCount;
+            final Double newAvg = ((avgCount * avg) + (sumCount * sum / sumCount)) / countTotal;
+
+            avgAndCount = new Tuple2<>(newAvg, countTotal);
+        }
+        return Optional.of(avgAndCount);
+    };
 
     // Overridden Functions
-    static final class AggregateEventToBucketFunction implements PairFunction<Event, String, Long> {
+    public static final class AggregateEventToBucketFunction implements PairFunction<Event, String, Long> {
         private final TimeUnit timeUnit;
 
         public AggregateEventToBucketFunction(final TimeUnit timeUnit) {
@@ -46,7 +80,7 @@ public final class Functions implements Serializable {
         }
     }
 
-    static final class CreateDStreamFunction implements Function0<JavaDStream<byte[]>> {
+    public static final class CreateDStreamFunction implements Function0<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
         private final JavaStreamingContext streamingContext;
 
@@ -58,7 +92,7 @@ public final class Functions implements Serializable {
         @Override
         public JavaDStream<byte[]> call() throws Exception {
             final String kinesisEndpoint = driverConfig.getKinesisEndpoint();
-            final String streamName = driverConfig.getStreamName();
+            final String streamName = driverConfig.getKinesisStreamName();
             // create the dstream
             final int shards = getNumberOfShards(kinesisEndpoint, streamName);
             // create 1 Kinesis Worker/Receiver/DStream for each shard
@@ -81,7 +115,7 @@ public final class Functions implements Serializable {
         }
     }
 
-    static final class CreateStreamingContextFunction implements Function0<JavaStreamingContext> {
+    public static final class CreateStreamingContextFunction implements Function0<JavaStreamingContext> {
         private final DriverConfig driverConfig;
         private final VoidFunction<JavaDStream<byte[]>> eventStreamProcessor;
 
@@ -95,6 +129,10 @@ public final class Functions implements Serializable {
         public JavaStreamingContext call() throws Exception {
             // create spark configure
             final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName());
+            // if master url set, apply
+            if (!Strings.isNullOrEmpty(driverConfig.getMasterUrl())) {
+                sparkConfiguration.setMaster(driverConfig.getMasterUrl());
+            }
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTime());
