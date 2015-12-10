@@ -71,7 +71,7 @@ public final class InterArrivalTimeProcessorTest {
             // delete dynamo tables
             final AmazonDynamoDBClient amazonDynamoDBClient = getAmazonDynamoDBClient(dynamoDBEndpoint);
             try {
-                final String tableName = String.format("%s_%s", userNamePrefix, InterArrivalTime.TABLE_NAME);
+                final String tableName = String.format("%s%s", userNamePrefix, InterArrivalTime.TABLE_NAME);
                 deleteDynamoTable(amazonDynamoDBClient, tableName);
             } catch (final Throwable ignore) {
             }

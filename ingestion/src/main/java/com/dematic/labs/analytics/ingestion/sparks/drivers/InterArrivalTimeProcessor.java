@@ -197,6 +197,9 @@ public final class InterArrivalTimeProcessor implements Serializable {
         }
 
         private static long interArrivalTimeBetweenBatches(final long lastEventTime, final List<Event> events) {
+            if (events == null || events.isEmpty()) {
+                return -1;
+            }
             // events r in order, if lastEventTime is > then current event, this is an error, just return -1
             final long eventTime = events.get(0).getTimestamp().getMillis();
             return lastEventTime > eventTime ? -1 : eventTime - lastEventTime;
