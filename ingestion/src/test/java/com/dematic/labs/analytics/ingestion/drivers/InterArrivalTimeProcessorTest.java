@@ -1,31 +1,37 @@
 package com.dematic.labs.analytics.ingestion.drivers;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.dematic.labs.analytics.common.sparks.DriverConsts;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeProcessor;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.toolkit.SystemPropertyRule;
+import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
-import com.dematic.labs.toolkit.simulators.NodeExecutor;
-import org.junit.Ignore;
+import com.dematic.labs.toolkit.communication.EventUtils;
+import com.jayway.awaitility.Awaitility;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestRule;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
 import static com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeProcessor.INTER_ARRIVAL_TIME_LEASE_TABLE_NAME;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeUtils.findInterArrivalTime;
 import static com.dematic.labs.toolkit.aws.Connections.deleteDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
+import static org.junit.Assert.assertEquals;
 
-@Ignore
 public final class InterArrivalTimeProcessorTest {
+    // used to create the IAT buckets
     private static final String AVG_INTER_ARRIVAL_TIME = "10";
+    private static final String NODE_ID = "node_10";
     // create a tmp dir
     private TemporaryFolder folder = new TemporaryFolder();
     // setup Kinesis
@@ -35,8 +41,8 @@ public final class InterArrivalTimeProcessorTest {
     public final TestRule systemPropertyRule =
             RuleChain.outerRule(new SystemPropertyRule()).around(kinesisStreamRule).around(folder);
 
-    //@Test
-    public void calculateInterArrivalTimes() {
+    @Test
+    public void calculateInterArrivalTimes() throws InterruptedException {
         // start sparks driver, running in the background
         final String kinesisEndpoint = System.getProperty("kinesisEndpoint");
         final String kinesisInputStream = System.getProperty("kinesisInputStream");
@@ -52,15 +58,15 @@ public final class InterArrivalTimeProcessorTest {
             final ExecutorService executorService = Executors.newCachedThreadPool();
             executorService.submit(() -> InterArrivalTimeProcessor.main(new String[]{kinesisEndpoint,
                     kinesisInputStream, dynamoDBEndpoint, userNamePrefix, "local[*]", "3", AVG_INTER_ARRIVAL_TIME}));
+
             // give spark some time to start
             TimeUnit.SECONDS.sleep(20);
-            // push events to kinesis stream using the node event generator
-            NodeExecutor.main(new String[]{"1", "20", "15", AVG_INTER_ARRIVAL_TIME, "2", kinesisEndpoint, kinesisInputStream,
-                    InterArrivalTimeProcessorTest.class.getSimpleName()});
-            // todo: figure out how to run to success
-            CountDownLatch countDownLatch = new CountDownLatch(1);
-            countDownLatch.await(20, TimeUnit.MINUTES);
-        } catch (final InterruptedException ignore) {
+
+            // ensure all use-cases succeed
+            checkSingleEventIAT(dynamoDBEndpoint, userNamePrefix, NODE_ID);
+            checkMultipleEventsIAT(NODE_ID);
+            checkIATBetweenBatches(NODE_ID);
+
         } finally {
             // delete dynamo tables
             final AmazonDynamoDBClient amazonDynamoDBClient = getAmazonDynamoDBClient(dynamoDBEndpoint);
@@ -75,5 +81,38 @@ public final class InterArrivalTimeProcessorTest {
             } catch (final Throwable ignore) {
             }
         }
+    }
+
+    private void checkSingleEventIAT(final String dynamoDBEndpoint, final String tablePrefix, final String nodeId) {
+        // push one event to kinesis
+        kinesisStreamRule.pushEventsToKinesis(EventUtils.generateEvents(1, nodeId));
+
+        // set the defaults timeouts
+        Awaitility.setDefaultTimeout(3, TimeUnit.MINUTES);
+        // poll dynamoDB IAT table and ensure error count == 1, error count will be 1 because we only get 1 event in
+        // the batch and no previous events occurred, may need to re-visit this logic in the future
+        Awaitility.with().pollInterval(10, TimeUnit.SECONDS).and().with().
+                pollDelay(10, TimeUnit.SECONDS).await().
+                until(() -> assertEquals(1, getIATErrorCount(dynamoDBEndpoint, tablePrefix, nodeId)));
+    }
+
+    private void checkMultipleEventsIAT(final String nodeId) {
+
+    }
+
+    private void checkIATBetweenBatches(final String nodeId) {
+
+    }
+
+    private long getIATErrorCount(final String dynamoDBEndpoint, final String tablePrefix, final String nodeId) {
+        final AmazonDynamoDBClient dynamoDBClient = Connections.getAmazonDynamoDBClient(dynamoDBEndpoint);
+        final DynamoDBMapper dynamoDBMapper = new DynamoDBMapper(dynamoDBClient,
+                new DynamoDBMapperConfig(withTableNamePrefix(tablePrefix)));
+        final InterArrivalTime interArrivalTime = findInterArrivalTime(nodeId, dynamoDBMapper);
+        return interArrivalTime == null ? 0 : interArrivalTime.getErrorCount();
+    }
+
+    private long getIATCountByBucket(final String nodeId, final String bucket) {
+        return 0;
     }
 }

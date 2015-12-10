@@ -3,8 +3,6 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
@@ -36,7 +34,8 @@ import java.util.stream.Stream;
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
 import static com.dematic.labs.analytics.ingestion.sparks.Functions.CreateStreamingContextFunction;
 import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime.TABLE_NAME;
-import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket.*;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket.toInterArrivalTimeBucket;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeUtils.findInterArrivalTime;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
@@ -89,7 +88,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final List<InterArrivalTimeBucket> buckets =
                     createBuckets(Integer.valueOf(driverConfig.getMediumInterArrivalTime()));
             // find inter arrival time from dynamo, used for business logic
-            final InterArrivalTime savedInterArrivalTime = findExistingInterArrivalTime(nodeId, dynamoDBMapper);
+            final InterArrivalTime savedInterArrivalTime = findInterArrivalTime(nodeId, dynamoDBMapper);
             // remove and count all errors, that is, events that should have been processed with the last batch
             final List<Event> eventsWithoutErrors = errorChecker(events, savedInterArrivalTime);
             // calculate errors
@@ -166,19 +165,6 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 buckets.add(new InterArrivalTimeBucket(low, high, 0L));
             }
             return buckets;
-        }
-
-        private static InterArrivalTime findExistingInterArrivalTime(final String nodeId,
-                                                                     final DynamoDBMapper dynamoDBMapper) {
-            // lookup buckets by nodeId
-            final PaginatedQueryList<InterArrivalTime> query = dynamoDBMapper.query(InterArrivalTime.class,
-                    new DynamoDBQueryExpression<InterArrivalTime>()
-                            .withHashKeyValues(new InterArrivalTime(nodeId)));
-            if (query == null || query.isEmpty()) {
-                return null;
-            }
-            // only 1 should exists
-            return query.get(0);
         }
 
         private static long interArrivalTimeInSeconds(final long interArrivalTimeInMs) {
