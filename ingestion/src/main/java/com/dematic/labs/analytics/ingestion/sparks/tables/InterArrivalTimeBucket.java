@@ -33,8 +33,9 @@ public final class InterArrivalTimeBucket implements Serializable {
         return Iterables.get(pair, 1);
     }
 
+    // inclusive/exclusive
     public boolean isWithinBucket(final long interArrivalTime) {
-        return getLowerBoundry() < interArrivalTime && getUpperBoundry() > interArrivalTime;
+        return getLowerBoundry() <= interArrivalTime && getUpperBoundry() > interArrivalTime;
     }
 
     public long getCount() {
