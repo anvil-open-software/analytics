@@ -72,8 +72,9 @@ public final class InterArrivalTimeProcessor implements Serializable {
             // calculate inter-arrival time
             nodeToEvents.foreachRDD(rdd -> {
                 rdd.collect().forEach(eventsByNode -> {
+                    LOGGER.info("IAT: calculating for node {} : event size {}", eventsByNode._1(),
+                            eventsByNode._2().size());
                     calculateInterArrivalTime(eventsByNode._1(), eventsByNode._2());
-                    LOGGER.info("IAT: node {} : event size {}", eventsByNode._1(), eventsByNode._2().size());
                 });
                 return null;
             });
@@ -93,6 +94,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final List<Event> eventsWithoutErrors = errorChecker(events, savedInterArrivalTime);
             // calculate errors
             long errorCount = events.size() - eventsWithoutErrors.size();
+
             if (eventsWithoutErrors.size() > 1) {
                 // 1) calculate the IAT between batches, if events have been processed already
                 if (savedInterArrivalTime != null) {
@@ -110,6 +112,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                         addToBucket(interArrivalTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
                     }
                 }
+
                 // 2) calculate IAT between events and populate buckets, add all inter arrival times to buckets
                 final PeekingIterator<Event> eventPeekingIterator =
                         Iterators.peekingIterator(eventsWithoutErrors.iterator());
@@ -124,28 +127,37 @@ public final class InterArrivalTimeProcessor implements Serializable {
                         addToBucket(interArrivalTimeValueInSeconds, buckets);
                     }
                 }
-            } else {
+            } else if (eventsWithoutErrors.size() == 1) {
                 // only one event
                 final Event singleEvent = eventsWithoutErrors.get(0);
                 // calculate the inter-arrival time from the last event in dynamoDB
-                if (savedInterArrivalTime == null ||
-                        interArrivalTimeBetweenBatches(savedInterArrivalTime.getLastEventTime(),
-                                eventsWithoutErrors) == -1) {
-                    // if only 1 event and either no last inter-arrival time or time is >, then just add to the
-                    // error count
+                if (savedInterArrivalTime == null) {
+                    // if only 1 event and either no last last event time, just log
+                    LOGGER.info("IAT: no previous event to calculate IAT for event {} and nodeId >{}<",
+                            singleEvent.toString(), nodeId);
+                } else if (interArrivalTimeBetweenBatches(savedInterArrivalTime.getLastEventTime(),
+                        eventsWithoutErrors) == -1) {
+                    // last event time is >, then current event, just add to the error count
                     errorCount = errorCount + 1;
-                    LOGGER.error("IAT: last inter-arrival time does not exist for node >{}< or processing batch only " +
-                            "contains one event >{}<", nodeId, singleEvent.toString());
+                    LOGGER.error("IAT: last event time '{}' > then current event time '{}' for node >{}<",
+                            savedInterArrivalTime.getLastEventTime(),
+                            eventsWithoutErrors.get(0).getTimestamp().getMillis(), nodeId);
                 } else {
                     final long interArrivalTimeBetweenBatches =
                             interArrivalTimeBetweenBatches(singleEvent.getTimestamp().getMillis(),
                                     eventsWithoutErrors);
                     addToBucket(interArrivalTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
                 }
+            } else {
+                // all errors
+                LOGGER.error("IAT: all events within batch are errors - errorCount >{}< batchSize >{}<", errorCount,
+                        events.size());
             }
+
             // calculate the new lastEventTimeInMillis
             final Long newLastEventTimeInMillis = errorCount == events.size() ? null :
                     eventsWithoutErrors.get(eventsWithoutErrors.size() - 1).getTimestamp().getMillis();
+
             // create or update
             createOrUpdate(savedInterArrivalTime, nodeId, buckets, newLastEventTimeInMillis, errorCount,
                     dynamoDBMapper);
@@ -196,8 +208,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
             return Collections.emptyList();
         }
 
-        private static long interArrivalTimeBetweenBatches(final long lastEventTime, final List<Event> events) {
-            if (events == null || events.isEmpty()) {
+        private static long interArrivalTimeBetweenBatches(final Long lastEventTime, final List<Event> events) {
+            if (lastEventTime == null || events == null || events.isEmpty()) {
                 return -1;
             }
             // events r in order, if lastEventTime is > then current event, this is an error, just return -1
@@ -236,8 +248,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 if (lastEventTimeInMillis != null) {
                     interArrivalTime.setLastEventTime(lastEventTimeInMillis);
                 }
-
-                // add existing and new
+                // add existing and new,
                 final List<InterArrivalTimeBucket> updatedBuckets = Lists.newArrayList();
                 interArrivalTime.getBuckets().stream()
                         .forEach(bucket -> updatedBuckets.add(toInterArrivalTimeBucket(bucket)));
@@ -245,7 +256,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 newBuckets.stream().forEach(newBucket -> {
                     final int bucketIndex = updatedBuckets.indexOf(newBucket);
                     if (bucketIndex > -1) {
-                        final InterArrivalTimeBucket existingInterArrivalTimeBucket = updatedBuckets.get(bucketIndex);
+                        final InterArrivalTimeBucket existingInterArrivalTimeBucket =
+                                updatedBuckets.remove(bucketIndex);
                         // add the counts
                         final long existingCount = existingInterArrivalTimeBucket.getCount();
                         final long newCount = newBucket.getCount();
