@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.dematic.labs.analytics.common.sparks.DriverConsts;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeProcessor;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
+import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
 import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
@@ -17,6 +18,7 @@ import org.junit.rules.RuleChain;
 import org.junit.rules.TemporaryFolder;
 import org.junit.rules.TestRule;
 
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -64,7 +66,7 @@ public final class InterArrivalTimeProcessorTest {
 
             // ensure all use-cases succeed
             checkSingleEventIAT(dynamoDBEndpoint, userNamePrefix, NODE_ID);
-            checkMultipleEventsIAT(NODE_ID);
+            checkMultipleEventsIAT(dynamoDBEndpoint, userNamePrefix, NODE_ID);
             checkIATBetweenBatches(NODE_ID);
 
         } finally {
@@ -89,15 +91,31 @@ public final class InterArrivalTimeProcessorTest {
 
         // set the defaults timeouts
         Awaitility.setDefaultTimeout(3, TimeUnit.MINUTES);
+        // poll dynamoDB IAT table and ensure error count == 0, error count will be 0 because we only get 1 event in
+        // the batch and no previous events occurred, may need to re-visit this logic in the future
+        Awaitility.with().pollInterval(10, TimeUnit.SECONDS).and().with().
+                pollDelay(10, TimeUnit.SECONDS).await().
+                until(() -> assertEquals(0, getIATErrorCount(dynamoDBEndpoint, tablePrefix, nodeId)));
+    }
+
+    private void checkMultipleEventsIAT(final String dynamoDBEndpoint, final String tablePrefix, final String nodeId) {
+        // setup buckets
+        final int numberOfEventsToPush = 100;
+        final int bucketLowerBoundry = Integer.parseInt(AVG_INTER_ARRIVAL_TIME);
+        final int bucketHigherBoundry = bucketLowerBoundry + 2;
+
+        // push one event to kinesis
+        kinesisStreamRule.pushEventsToKinesis(EventUtils.generateEvents(numberOfEventsToPush, nodeId,
+                bucketLowerBoundry));
+
+        // set the defaults timeouts
+        Awaitility.setDefaultTimeout(3, TimeUnit.MINUTES);
         // poll dynamoDB IAT table and ensure error count == 1, error count will be 1 because we only get 1 event in
         // the batch and no previous events occurred, may need to re-visit this logic in the future
         Awaitility.with().pollInterval(10, TimeUnit.SECONDS).and().with().
                 pollDelay(10, TimeUnit.SECONDS).await().
-                until(() -> assertEquals(1, getIATErrorCount(dynamoDBEndpoint, tablePrefix, nodeId)));
-    }
-
-    private void checkMultipleEventsIAT(final String nodeId) {
-
+                until(() -> assertEquals(99, getIATCountByBucket(dynamoDBEndpoint, tablePrefix, nodeId,
+                        bucketLowerBoundry, bucketHigherBoundry)));
     }
 
     private void checkIATBetweenBatches(final String nodeId) {
@@ -109,10 +127,28 @@ public final class InterArrivalTimeProcessorTest {
         final DynamoDBMapper dynamoDBMapper = new DynamoDBMapper(dynamoDBClient,
                 new DynamoDBMapperConfig(withTableNamePrefix(tablePrefix)));
         final InterArrivalTime interArrivalTime = findInterArrivalTime(nodeId, dynamoDBMapper);
-        return interArrivalTime == null ? 0 : interArrivalTime.getErrorCount();
+        return interArrivalTime == null ? -1 : interArrivalTime.getErrorCount();
     }
 
-    private long getIATCountByBucket(final String nodeId, final String bucket) {
+    private long getIATCountByBucket(final String dynamoDBEndpoint, final String tablePrefix, final String nodeId,
+                                     final int lowerBoundry, final int upperBoundry) {
+        final AmazonDynamoDBClient dynamoDBClient = Connections.getAmazonDynamoDBClient(dynamoDBEndpoint);
+        final DynamoDBMapper dynamoDBMapper = new DynamoDBMapper(dynamoDBClient,
+                new DynamoDBMapperConfig(withTableNamePrefix(tablePrefix)));
+        final InterArrivalTime interArrivalTime = findInterArrivalTime(nodeId, dynamoDBMapper);
+        if (interArrivalTime == null) {
+            return 0;
+        }
+        final Set<String> buckets = interArrivalTime.getBuckets();
+        for (final String bucket : buckets) {
+            final InterArrivalTimeBucket interArrivalTimeBucket =
+                    InterArrivalTimeBucket.toInterArrivalTimeBucket(bucket);
+            final int bucketLowerBoundry = interArrivalTimeBucket.getLowerBoundry();
+            final int bucketUpperBoundry = interArrivalTimeBucket.getUpperBoundry();
+            if (lowerBoundry == bucketLowerBoundry && upperBoundry == bucketUpperBoundry) {
+                return interArrivalTimeBucket.getCount();
+            }
+        }
         return 0;
     }
 }
