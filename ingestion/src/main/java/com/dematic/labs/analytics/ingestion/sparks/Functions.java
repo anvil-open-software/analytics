@@ -3,7 +3,7 @@ package com.dematic.labs.analytics.ingestion.sparks;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.toolkit.communication.Event;
-import com.google.common.base.Optional;
+import java.util.Optional;
 import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function0;
@@ -34,7 +34,7 @@ public final class Functions implements Serializable {
 
     public static Function2<List<Long>, Optional<Long>, Optional<Long>> COMPUTE_RUNNING_SUM
             = (nums, existing) -> {
-        long sum = existing.or(0L);
+        long sum = existing.orElse(0L);
         for (long i : nums) {
             sum += i;
         }
@@ -46,7 +46,7 @@ public final class Functions implements Serializable {
 
     public static Function2<List<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>>
             COMPUTE_RUNNING_AVG = (sums, existing) -> {
-        Tuple2<Double, Long> avgAndCount = existing.or(new Tuple2<>(0.0, 0L));
+        Tuple2<Double, Long> avgAndCount = existing.orElse(new Tuple2<>(0.0, 0L));
 
         for (final Tuple2<Double, Long> sumAndCount : sums) {
             final double avg = avgAndCount._1();
