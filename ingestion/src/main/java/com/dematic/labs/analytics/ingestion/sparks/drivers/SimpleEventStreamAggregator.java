@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.util.StringUtils;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
+import com.dematic.labs.analytics.common.sparks.DriverConsts;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.Event;
 import org.apache.spark.api.java.JavaRDD;
@@ -43,6 +44,9 @@ public final class SimpleEventStreamAggregator implements EventStreamProcessor<b
             return Tuple2.apply(event.aggregateBy(timeUnit), 1L);
         }).reduceByKey(SUM_REDUCER);
 
+        // just add a flag to be able to turn off bucket writes to see if this is causing restart hangs
+        boolean skipDynamoDBwrite = System.getProperty(DriverConsts.SPARK_DRIVER_SKIP_DYNAMODB_WRITE)!= null;
+
         // save counts
         aggregates.foreachRDD(rdd -> {
             final AmazonDynamoDBClient amazonDynamoDBClient = Connections.getAmazonDynamoDBClient(session.getDynamoDBEndpoint());
@@ -52,7 +56,9 @@ public final class SimpleEventStreamAggregator implements EventStreamProcessor<b
                     new DynamoDBMapper(amazonDynamoDBClient, new DynamoDBMapperConfig(withTableNamePrefix(tablePrefix)));
             final List<Tuple2<String, Long>> collect = rdd.collect();
             for (final Tuple2<String, Long> bucket : collect) {
-                AggregationDriverUtils.createOrUpdateDynamoDBBucket(bucket, dynamoDBMapper);
+                if (!skipDynamoDBwrite) {
+                    AggregationDriverUtils.createOrUpdateDynamoDBBucket(bucket, dynamoDBMapper);
+                }
             }
             return null;
         });
