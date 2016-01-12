@@ -4,19 +4,27 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
+import com.dematic.labs.analytics.ingestion.sparks.Functions;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
+import com.dematic.labs.toolkit.communication.EventUtils;
+import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
+
+
+import org.apache.spark.api.java.function.Function4;
 import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.streaming.*;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -26,8 +34,8 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,6 +53,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
     public static final String INTER_ARRIVAL_TIME_LEASE_TABLE_NAME = TABLE_NAME + "_LT";
 
     // event stream processing function
+    @SuppressWarnings("unchecked")
     private static final class InterArrivalTimeFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
 
@@ -68,6 +77,114 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final JavaPairDStream<String, List<Event>> nodeToEvents =
                     nodeToEventsPairs.reduceByKey((events1, events2) -> Stream.of(events1, events2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
+
+
+            /**
+             *
+             *  Example of using `mapWithState`:
+             * {{{
+             *   // A mapping function that maintains an integer state and return a string
+             *   Function3<String, Optional<Integer>, State<Integer>, String> mappingFunction =
+             *       new Function3<String, Optional<Integer>, State<Integer>, String>() {
+             *           @Override
+             *           public Optional<String> call(Optional<Integer> value, State<Integer> state) {
+             *               // Use state.exists(), state.get(), state.update() and state.remove()
+             *               // to manage state, and return the necessary string
+             *           }
+             *       };
+             *
+             *    JavaMapWithStateDStream<String, Integer, Integer, String> mapWithStateDStream =
+             *        keyValueDStream.mapWithState(StateSpec.function(mappingFunc));
+             *}}}
+             *
+             *
+             *
+             *  {{{
+             *    // A mapping function that maintains an integer state and returns a String
+             *    Function3<String, Optional<Integer>, State<Integer>, String> mappingFunction =
+             *       new Function3<String, Optional<Integer>, State<Integer>, String>() {
+             *
+             *         @Override
+             *         public String call(String key, Optional<Integer> value, State<Integer> state) {
+             *           if (state.exists()) {
+             *             int existingState = state.get(); // Get the existing state
+             *             boolean shouldRemove = ...; // Decide whether to remove the state
+             *             if (shouldRemove) {
+             *               state.remove(); // Remove the state
+             *             } else {
+             *               int newState = ...;
+             *               state.update(newState); // Set the new state
+             *             }
+             *           } else {
+             *             int initialState = ...; // Set the initial state
+             *             state.update(initialState);
+             *           }
+             *           // return something
+             *         }z
+             *       };
+             * }}}
+             *
+             *
+             *
+             */
+
+
+            final JavaPairDStream<String, InterArrivalTimeState> stateJavaPairDStream =
+                    nodeToEvents.mapWithState(StateSpec.function(new Functions.StatefulEventByNodeFunction()).timeout(Durations.seconds(30))).stateSnapshots();
+
+
+            stateJavaPairDStream.foreachRDD(rdd -> {
+                // list of node id's, and a snapshot of inter-arrival time state
+                final List<Tuple2<String, InterArrivalTimeState>> collect = rdd.collect();
+                collect.forEach(eventsByNode -> {
+                    final List<Event> events = eventsByNode._2().bufferedInterArrivalTimeEvents();
+                    System.out.print("-------------- " + EventUtils.nowString() + events.size());
+                });
+            });
+
+
+
+
+
+
+/*            final JavaPairDStream<String, List<Event>> stringObjectJavaPairDStream = nodeToEvents.mapWithState(StateSpec.function(new Function4<Time, String, Optional<List<Event>>, State<InterArrivalTimeState>, Optional<List<Event>>>() {
+
+                @Override
+                public Optional<List<Event>> call(final Time time, final String key, Optional<List<Event>> events, State<InterArrivalTimeState> state) throws Exception {
+
+                    final InterArrivalTimeState interArrivalTimeState;
+
+                    if (state.exists()) {
+                        // get existing events
+                        interArrivalTimeState = state.get();
+                        // determine if we should remove state
+                        if (interArrivalTimeState.removeInterArrivalTimeState()) {
+                            state.remove();
+                        } else {
+                            // add new events to state
+                            interArrivalTimeState.addNewEvents(events.get());
+                            state.update(interArrivalTimeState);
+                        }
+
+                    } else {
+                        // add the initial state, todo: make duration configurable
+                        interArrivalTimeState = new InterArrivalTimeState(time.milliseconds(), 20L, events.get());
+                        state.update(interArrivalTimeState);
+                    }
+
+                    return Optional.of(null);
+                }
+            })).stateSnapshots();
+
+            stringObjectJavaPairDStream.foreachRDD(rdd -> {
+                final List<Tuple2<String, InterArrivalTimeState>> collect = rdd.collect();
+
+                for (Tuple2<String, InterArrivalTimeState> stringObjectTuple2 : collect) {
+                    System.out.println(stringObjectTuple2._1() + " ------------ " +stringObjectTuple2._2().interArrivalTimeEvents().size());
+                }
+            });*/
+
+
             //todo: look into update by key, last event date, when spark 1.6 is out
             // calculate inter-arrival time
             nodeToEvents.foreachRDD(rdd -> {
@@ -79,6 +196,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 return null;
             });
         }
+
 
         private void calculateInterArrivalTime(final String nodeId, final List<Event> events) {
             final AmazonDynamoDBClient dynamoDBClient = getAmazonDynamoDBClient(driverConfig.getDynamoDBEndpoint());
@@ -196,7 +314,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 return unprocessedEvents;
             }
             // find the fist event in the list that is after the last processed event time
-            final Optional<Event> firstUnprocessedEvent = unprocessedEvents.stream()
+            final java.util.Optional<Event> firstUnprocessedEvent = unprocessedEvents.stream()
                     .filter(event -> lastEventTime < event.getTimestamp().getMillis()).findFirst();
 
             if (firstUnprocessedEvent.isPresent()) {
@@ -218,7 +336,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
         }
 
         private static void addToBucket(final long intervalTime, final List<InterArrivalTimeBucket> buckets) {
-            final Optional<InterArrivalTimeBucket> first = buckets.stream()
+            final java.util.Optional<InterArrivalTimeBucket> first = buckets.stream()
                     .filter(bucket -> bucket.isWithinBucket(intervalTime)).findFirst();
             if (!first.isPresent()) {
                 throw new IllegalStateException(String.format("IAT: - Unexpected Error: intervalTime >%s<" +
@@ -349,4 +467,39 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 .with(DriverConfig::setMediumInterArrivalTime, mediumInterArrivalTime)
                 .build();
     }
+
+
+    /**
+     *
+     *
+     *  final JavaPairDStream<String, InterArrivalTimeState> stringObjectJavaPairDStream = nodeToEvents.mapWithState(StateSpec.function(new Function4<Time, String, Optional<List<Event>>, State<InterArrivalTimeState>, Optional<InterArrivalTimeState>>() {
+
+    @Override public Optional<InterArrivalTimeState> call(final Time time, final String nodeId, Optional<List<Event>> events, State<InterArrivalTimeState> state) throws Exception {
+
+    final InterArrivalTimeState interArrivalTimeState;
+
+    if (state.exists()) {
+    // get existing events
+    interArrivalTimeState = state.get();
+    // determine if we should remove state
+    if (interArrivalTimeState.removeInterArrivalTimeState()) {
+    state.remove();
+    } else {
+    // add new events to state
+
+    state.update(all);
+    }
+
+    } else {
+    // add the initial state, todo: make duration configurable
+    interArrivalTimeState = new InterArrivalTimeState(time.milliseconds(), 20L, events.get());
+    state.update(interArrivalTimeState);
+    }
+
+    return Optional.of(interArrivalTimeState);
+    }
+    })).stateSnapshots();
+     *
+     *
+     */
 }

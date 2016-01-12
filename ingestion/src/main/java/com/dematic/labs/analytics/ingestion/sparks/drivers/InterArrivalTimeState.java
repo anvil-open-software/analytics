@@ -18,14 +18,12 @@ public final class InterArrivalTimeState implements Serializable {
     private final long bufferTimeInsSconds;
     private final List<Event> events;
     private int bufferIndex;
-    // private final List<Event> bufferedEvents;
 
     public InterArrivalTimeState(final long startTimeInMs, final long bufferTimeInSeconds, final List<Event> events) {
         this.startTimeInMs = startTimeInMs;
         this.bufferTimeInsSconds = Duration.ofSeconds(bufferTimeInSeconds).getSeconds();
         this.events = Lists.newLinkedList(events);
         bufferIndex = 0;
-        //this.bufferedEvents = Lists.newLinkedList();
     }
 
     public boolean triggerInterArrivalTimeProcessing(final long timeInMs) {
@@ -46,24 +44,27 @@ public final class InterArrivalTimeState implements Serializable {
         if (triggerInterArrivalTimeProcessing(timeInMs)) {
             // only process half of the buffer
             final long halfBuffer = bufferTimeInsSconds / 2; // i.e. 20 / 2 = 10
+
             // find the half buffer time
             final long halfBufferTime =
                     EventUtils.dateTime(timeInMs).minusSeconds(new Long(halfBuffer).intValue()).getMillis();
+
             // find the first event in the list that is half the buffer size and get the index
             final Optional<Event> first =
                     events.stream().filter(event -> event.getTimestamp().getMillis() > halfBufferTime).findFirst();
+
             // if no event has been found return all events
             if (!first.isPresent()) {
                 bufferIndex = events.size();
             } else {
                 // find the index of the first event in the buffer and assign the buffer index, exclusive
                 bufferIndex = events.indexOf(first.get());
-
             }
         }
     }
 
     public List<Event> bufferedInterArrivalTimeEvents() {
+        // todo: figure out event return event...move buffer....
         final List<Event> bufferedEvents = new ArrayList<>(this.events.subList(0, bufferIndex));
         // remove from the event list
         if (!bufferedEvents.isEmpty()) {

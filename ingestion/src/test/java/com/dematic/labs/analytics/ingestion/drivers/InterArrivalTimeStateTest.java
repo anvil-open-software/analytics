@@ -18,6 +18,7 @@ public final class InterArrivalTimeStateTest {
                 new InterArrivalTimeState(now().getMillis(), 20L, generateEvents(100, "node1", 5));
         state.updateBuffer(now().plusSeconds(21).getMillis());
         final List<Event> events = state.bufferedInterArrivalTimeEvents();
+        final List<Event> event2 = state.bufferedInterArrivalTimeEvents();
         System.out.println();
     }
 }

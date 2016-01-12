@@ -2,18 +2,21 @@ package com.dematic.labs.analytics.ingestion.sparks;
 
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeState;
 import com.dematic.labs.toolkit.communication.Event;
+
 import java.util.Optional;
+
 import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.function.Function0;
-import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
-import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.api.java.function.*;
 import org.apache.spark.storage.StorageLevel;
+import org.apache.spark.streaming.State;
+import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
+import org.joda.time.DateTime;
 import scala.Tuple2;
 
 import java.io.Serializable;
@@ -64,22 +67,8 @@ public final class Functions implements Serializable {
     };
 
     // Overridden Functions
-    public static final class AggregateEventToBucketFunction implements PairFunction<Event, String, Long> {
-        private final TimeUnit timeUnit;
 
-        public AggregateEventToBucketFunction(final TimeUnit timeUnit) {
-            this.timeUnit = timeUnit;
-        }
-
-        @Override
-        public Tuple2<String, Long> call(final Event event) throws Exception {
-            // Downsampling: where we reduce the event’s ISO 8601 timestamp down to timeUnit precision,
-            // so for instance “2015-06-05T12:54:43.064528” becomes “2015-06-05T12:54:00.000000” for minute.
-            // This downsampling gives us a fast way of bucketing or aggregating events via this downsampled key
-            return new Tuple2<>(event.aggregateBy(timeUnit), 1L);
-        }
-    }
-
+    // creation functions
     public static final class CreateDStreamFunction implements Function0<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
         private final JavaStreamingContext streamingContext;
@@ -147,4 +136,57 @@ public final class Functions implements Serializable {
             return streamingContext;
         }
     }
+
+    // driver functions
+    public static final class AggregateEventToBucketFunction implements PairFunction<Event, String, Long> {
+        private final TimeUnit timeUnit;
+
+        public AggregateEventToBucketFunction(final TimeUnit timeUnit) {
+            this.timeUnit = timeUnit;
+        }
+
+        @Override
+        public Tuple2<String, Long> call(final Event event) throws Exception {
+            // Downsampling: where we reduce the event’s ISO 8601 timestamp down to timeUnit precision,
+            // so for instance “2015-06-05T12:54:43.064528” becomes “2015-06-05T12:54:00.000000” for minute.
+            // This downsampling gives us a fast way of bucketing or aggregating events via this downsampled key
+            return new Tuple2<>(event.aggregateBy(timeUnit), 1L);
+        }
+    }
+
+
+    public static final class StatefulEventByNodeFunction implements Function4<Time, String,
+            com.google.common.base.Optional<List<Event>>, State<InterArrivalTimeState>,
+            com.google.common.base.Optional<String>> {
+
+        @Override
+        public com.google.common.base.Optional<String> call(final Time time, final String nodeId,
+                                                            final com.google.common.base.Optional<List<Event>> events,
+                                                            final State<InterArrivalTimeState> state) throws Exception {
+
+            final InterArrivalTimeState interArrivalTimeState;
+            if (state.exists()) {
+                // get existing events
+                interArrivalTimeState = state.get();
+                // determine if we should remove state
+                if (state.isTimingOut()) {
+                    System.out.println();
+                 //   state.remove();
+                } else {
+                    // add new events to state
+                    interArrivalTimeState.addNewEvents(events.get());
+                    interArrivalTimeState.updateBuffer(time.milliseconds());
+                    state.update(interArrivalTimeState);
+                }
+            } else {
+                // add the initial state, todo: make duration configurable
+                interArrivalTimeState = new InterArrivalTimeState(time.milliseconds(), 20L, events.get());
+                state.update(interArrivalTimeState);
+            }
+
+            // todo: figure out the return type
+            return com.google.common.base.Optional.of(nodeId);
+        }
+    }
+
 }
