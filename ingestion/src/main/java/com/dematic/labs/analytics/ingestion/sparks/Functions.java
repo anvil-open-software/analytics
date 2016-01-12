@@ -9,14 +9,17 @@ import java.util.Optional;
 
 import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.function.*;
+import org.apache.spark.api.java.function.Function0;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.Function4;
+import org.apache.spark.api.java.function.PairFunction;
+import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.State;
 import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
-import org.joda.time.DateTime;
 import scala.Tuple2;
 
 import java.io.Serializable;
@@ -154,7 +157,7 @@ public final class Functions implements Serializable {
         }
     }
 
-
+    // todo: try to come up with a better Optional solution
     public static final class StatefulEventByNodeFunction implements Function4<Time, String,
             com.google.common.base.Optional<List<Event>>, State<InterArrivalTimeState>,
             com.google.common.base.Optional<String>> {
@@ -169,13 +172,14 @@ public final class Functions implements Serializable {
                 // get existing events
                 interArrivalTimeState = state.get();
                 // determine if we should remove state
-                if (state.isTimingOut()) {
-                    System.out.println();
-                 //   state.remove();
+                if (interArrivalTimeState.removeInterArrivalTimeState()) {
+                    state.remove();
+                } else if (state.isTimingOut()) {
+                 // todo: figure what to do for timeouts
                 } else {
                     // add new events to state
                     interArrivalTimeState.addNewEvents(events.get());
-                    interArrivalTimeState.updateBuffer(time.milliseconds());
+                    interArrivalTimeState.moveBufferIndex(time.milliseconds());
                     state.update(interArrivalTimeState);
                 }
             } else {
@@ -188,5 +192,4 @@ public final class Functions implements Serializable {
             return com.google.common.base.Optional.of(nodeId);
         }
     }
-
 }

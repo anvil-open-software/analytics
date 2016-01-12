@@ -12,6 +12,7 @@ import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
 import com.dematic.labs.toolkit.communication.EventUtils;
 import com.jayway.awaitility.Awaitility;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -30,6 +31,7 @@ import static com.dematic.labs.toolkit.aws.Connections.deleteDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
 import static org.junit.Assert.assertEquals;
 
+@Ignore
 public final class InterArrivalTimeProcessorTest {
     // used to create the IAT buckets
     private static final String AVG_INTER_ARRIVAL_TIME = "10";
