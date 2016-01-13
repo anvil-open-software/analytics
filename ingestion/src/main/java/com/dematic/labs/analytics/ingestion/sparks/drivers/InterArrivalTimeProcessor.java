@@ -9,7 +9,6 @@ import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
-import com.dematic.labs.toolkit.communication.EventUtils;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -84,18 +83,13 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 final List<Tuple2<String, InterArrivalTimeState>> collect = rdd.collect();
                 collect.forEach(eventsByNode -> {
                     final List<Event> events = eventsByNode._2().bufferedInterArrivalTimeEvents(true);
-                    System.out.print("-------------- " + EventUtils.nowString() + events.size());
+                    if (!events.isEmpty()) {
+                        final String nodeId = eventsByNode._1();
+                        LOGGER.info("IAT: calculating for node {} : event size {}", nodeId, events.size());
+                        // calculate inter-arrival time
+                        calculateInterArrivalTime(nodeId, events);
+                    }
                 });
-            });
-
-            // calculate inter-arrival time
-            nodeToEvents.foreachRDD(rdd -> {
-                rdd.collect().forEach(eventsByNode -> {
-                    LOGGER.info("IAT: calculating for node {} : event size {}", eventsByNode._1(),
-                            eventsByNode._2().size());
-                    calculateInterArrivalTime(eventsByNode._1(), eventsByNode._2());
-                });
-                return null;
             });
         }
 
