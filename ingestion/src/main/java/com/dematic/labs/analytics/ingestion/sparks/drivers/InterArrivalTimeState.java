@@ -73,9 +73,9 @@ public final class InterArrivalTimeState implements Serializable {
     }
 
     // todo: look into changing this structure and flow
-    public List<Event> bufferedInterArrivalTimeEvents(final boolean clear) {
+    public List<Event> bufferedInterArrivalTimeEvents(final boolean flush) {
         final List<Event> copy = new ArrayList<>(bufferedEvents);
-        if (clear) {
+        if (flush) {
             bufferedEvents.clear();
         }
         return copy;
