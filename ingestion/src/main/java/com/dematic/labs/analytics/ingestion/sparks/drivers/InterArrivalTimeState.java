@@ -41,6 +41,7 @@ public final class InterArrivalTimeState implements Serializable {
         events.addAll(newEvents);
     }
 
+    //todo: every batch creates a new instance.....
     public void moveBufferIndex(final long timeInMs) {
         // move the index of the buffer, the elapse time has expired
         if (triggerInterArrivalTimeProcessing(timeInMs)) {
@@ -74,6 +75,8 @@ public final class InterArrivalTimeState implements Serializable {
 
     // todo: look into changing this structure and flow
     public List<Event> bufferedInterArrivalTimeEvents(final boolean flush) {
+        // todo: will not work, needs to be cleared elsewhere, state, is reused....
+
         final List<Event> copy = new ArrayList<>(bufferedEvents);
         if (flush) {
             bufferedEvents.clear();
