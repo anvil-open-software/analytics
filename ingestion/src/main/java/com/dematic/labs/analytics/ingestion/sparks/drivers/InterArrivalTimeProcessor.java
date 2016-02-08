@@ -18,6 +18,7 @@ import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.StateSpec;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaMapWithStateDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
@@ -50,7 +51,6 @@ public final class InterArrivalTimeProcessor implements Serializable {
     @SuppressWarnings("unchecked")
     private static final class InterArrivalTimeFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
-
         public InterArrivalTimeFunction(final DriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
@@ -73,21 +73,20 @@ public final class InterArrivalTimeProcessor implements Serializable {
                             .flatMap(Collection::stream).collect(Collectors.toList()));
 
             //todo: make state time out configurable
-            final JavaPairDStream<String, InterArrivalTimeState> stateJavaPairDStream =
+            final JavaMapWithStateDStream<String, List<Event>, InterArrivalTimeState, InterArrivalTimeStateModel> mapWithStateDStream =
                     nodeToEvents.mapWithState(StateSpec.function(
-                            new Functions.StatefulEventByNodeFunction()).timeout(Durations.seconds(30)))
-                            .stateSnapshots();
-
-            stateJavaPairDStream.foreachRDD(rdd -> {
-                // list of node id's, and a snapshot of inter-arrival time state
-                final List<Tuple2<String, InterArrivalTimeState>> collect = rdd.collect();
+                            // make timeout config
+                    new Functions.StatefulEventByNodeFunction()).timeout(Durations.seconds(30)));
+            mapWithStateDStream.foreachRDD(rdd -> {
+                // list of node id's and buffered events
+                final List<InterArrivalTimeStateModel> collect = rdd.collect();
                 collect.forEach(eventsByNode -> {
-                    final List<Event> events = eventsByNode._2().bufferedInterArrivalTimeEvents(true);
+                    final List<Event> events = eventsByNode.getEvents();
                     if (!events.isEmpty()) {
-                        final String nodeId = eventsByNode._1();
-                        LOGGER.info("IAT: calculating for node {} : event size {}", nodeId, events.size());
+                        LOGGER.info("IAT: calculating for node {} : event size {}", eventsByNode.getNodeId(),
+                                events.size());
                         // calculate inter-arrival time
-                        calculateInterArrivalTime(nodeId, events);
+                        calculateInterArrivalTime(eventsByNode.getNodeId(), events);
                     }
                 });
             });
