@@ -2,6 +2,7 @@ package com.dematic.labs.analytics.ingestion.sparks;
 
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeStateModel;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeState;
 import com.dematic.labs.toolkit.communication.Event;
 
@@ -160,12 +161,11 @@ public final class Functions implements Serializable {
     // todo: try to come up with a better Optional solution
     public static final class StatefulEventByNodeFunction implements Function4<Time, String,
             com.google.common.base.Optional<List<Event>>, State<InterArrivalTimeState>,
-            com.google.common.base.Optional<String>> {
-
+            com.google.common.base.Optional<InterArrivalTimeStateModel>> {
         @Override
-        public com.google.common.base.Optional<String> call(final Time time, final String nodeId,
-                                                            final com.google.common.base.Optional<List<Event>> events,
-                                                            final State<InterArrivalTimeState> state) throws Exception {
+        public com.google.common.base.Optional<InterArrivalTimeStateModel> call(final Time time, final String nodeId,
+                                                                                final com.google.common.base.Optional<List<Event>> events,
+                                                                                final State<InterArrivalTimeState> state) throws Exception {
 
             final InterArrivalTimeState interArrivalTimeState;
             if (state.exists()) {
@@ -175,7 +175,7 @@ public final class Functions implements Serializable {
                 if (interArrivalTimeState.removeInterArrivalTimeState()) {
                     state.remove();
                 } else if (state.isTimingOut()) {
-                 // todo: figure what to do for timeouts
+                    // todo: figure what to do for timeouts
                 } else {
                     // add new events to state
                     interArrivalTimeState.addNewEvents(events.get());
@@ -187,9 +187,8 @@ public final class Functions implements Serializable {
                 interArrivalTimeState = new InterArrivalTimeState(time.milliseconds(), 20L, events.get());
                 state.update(interArrivalTimeState);
             }
-
-            // todo: figure out the return type
-            return com.google.common.base.Optional.of(nodeId);
+            return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId,
+                    interArrivalTimeState.bufferedInterArrivalTimeEvents()));
         }
     }
 }
