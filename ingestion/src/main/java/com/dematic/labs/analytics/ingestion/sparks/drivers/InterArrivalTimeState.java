@@ -17,14 +17,12 @@ public final class InterArrivalTimeState implements Serializable {
     private final long startTimeInMs;
     private final long bufferTimeInsSconds;
     private final List<Event> events;
-    private final List<Event> bufferedEvents;
     private int bufferIndex;
 
     public InterArrivalTimeState(final long startTimeInMs, final long bufferTimeInSeconds, final List<Event> events) {
         this.startTimeInMs = startTimeInMs;
         this.bufferTimeInsSconds = Duration.ofSeconds(bufferTimeInSeconds).getSeconds();
         this.events = Lists.newLinkedList(events);
-        this.bufferedEvents = Lists.newLinkedList();
         bufferIndex = 0;
     }
 
@@ -41,7 +39,6 @@ public final class InterArrivalTimeState implements Serializable {
         events.addAll(newEvents);
     }
 
-    //todo: every batch creates a new instance.....
     public void moveBufferIndex(final long timeInMs) {
         // move the index of the buffer, the elapse time has expired
         if (triggerInterArrivalTimeProcessing(timeInMs)) {
@@ -63,24 +60,14 @@ public final class InterArrivalTimeState implements Serializable {
                 // find the index of the first event in the buffer and assign the buffer index, exclusive
                 bufferIndex = events.indexOf(first.get());
             }
-            // add events to the buffer
-            // todo: figure out if there is a better way to do this
-            bufferedEvents.addAll(this.events.subList(0, bufferIndex));
-            // remove from the event list
-            if (!bufferedEvents.isEmpty()) {
-                events.removeAll(bufferedEvents);
-            }
         }
     }
 
-    // todo: look into changing this structure and flow
-    public List<Event> bufferedInterArrivalTimeEvents(final boolean flush) {
-        // todo: will not work, needs to be cleared elsewhere, state, is reused....
-
-        final List<Event> copy = new ArrayList<>(bufferedEvents);
-        if (flush) {
-            bufferedEvents.clear();
-        }
+    public List<Event> bufferedInterArrivalTimeEvents() {
+        final List<Event> bufferedEvents = this.events.subList(0, bufferIndex);
+        final ArrayList<Event> copy = Lists.newArrayList(bufferedEvents);
+        // remove from the original events
+        bufferedEvents.clear();
         return copy;
     }
 }
