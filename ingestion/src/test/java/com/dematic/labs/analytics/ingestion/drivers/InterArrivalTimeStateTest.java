@@ -17,15 +17,9 @@ public final class InterArrivalTimeStateTest {
                 new InterArrivalTimeState(now().getMillis(), 20L, generateEvents(100, "node1", 5));
         // 2) move the buffer past the configured buffer time
         state.moveBufferIndex(now().plusSeconds(21).getMillis());
-        // 3) get the buffered events without removing the state, shoul only contain 3 events because we only return
+        // 3) get the buffered events without removing the state, should only contain 3 events because we only return
         //    half the allocated buffer time events
-        final List<Event> events = state.bufferedInterArrivalTimeEvents(false);
+        final List<Event> events = state.bufferedInterArrivalTimeEvents();
         assertEquals(events.size(), 3);
-        // 4) events were not cleared should still be able to get them
-        final List<Event> events_2 = state.bufferedInterArrivalTimeEvents(true);
-        assertEquals(events_2.size(), 3);
-        // 4) events were cleared should be 0
-        final List<Event> events_3 = state.bufferedInterArrivalTimeEvents(true);
-        assertEquals(events_3.size(), 0);
     }
 }
