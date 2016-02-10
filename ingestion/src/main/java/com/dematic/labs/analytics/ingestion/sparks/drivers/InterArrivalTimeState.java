@@ -3,11 +3,12 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers;
 import com.dematic.labs.toolkit.communication.Event;
 import com.dematic.labs.toolkit.communication.EventUtils;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import org.joda.time.Seconds;
 
 import java.io.Serializable;
 import java.time.Duration;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -65,9 +66,14 @@ public final class InterArrivalTimeState implements Serializable {
 
     public List<Event> bufferedInterArrivalTimeEvents() {
         final List<Event> bufferedEvents = this.events.subList(0, bufferIndex);
-        final ArrayList<Event> copy = Lists.newArrayList(bufferedEvents);
+        final List<Event> copy = Lists.newArrayList(bufferedEvents);
         // remove from the original events
         bufferedEvents.clear();
-        return copy;
+        return Ordering.from(new Comparator<Event>() {
+            @Override
+            public int compare(Event event1, Event event2) {
+                return event1.getTimestamp().compareTo(event2.getTimestamp());
+            }
+        }).sortedCopy(copy);
     }
 }
