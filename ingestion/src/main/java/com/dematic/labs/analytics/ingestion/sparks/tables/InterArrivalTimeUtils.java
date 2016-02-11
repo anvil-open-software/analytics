@@ -1,5 +1,8 @@
 package com.dematic.labs.analytics.ingestion.sparks.tables;
 
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.ObjectCodec;
@@ -33,6 +36,18 @@ public final class InterArrivalTimeUtils {
 
     public static String interArrivalTimeBucketToJson(final InterArrivalTimeBucket bucket) throws IOException {
         return objectMapper.writeValueAsString(bucket);
+    }
+
+    public static InterArrivalTime findInterArrivalTime(final String nodeId, final DynamoDBMapper dynamoDBMapper) {
+        // lookup buckets by nodeId
+        final PaginatedQueryList<InterArrivalTime> query = dynamoDBMapper.query(InterArrivalTime.class,
+                new DynamoDBQueryExpression<InterArrivalTime>()
+                        .withHashKeyValues(new InterArrivalTime(nodeId)));
+        if (query == null || query.isEmpty()) {
+            return null;
+        }
+        // only 1 should exists
+        return query.get(0);
     }
 
     private final static class InterArrivalTimeBucketSerializer extends JsonSerializer<InterArrivalTimeBucket> {

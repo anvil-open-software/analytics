@@ -2,15 +2,22 @@ package com.dematic.labs.analytics.ingestion.sparks;
 
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeStateModel;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeState;
 import com.dematic.labs.toolkit.communication.Event;
-import com.google.common.base.Optional;
+
+import java.util.Optional;
+
 import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.Function4;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.storage.StorageLevel;
+import org.apache.spark.streaming.State;
+import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
@@ -34,7 +41,7 @@ public final class Functions implements Serializable {
 
     public static Function2<List<Long>, Optional<Long>, Optional<Long>> COMPUTE_RUNNING_SUM
             = (nums, existing) -> {
-        long sum = existing.or(0L);
+        long sum = existing.orElse(0L);
         for (long i : nums) {
             sum += i;
         }
@@ -46,7 +53,7 @@ public final class Functions implements Serializable {
 
     public static Function2<List<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>>
             COMPUTE_RUNNING_AVG = (sums, existing) -> {
-        Tuple2<Double, Long> avgAndCount = existing.or(new Tuple2<>(0.0, 0L));
+        Tuple2<Double, Long> avgAndCount = existing.orElse(new Tuple2<>(0.0, 0L));
 
         for (final Tuple2<Double, Long> sumAndCount : sums) {
             final double avg = avgAndCount._1();
@@ -64,22 +71,8 @@ public final class Functions implements Serializable {
     };
 
     // Overridden Functions
-    public static final class AggregateEventToBucketFunction implements PairFunction<Event, String, Long> {
-        private final TimeUnit timeUnit;
 
-        public AggregateEventToBucketFunction(final TimeUnit timeUnit) {
-            this.timeUnit = timeUnit;
-        }
-
-        @Override
-        public Tuple2<String, Long> call(final Event event) throws Exception {
-            // Downsampling: where we reduce the event’s ISO 8601 timestamp down to timeUnit precision,
-            // so for instance “2015-06-05T12:54:43.064528” becomes “2015-06-05T12:54:00.000000” for minute.
-            // This downsampling gives us a fast way of bucketing or aggregating events via this downsampled key
-            return new Tuple2<>(event.aggregateBy(timeUnit), 1L);
-        }
-    }
-
+    // creation functions
     public static final class CreateDStreamFunction implements Function0<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
         private final JavaStreamingContext streamingContext;
@@ -145,6 +138,57 @@ public final class Functions implements Serializable {
             streamingContext.checkpoint(driverConfig.getCheckPointDir());
             // return the streaming context
             return streamingContext;
+        }
+    }
+
+    // driver functions
+    public static final class AggregateEventToBucketFunction implements PairFunction<Event, String, Long> {
+        private final TimeUnit timeUnit;
+
+        public AggregateEventToBucketFunction(final TimeUnit timeUnit) {
+            this.timeUnit = timeUnit;
+        }
+
+        @Override
+        public Tuple2<String, Long> call(final Event event) throws Exception {
+            // Downsampling: where we reduce the event’s ISO 8601 timestamp down to timeUnit precision,
+            // so for instance “2015-06-05T12:54:43.064528” becomes “2015-06-05T12:54:00.000000” for minute.
+            // This downsampling gives us a fast way of bucketing or aggregating events via this downsampled key
+            return new Tuple2<>(event.aggregateBy(timeUnit), 1L);
+        }
+    }
+
+    // todo: try to come up with a better Optional solution
+    public static final class StatefulEventByNodeFunction implements Function4<Time, String,
+            com.google.common.base.Optional<List<Event>>, State<InterArrivalTimeState>,
+            com.google.common.base.Optional<InterArrivalTimeStateModel>> {
+        @Override
+        public com.google.common.base.Optional<InterArrivalTimeStateModel> call(final Time time, final String nodeId,
+                                                                                final com.google.common.base.Optional<List<Event>> events,
+                                                                                final State<InterArrivalTimeState> state) throws Exception {
+
+            final InterArrivalTimeState interArrivalTimeState;
+            if (state.exists()) {
+                // get existing events
+                interArrivalTimeState = state.get();
+                // determine if we should remove state
+                if (interArrivalTimeState.removeInterArrivalTimeState()) {
+                    state.remove();
+                } else if (state.isTimingOut()) {
+                    // todo: figure what to do for timeouts
+                } else {
+                    // add new events to state
+                    interArrivalTimeState.addNewEvents(events.get());
+                    interArrivalTimeState.moveBufferIndex(time.milliseconds());
+                    state.update(interArrivalTimeState);
+                }
+            } else {
+                // add the initial state, todo: make duration configurable
+                interArrivalTimeState = new InterArrivalTimeState(time.milliseconds(), 20L, events.get());
+                state.update(interArrivalTimeState);
+            }
+            return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId,
+                    interArrivalTimeState.bufferedInterArrivalTimeEvents()));
         }
     }
 }
