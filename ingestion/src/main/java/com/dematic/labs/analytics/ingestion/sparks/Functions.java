@@ -173,10 +173,17 @@ public final class Functions implements Serializable {
                 interArrivalTimeState = state.get();
 
                 final boolean timingOut = state.isTimingOut();
+                if (timingOut) {
+                    // no state has been updated for timeout amount of time, if any events are in the buffer just
+                    // return all of them
+                    return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId,
+                            interArrivalTimeState.allInterArrivalTimeEvents()));
+                }
+
                 // determine if we should remove state
-                 if (!timingOut && interArrivalTimeState.removeInterArrivalTimeState()) {
+                if (interArrivalTimeState.removeInterArrivalTimeState()) {
                     state.remove();
-                } else if(!timingOut ) {
+                } else {
                     // add new events to state
                     interArrivalTimeState.addNewEvents(events.get());
                     interArrivalTimeState.moveBufferIndex(time.milliseconds());

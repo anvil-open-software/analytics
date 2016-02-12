@@ -65,10 +65,17 @@ public final class InterArrivalTimeState implements Serializable {
     }
 
     public List<Event> bufferedInterArrivalTimeEvents() {
-        final List<Event> bufferedEvents = this.events.subList(0, bufferIndex);
-        final List<Event> copy = Lists.newArrayList(bufferedEvents);
+        return sort(events.subList(0, bufferIndex));
+    }
+
+    public List<Event> allInterArrivalTimeEvents() {
+        return sort(events);
+    }
+
+    private static List<Event> sort(final List<Event> events) {
+        final List<Event> copy = Lists.newArrayList(events);
         // remove from the original events
-        bufferedEvents.clear();
+        events.clear();
         return Ordering.from(new Comparator<Event>() {
             @Override
             public int compare(Event event1, Event event2) {
