@@ -171,12 +171,12 @@ public final class Functions implements Serializable {
             if (state.exists()) {
                 // get existing events
                 interArrivalTimeState = state.get();
+
+                final boolean timingOut = state.isTimingOut();
                 // determine if we should remove state
-                if (interArrivalTimeState.removeInterArrivalTimeState()) {
+                 if (!timingOut && interArrivalTimeState.removeInterArrivalTimeState()) {
                     state.remove();
-                } else if (state.isTimingOut()) {
-                    // todo: figure what to do for timeouts
-                } else {
+                } else if(!timingOut ) {
                     // add new events to state
                     interArrivalTimeState.addNewEvents(events.get());
                     interArrivalTimeState.moveBufferIndex(time.milliseconds());
