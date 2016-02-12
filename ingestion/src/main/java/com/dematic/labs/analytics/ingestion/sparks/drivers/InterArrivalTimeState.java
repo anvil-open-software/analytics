@@ -17,7 +17,7 @@ import static com.dematic.labs.toolkit.communication.EventUtils.dateTime;
 public final class InterArrivalTimeState implements Serializable {
     private final long startTimeInMs;
     private final long bufferTimeInsSconds;
-    private final List<Event> events;
+    private List<Event> events;
     private int bufferIndex;
 
     public InterArrivalTimeState(final long startTimeInMs, final long bufferTimeInSeconds, final List<Event> events) {
@@ -38,6 +38,12 @@ public final class InterArrivalTimeState implements Serializable {
 
     public void addNewEvents(final List<Event> newEvents) {
         events.addAll(newEvents);
+        events = Ordering.from(new Comparator<Event>() {
+            @Override
+            public int compare(Event event1, Event event2) {
+                return event1.getTimestamp().compareTo(event2.getTimestamp());
+            }
+        }).sortedCopy(events);
     }
 
     public void moveBufferIndex(final long timeInMs) {
@@ -65,22 +71,17 @@ public final class InterArrivalTimeState implements Serializable {
     }
 
     public List<Event> bufferedInterArrivalTimeEvents() {
-        return sort(events.subList(0, bufferIndex));
+        return copy(events.subList(0, bufferIndex));
     }
 
     public List<Event> allInterArrivalTimeEvents() {
-        return sort(events);
+        return copy(events);
     }
 
-    private static List<Event> sort(final List<Event> events) {
+    private static List<Event> copy(final List<Event> events) {
         final List<Event> copy = Lists.newArrayList(events);
         // remove from the original events
         events.clear();
-        return Ordering.from(new Comparator<Event>() {
-            @Override
-            public int compare(Event event1, Event event2) {
-                return event1.getTimestamp().compareTo(event2.getTimestamp());
-            }
-        }).sortedCopy(copy);
+        return copy;
     }
 }
