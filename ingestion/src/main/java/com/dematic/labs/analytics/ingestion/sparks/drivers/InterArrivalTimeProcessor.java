@@ -202,7 +202,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 return unprocessedEvents;
             }
             // get the last event timestamp
-            final Long lastEventTime = interArrivalTime.getLastEventTime();
+            final Long lastEventTime = interArrivalTime.getLastEventTime(); //todo: get from state
             // last event is before new events, just return
             if (lastEventTime == null || lastEventTime < unprocessedEvents.get(0).getTimestamp().getMillis()) {
                 return unprocessedEvents;
