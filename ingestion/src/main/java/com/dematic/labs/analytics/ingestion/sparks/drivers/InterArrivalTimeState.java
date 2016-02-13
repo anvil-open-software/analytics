@@ -71,7 +71,9 @@ public final class InterArrivalTimeState implements Serializable {
     }
 
     public List<Event> bufferedInterArrivalTimeEvents() {
-        return copy(events.subList(0, bufferIndex));
+        final List<Event> copy = copy(events.subList(0, bufferIndex));
+        bufferIndex = 0;
+        return copy;
     }
 
     public List<Event> allInterArrivalTimeEvents() {
@@ -80,7 +82,7 @@ public final class InterArrivalTimeState implements Serializable {
 
     private static List<Event> copy(final List<Event> events) {
         final List<Event> copy = Lists.newArrayList(events);
-        // remove from the original events
+        // remove from the original events and reset the index
         events.clear();
         return copy;
     }
