@@ -162,8 +162,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 }
             } else {
                 // all errors
-                LOGGER.error("IAT: all events within batch are errors - errorCount >{}< batchSize >{}<", errorCount,
-                        events.size());
+                LOGGER.error("IAT: all events for node >{}< within batch are errors - errorCount >{}< batchSize >{}<",
+                        nodeId, errorCount, events.size());
             }
 
             // calculate the new lastEventTimeInMillis
