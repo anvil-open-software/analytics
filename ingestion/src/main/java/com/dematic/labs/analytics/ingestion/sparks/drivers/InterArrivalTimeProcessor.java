@@ -9,6 +9,7 @@ import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
+import com.dematic.labs.toolkit.communication.EventUtils;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -161,9 +162,14 @@ public final class InterArrivalTimeProcessor implements Serializable {
                     addToBucket(interArrivalTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
                 }
             } else {
+                
+                final String lastEventTime = savedInterArrivalTime != null &&
+                        savedInterArrivalTime.getLastEventTime() != null ?
+                        EventUtils.dateTime(savedInterArrivalTime.getLastEventTime()).toString() : null;
                 // all errors
-                LOGGER.error("IAT: all events for node >{}< within batch are errors - errorCount >{}< batchSize >{}<",
-                        nodeId, errorCount, events.size());
+                LOGGER.error(String.format("IAT: all events for node >%s< within batch are errors - errorCount >%s< " +
+                        "batchSize >%s< : last saved IAT >%s< and last batched event time >%s<", nodeId, errorCount,
+                        events.size(), lastEventTime, Iterators.getLast(events.iterator()).getTimestamp().toString()));
             }
 
             // calculate the new lastEventTimeInMillis
