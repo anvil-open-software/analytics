@@ -2,7 +2,6 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers;
 
 import com.dematic.labs.toolkit.communication.Event;
 import com.dematic.labs.toolkit.communication.EventUtils;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Ordering;
 import org.joda.time.Seconds;
@@ -77,16 +76,8 @@ public final class InterArrivalTimeState implements Serializable {
         return copy;
     }
 
-    public Long lastBufferedInterArrivalTimeEvent() {
-        return lastEventTime(this.events.subList(0, bufferIndex));
-    }
-
     public List<Event> allInterArrivalTimeEvents() {
         return copy(events);
-    }
-
-    public Long lastAllInterArrivalTimeEvent() {
-        return lastEventTime(events);
     }
 
     private static List<Event> copy(final List<Event> events) {
@@ -94,9 +85,5 @@ public final class InterArrivalTimeState implements Serializable {
         // remove from the original events and reset the index
         events.clear();
         return copy;
-    }
-
-    private static Long lastEventTime(final List<Event> events) {
-        return events == null || events.isEmpty() ? null : Iterables.getLast(events).getTimestamp().getMillis();
     }
 }

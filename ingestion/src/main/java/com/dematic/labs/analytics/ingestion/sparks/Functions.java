@@ -174,7 +174,6 @@ public final class Functions implements Serializable {
                                                                                 final State<InterArrivalTimeState> state) throws Exception {
 
             final InterArrivalTimeState interArrivalTimeState;
-            Long lastEventTime = null;
             if (state.exists()) {
                 // get existing events
                 interArrivalTimeState = state.get();
@@ -183,20 +182,18 @@ public final class Functions implements Serializable {
                 if (timingOut) {
                     // no state has been updated for timeout amount of time, if any events are in the buffer just
                     // return all of them
-                    lastEventTime = interArrivalTimeState.lastAllInterArrivalTimeEvent();
-                    return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId, lastEventTime,
+                    return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId,
                             interArrivalTimeState.allInterArrivalTimeEvents()));
                 }
+
                 // determine if we should remove state
                 if (interArrivalTimeState.removeInterArrivalTimeState()) {
                     state.remove();
-                    lastEventTime = null;
                 } else {
                     // add new events to state
                     interArrivalTimeState.addNewEvents(events.get());
                     interArrivalTimeState.moveBufferIndex(time.milliseconds());
                     state.update(interArrivalTimeState);
-                    lastEventTime = interArrivalTimeState.lastBufferedInterArrivalTimeEvent();
                 }
             } else {
                 // add the initial state
@@ -204,7 +201,7 @@ public final class Functions implements Serializable {
                         Long.valueOf(driverConfig.getBufferTime()), events.get());
                 state.update(interArrivalTimeState);
             }
-            return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId, lastEventTime,
+            return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId,
                     interArrivalTimeState.bufferedInterArrivalTimeEvents()));
         }
     }

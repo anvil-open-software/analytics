@@ -16,6 +16,7 @@ public final class InterArrivalTime implements Serializable {
     private String nodeId;
     private Set<String> buckets;
     private String eventType;
+    private Long lastEventTime;
     private Long errorCount;
     private Long version;
 
@@ -51,6 +52,15 @@ public final class InterArrivalTime implements Serializable {
 
     public void setEventType(final String eventType) {
         this.eventType = eventType;
+    }
+
+    @DynamoDBAttribute
+    public Long getLastEventTime() {
+        return lastEventTime;
+    }
+
+    public void setLastEventTime(final Long lastEventTime) {
+        this.lastEventTime = lastEventTime;
     }
 
     @DynamoDBAttribute
