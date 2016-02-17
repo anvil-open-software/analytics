@@ -54,6 +54,7 @@ public final class InterArrivalTime implements Serializable {
         this.eventType = eventType;
     }
 
+    @DynamoDBAttribute
     public Long getLastEventTime() {
         return lastEventTime;
     }
