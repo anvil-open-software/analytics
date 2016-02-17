@@ -162,6 +162,12 @@ public final class Functions implements Serializable {
     public static final class StatefulEventByNodeFunction implements Function4<Time, String,
             com.google.common.base.Optional<List<Event>>, State<InterArrivalTimeState>,
             com.google.common.base.Optional<InterArrivalTimeStateModel>> {
+        private final DriverConfig driverConfig;
+
+        public StatefulEventByNodeFunction(final DriverConfig driverConfig) {
+            this.driverConfig = driverConfig;
+        }
+
         @Override
         public com.google.common.base.Optional<InterArrivalTimeStateModel> call(final Time time, final String nodeId,
                                                                                 final com.google.common.base.Optional<List<Event>> events,
@@ -190,8 +196,9 @@ public final class Functions implements Serializable {
                     state.update(interArrivalTimeState);
                 }
             } else {
-                // add the initial state, todo: make duration configurable
-                interArrivalTimeState = new InterArrivalTimeState(time.milliseconds(), 20L, events.get());
+                // add the initial state
+                interArrivalTimeState = new InterArrivalTimeState(time.milliseconds(),
+                        Long.valueOf(driverConfig.getBufferTime()), events.get());
                 state.update(interArrivalTimeState);
             }
             return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId,

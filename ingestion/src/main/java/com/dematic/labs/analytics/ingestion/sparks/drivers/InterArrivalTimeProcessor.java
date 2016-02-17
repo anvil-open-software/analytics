@@ -16,6 +16,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
 import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.StateSpec;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -52,6 +53,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
     @SuppressWarnings("unchecked")
     private static final class InterArrivalTimeFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
+
         public InterArrivalTimeFunction(final DriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
@@ -72,12 +74,10 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final JavaPairDStream<String, List<Event>> nodeToEvents =
                     nodeToEventsPairs.reduceByKey((events1, events2) -> Stream.of(events1, events2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
-
-            //todo: make state time out configurable
-            final JavaMapWithStateDStream<String, List<Event>, InterArrivalTimeState, InterArrivalTimeStateModel> mapWithStateDStream =
-                    nodeToEvents.mapWithState(StateSpec.function(
-                            // make timeout config
-                    new Functions.StatefulEventByNodeFunction()).timeout(Durations.seconds(30)));
+            final JavaMapWithStateDStream<String, List<Event>, InterArrivalTimeState, InterArrivalTimeStateModel>
+                    mapWithStateDStream =
+                    nodeToEvents.mapWithState(StateSpec.function(new Functions.StatefulEventByNodeFunction(driverConfig))
+                            .timeout(bufferTimeOut(driverConfig.getBufferTime())));
             mapWithStateDStream.foreachRDD(rdd -> {
                 // list of node id's and buffered events
                 final List<InterArrivalTimeStateModel> collect = rdd.collect();
@@ -91,6 +91,11 @@ public final class InterArrivalTimeProcessor implements Serializable {
                     }
                 });
             });
+        }
+
+        private static Duration bufferTimeOut(final String bufferTime) {
+            // buffer timeout is the same as the buffer time for now, may have to change, need to test
+            return Durations.seconds(Long.valueOf(bufferTime));
         }
 
         private void calculateInterArrivalTime(final String nodeId, final List<Event> events) {
@@ -162,13 +167,13 @@ public final class InterArrivalTimeProcessor implements Serializable {
                     addToBucket(interArrivalTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
                 }
             } else {
-                
+
                 final String lastEventTime = savedInterArrivalTime != null &&
                         savedInterArrivalTime.getLastEventTime() != null ?
                         EventUtils.dateTime(savedInterArrivalTime.getLastEventTime()).toString() : null;
                 // all errors
                 LOGGER.error(String.format("IAT: all events for node >%s< within batch are errors - errorCount >%s< " +
-                        "batchSize >%s< : last saved IAT >%s< and last batched event time >%s<", nodeId, errorCount,
+                                "batchSize >%s< : last saved IAT >%s< and last batched event time >%s<", nodeId, errorCount,
                         events.size(), lastEventTime, Iterators.getLast(events.iterator()).getTimestamp().toString()));
             }
 
@@ -301,10 +306,10 @@ public final class InterArrivalTimeProcessor implements Serializable {
     // functions
     public static void main(final String[] args) {
         // master url is only set for testing or running locally
-        if (args.length < 5) {
+        if (args.length < 6) {
             throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB " +
-                    "Endpoint, optional DynamoDB Prefix, optional driver MasterUrl, driver PollTime, and " +
-                    "MediumInterArrivalTime");
+                    "Endpoint, optional DynamoDB Prefix, optional driver MasterUrl, driver PollTime, " +
+                    "MediumInterArrivalTime, and bufferTime");
         }
         final String kinesisEndpoint = args[0];
         final String kinesisStreamName = args[1];
@@ -313,30 +318,34 @@ public final class InterArrivalTimeProcessor implements Serializable {
         final String masterUrl;
         final String pollTime;
         final String mediumInterArrivalTime;
-        if (args.length == 7) {
+        final String bufferTime;
+        if (args.length == 8) {
             dynamoPrefix = args[3];
             masterUrl = args[4];
             pollTime = args[5];
             mediumInterArrivalTime = args[6];
-        } else if (args.length == 6) {
+            bufferTime = args[7];
+        } else if (args.length == 7) {
             // no master url
             dynamoPrefix = args[3];
             masterUrl = null;
             pollTime = args[4];
             mediumInterArrivalTime = args[5];
+            bufferTime = args[6];
         } else {
             // no prefix or master url
             dynamoPrefix = null;
             masterUrl = null;
             pollTime = args[3];
             mediumInterArrivalTime = args[4];
+            bufferTime = args[5];
         }
 
         final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? INTER_ARRIVAL_TIME_LEASE_TABLE_NAME :
                 String.format("%s%s", dynamoPrefix, INTER_ARRIVAL_TIME_LEASE_TABLE_NAME);
         // create the driver configuration and checkpoint dir
         final DriverConfig driverConfig = configure(appName, kinesisEndpoint, kinesisStreamName, dynamoDBEndpoint,
-                dynamoPrefix, masterUrl, pollTime, mediumInterArrivalTime);
+                dynamoPrefix, masterUrl, pollTime, mediumInterArrivalTime, bufferTime);
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // create the table, if it does not exist
         createDynamoTable(driverConfig.getDynamoDBEndpoint(), InterArrivalTime.class, driverConfig.getDynamoPrefix());
@@ -355,7 +364,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
     private static DriverConfig configure(final String appName, final String kinesisEndpoint,
                                           final String kinesisStreamName, final String dynamoDBEndpoint,
                                           final String dynamoPrefix, final String masterUrl, final String pollTime,
-                                          final String mediumInterArrivalTime) {
+                                          final String mediumInterArrivalTime, final String bufferTime) {
         return GenericBuilder.of(DriverConfig::new)
                 .with(DriverConfig::setAppName, appName)
                 .with(DriverConfig::setKinesisEndpoint, kinesisEndpoint)
@@ -365,6 +374,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                 .with(DriverConfig::setMasterUrl, masterUrl)
                 .with(DriverConfig::setPollTime, pollTime)
                 .with(DriverConfig::setMediumInterArrivalTime, mediumInterArrivalTime)
+                .with(DriverConfig::setBufferTime, bufferTime)
                 .build();
     }
 }
