@@ -31,6 +31,7 @@ public final class DriverConfig implements Serializable {
     private TimeUnit timeUnit;
 
     private String mediumInterArrivalTime;
+    private String bufferTime;
 
     private String checkPointDir;
 
@@ -101,6 +102,10 @@ public final class DriverConfig implements Serializable {
         return mediumInterArrivalTime;
     }
 
+    public String getBufferTime() {
+        return bufferTime;
+    }
+
     public String getCheckPointDir() {
         return checkPointDir;
     }
@@ -141,6 +146,10 @@ public final class DriverConfig implements Serializable {
         this.mediumInterArrivalTime = mediumInterArrivalTime;
     }
 
+    public void setBufferTime(String bufferTime) {
+        this.bufferTime = bufferTime;
+    }
+
     public void setCheckPointDir(final String checkPointDir) {
         this.checkPointDir = checkPointDir;
     }
@@ -169,6 +178,7 @@ public final class DriverConfig implements Serializable {
                 ", pollTime=" + pollTime +
                 ", timeUnit=" + timeUnit +
                 ", mediumInterArrivalTime='" + mediumInterArrivalTime + '\'' +
+                ", bufferTime='" + bufferTime + '\'' +
                 ", checkPointDir='" + checkPointDir + '\'' +
                 '}';
     }
