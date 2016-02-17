@@ -9,6 +9,7 @@ import com.dematic.labs.toolkit.communication.Event;
 import java.util.Optional;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.Function2;
@@ -174,6 +175,7 @@ public final class Functions implements Serializable {
                                                                                 final State<InterArrivalTimeState> state) throws Exception {
 
             final InterArrivalTimeState interArrivalTimeState;
+            Long lastEventTime = null;
             if (state.exists()) {
                 // get existing events
                 interArrivalTimeState = state.get();
@@ -182,18 +184,20 @@ public final class Functions implements Serializable {
                 if (timingOut) {
                     // no state has been updated for timeout amount of time, if any events are in the buffer just
                     // return all of them
-                    return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId,
+                    lastEventTime = lastEventTime(interArrivalTimeState.allInterArrivalTimeEvents());
+                    return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId, lastEventTime,
                             interArrivalTimeState.allInterArrivalTimeEvents()));
                 }
-
                 // determine if we should remove state
                 if (interArrivalTimeState.removeInterArrivalTimeState()) {
                     state.remove();
+                    lastEventTime = null;
                 } else {
                     // add new events to state
                     interArrivalTimeState.addNewEvents(events.get());
                     interArrivalTimeState.moveBufferIndex(time.milliseconds());
                     state.update(interArrivalTimeState);
+                    lastEventTime = lastEventTime(interArrivalTimeState.bufferedInterArrivalTimeEvents());
                 }
             } else {
                 // add the initial state
@@ -201,8 +205,12 @@ public final class Functions implements Serializable {
                         Long.valueOf(driverConfig.getBufferTime()), events.get());
                 state.update(interArrivalTimeState);
             }
-            return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId,
+            return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId, lastEventTime,
                     interArrivalTimeState.bufferedInterArrivalTimeEvents()));
         }
+    }
+
+    private static long lastEventTime(final List<Event> events) {
+        return Iterables.getLast(events).getTimestamp().getMillis();
     }
 }
