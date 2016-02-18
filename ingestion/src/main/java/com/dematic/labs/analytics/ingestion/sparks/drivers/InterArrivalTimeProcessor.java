@@ -9,7 +9,6 @@ import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
-import com.dematic.labs.toolkit.communication.EventUtils;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -43,6 +42,7 @@ import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTim
 import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeUtils.findInterArrivalTime;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
+import static com.dematic.labs.toolkit.communication.EventUtils.dateTime;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 public final class InterArrivalTimeProcessor implements Serializable {
@@ -167,10 +167,9 @@ public final class InterArrivalTimeProcessor implements Serializable {
                     addToBucket(interArrivalTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
                 }
             } else {
-
                 final String lastEventTime = savedInterArrivalTime != null &&
                         savedInterArrivalTime.getLastEventTime() != null ?
-                        EventUtils.dateTime(savedInterArrivalTime.getLastEventTime()).toString() : null;
+                        dateTime(savedInterArrivalTime.getLastEventTime()).toString() : null;
                 // all errors
                 LOGGER.error(String.format("IAT: all events for node >%s< within batch are errors - errorCount >%s< " +
                                 "batchSize >%s< : last saved IAT >%s< and last batched event time >%s<", nodeId, errorCount,
@@ -223,6 +222,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
                     .filter(event -> lastEventTime < event.getTimestamp().getMillis()).findFirst();
 
             if (firstUnprocessedEvent.isPresent()) {
+                LOGGER.error("IAT: unprocessed events : event time >{}< last event time >{}<",
+                        dateTime(firstUnprocessedEvent.get().getTimestamp().getMillis()), dateTime(lastEventTime));
                 // remove from the list all events that should have been processed, these are errors
                 return unprocessedEvents.subList(unprocessedEvents.indexOf(firstUnprocessedEvent.get()),
                         unprocessedEvents.size());
