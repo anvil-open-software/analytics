@@ -112,7 +112,9 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final List<Event> eventsWithoutErrors = errorChecker(events, savedInterArrivalTime);
             // calculate errors
             long errorCount = events.size() - eventsWithoutErrors.size();
-
+            if (errorCount > 0) {
+                LOGGER.error("IAT: node >{}< : errorCount >{}< : events size >{}<", nodeId, errorCount, events.size());
+            }
             if (eventsWithoutErrors.size() > 1) {
                 // 1) calculate the IAT between batches, if events have been processed already
                 if (savedInterArrivalTime != null) {
@@ -222,8 +224,9 @@ public final class InterArrivalTimeProcessor implements Serializable {
                     .filter(event -> lastEventTime < event.getTimestamp().getMillis()).findFirst();
 
             if (firstUnprocessedEvent.isPresent()) {
-                LOGGER.error("IAT: unprocessed events : event time >{}< last event time >{}<",
-                        dateTime(firstUnprocessedEvent.get().getTimestamp().getMillis()), dateTime(lastEventTime));
+                LOGGER.error("IAT: unprocessed events : first event time >{}< last event time >{}<",
+                        dateTime(unprocessedEvents.get(0).getTimestamp().getMillis()), dateTime(lastEventTime));
+
                 // remove from the list all events that should have been processed, these are errors
                 return unprocessedEvents.subList(unprocessedEvents.indexOf(firstUnprocessedEvent.get()),
                         unprocessedEvents.size());
