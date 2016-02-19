@@ -81,7 +81,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
             mapWithStateDStream.foreachRDD(rdd -> {
                 // list of node id's and buffered events
                 final List<InterArrivalTimeStateModel> collect = rdd.collect();
-                collect.forEach(eventsByNode -> {
+                collect.parallelStream().forEach(eventsByNode -> {
                     final List<Event> events = eventsByNode.getEvents();
                     if (!events.isEmpty()) {
                         LOGGER.info("IAT: calculating for node {} : event size {}", eventsByNode.getNodeId(),
