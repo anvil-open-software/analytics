@@ -4,6 +4,7 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionIn
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeStateModel;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeState;
+import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.toolkit.communication.Event;
 
 import java.util.Optional;
@@ -158,7 +159,6 @@ public final class Functions implements Serializable {
         }
     }
 
-    // todo: try to come up with a better Optional solution
     public static final class StatefulEventByNodeFunction implements Function4<Time, String,
             com.google.common.base.Optional<List<Event>>, State<InterArrivalTimeState>,
             com.google.common.base.Optional<InterArrivalTimeStateModel>> {
@@ -173,6 +173,7 @@ public final class Functions implements Serializable {
                                                                                 final com.google.common.base.Optional<List<Event>> events,
                                                                                 final State<InterArrivalTimeState> state) throws Exception {
 
+            // keeps the buffered events
             final InterArrivalTimeState interArrivalTimeState;
             if (state.exists()) {
                 // get existing events
@@ -182,8 +183,10 @@ public final class Functions implements Serializable {
                 if (timingOut) {
                     // no state has been updated for timeout amount of time, if any events are in the buffer just
                     // return all of them
-                    return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId,
-                            interArrivalTimeState.allInterArrivalTimeEvents()));
+                     return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(
+                             interArrivalTimeState.getInterArrivalTime(),
+                             interArrivalTimeState.allInterArrivalTimeEvents(),
+                             interArrivalTimeState.getLastEventTime(), driverConfig.getMediumInterArrivalTime()));
                 }
 
                 // determine if we should remove state
@@ -198,11 +201,13 @@ public final class Functions implements Serializable {
             } else {
                 // add the initial state
                 interArrivalTimeState = new InterArrivalTimeState(time.milliseconds(),
-                        Long.valueOf(driverConfig.getBufferTime()), events.get());
+                        Long.valueOf(driverConfig.getBufferTime()), new InterArrivalTime(nodeId), events.get(), null);
                 state.update(interArrivalTimeState);
             }
-            return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(nodeId,
-                    interArrivalTimeState.bufferedInterArrivalTimeEvents()));
+            // todo: just return the IAT and compute here
+            return com.google.common.base.Optional.of(new InterArrivalTimeStateModel(
+                    interArrivalTimeState.getInterArrivalTime(), interArrivalTimeState.bufferedInterArrivalTimeEvents(),
+                    interArrivalTimeState.getLastEventTime(), driverConfig.getMediumInterArrivalTime()));
         }
     }
 }

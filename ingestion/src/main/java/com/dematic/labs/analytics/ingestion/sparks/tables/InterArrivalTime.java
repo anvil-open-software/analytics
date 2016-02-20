@@ -3,7 +3,6 @@ package com.dematic.labs.analytics.ingestion.sparks.tables;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBVersionAttribute;
 
 import java.io.Serializable;
 import java.util.Set;
@@ -16,9 +15,7 @@ public final class InterArrivalTime implements Serializable {
     private String nodeId;
     private Set<String> buckets;
     private String eventType;
-    private Long lastEventTime;
     private Long errorCount;
-    private Long version;
 
     public InterArrivalTime() {
     }
@@ -55,29 +52,21 @@ public final class InterArrivalTime implements Serializable {
     }
 
     @DynamoDBAttribute
-    public Long getLastEventTime() {
-        return lastEventTime;
-    }
-
-    public void setLastEventTime(final Long lastEventTime) {
-        this.lastEventTime = lastEventTime;
-    }
-
-    @DynamoDBAttribute
     public Long getErrorCount() {
-        return errorCount;
+        return errorCount == null ? 0 : errorCount;
     }
 
     public void setErrorCount(final Long errorCount) {
         this.errorCount = errorCount;
     }
 
-    @DynamoDBVersionAttribute
-    public Long getVersion() {
-        return version;
-    }
-
-    public void setVersion(final Long version) {
-        this.version = version;
+    @Override
+    public String toString() {
+        return "InterArrivalTime{" +
+                "nodeId='" + nodeId + '\'' +
+                ", buckets=" + buckets +
+                ", eventType='" + eventType + '\'' +
+                ", errorCount=" + errorCount +
+                '}';
     }
 }

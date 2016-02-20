@@ -1,6 +1,7 @@
 package com.dematic.labs.analytics.ingestion.drivers;
 
 import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeState;
+import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.toolkit.communication.Event;
 import org.junit.Test;
 
@@ -14,7 +15,8 @@ public final class InterArrivalTimeStateTest {
     public void InterArrivalTimeStateWorkflow() {
         // 1) create events with 5 seconds between events and add to state, set a buffer time of 20 seconds
         final InterArrivalTimeState state =
-                new InterArrivalTimeState(now().getMillis(), 20L, generateEvents(100, "node1", 5));
+                new InterArrivalTimeState(now().getMillis(), 20L, new InterArrivalTime("node1"),
+                        generateEvents(100, "node1", 5), null);
         // 2) move the buffer past the configured buffer time
         state.moveBufferIndex(now().plusSeconds(21).getMillis());
         // 3) get the buffered events without removing the state, should only contain 3 events because we only return
