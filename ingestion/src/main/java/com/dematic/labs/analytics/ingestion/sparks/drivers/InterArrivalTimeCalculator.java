@@ -10,38 +10,27 @@ import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket.toInterArrivalTimeBucket;
 import static com.dematic.labs.toolkit.communication.EventUtils.dateTime;
-import static java.lang.Integer.valueOf;
 
-public final class InterArrivalTimeStateModel implements Serializable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(InterArrivalTimeStateModel.class);
+public final class InterArrivalTimeCalculator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(InterArrivalTimeCalculator.class);
 
-    private final InterArrivalTime interArrivalTime;
-
-    public InterArrivalTimeStateModel(final InterArrivalTime interArrivalTime, final List<Event> events,
-                                      final Long lastEventTime, final String mediumInterArrivalTime) {
-        this.interArrivalTime = interArrivalTime;
-        computeInterArrivalTime(interArrivalTime, createBuckets(valueOf(mediumInterArrivalTime)), events,
-                lastEventTime);
+    private InterArrivalTimeCalculator() {
     }
 
-    public InterArrivalTime getInterArrivalTime() {
-        return interArrivalTime;
-    }
-
-    private static void computeInterArrivalTime(final InterArrivalTime interArrivalTime,
-                                                            final List<InterArrivalTimeBucket> buckets,
-                                                            final List<Event> events,
-                                                            final Long lastEventTime) {
+    public static void computeInterArrivalTime(final InterArrivalTime interArrivalTime,
+                                               final List<Event> events,
+                                               final Long lastEventTime, final int avgInterArrivalTime) {
         if (events == null || events.isEmpty()) {
             return;
         }
+        // create the buckets
+        final List<InterArrivalTimeBucket> buckets = createBuckets(avgInterArrivalTime);
 
         // remove and count all errors, that is, events that should have been processed with the last batch
         final List<Event> eventsWithoutErrors = errorChecker(events, lastEventTime);
@@ -117,7 +106,7 @@ public final class InterArrivalTimeStateModel implements Serializable {
         interArrivalTime.setErrorCount(existingErrorCount + errorCount);
         // set the buckets
         final Set<String> existingBuckets = interArrivalTime.getBuckets();
-        if (existingBuckets== null || existingBuckets.isEmpty()) {
+        if (existingBuckets == null || existingBuckets.isEmpty()) {
             final Set<String> bucketsString = Sets.newHashSet();
             buckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
             interArrivalTime.setBuckets(bucketsString);
@@ -145,7 +134,6 @@ public final class InterArrivalTimeStateModel implements Serializable {
             final Set<String> bucketsString = Sets.newHashSet();
             updatedBuckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
             interArrivalTime.setBuckets(bucketsString);
-
         }
     }
 

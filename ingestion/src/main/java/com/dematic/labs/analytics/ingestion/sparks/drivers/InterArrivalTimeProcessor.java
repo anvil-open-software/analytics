@@ -24,7 +24,11 @@ import scala.Tuple2;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Spliterator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -67,7 +71,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final JavaPairDStream<String, List<Event>> nodeToEvents =
                     nodeToEventsPairs.reduceByKey((events1, events2) -> Stream.of(events1, events2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
-            final JavaMapWithStateDStream<String, List<Event>, InterArrivalTimeState, InterArrivalTimeStateModel>
+            final JavaMapWithStateDStream<String, List<Event>, InterArrivalTimeState, InterArrivalTime>
                     mapWithStateDStream = nodeToEvents.mapWithState(
                     StateSpec.function(new Functions.StatefulEventByNodeFunction(driverConfig))
                             .timeout(bufferTimeOut(driverConfig.getBufferTime())));
@@ -75,9 +79,9 @@ public final class InterArrivalTimeProcessor implements Serializable {
             mapWithStateDStream.foreachRDD(rdd -> {
                 rdd.foreachPartition(partition -> {
 
-                    final List<InterArrivalTimeStateModel> collect = stream(spliteratorUnknownSize(partition,
+                    final List<InterArrivalTime> collect = stream(spliteratorUnknownSize(partition,
                             Spliterator.CONCURRENT), true)
-                            .collect(Collectors.<InterArrivalTimeStateModel>toList());
+                            .collect(Collectors.<InterArrivalTime>toList());
 
                     // just add a flag to be able to turn off reads and writes
                     boolean skipDynamoDBwrite =
@@ -85,13 +89,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
                     if (!skipDynamoDBwrite && !collect.isEmpty()) {
                         writeInterArrivalTimeStateModel(collect, driverConfig);
                     } else {
-                        collect.parallelStream().forEach(interArrivalTimeStateModel -> {
-                            final InterArrivalTime interArrivalTime =
-                                    interArrivalTimeStateModel.getInterArrivalTime();
-                            if (interArrivalTime != null) {
-                                LOGGER.info("IAT: >{}<", interArrivalTime);
-                            }
-                        });
+                        collect.parallelStream()
+                                .forEach(interArrivalTime -> LOGGER.info("IAT: >{}<", interArrivalTime));
                     }
                 });
             });
@@ -102,16 +101,17 @@ public final class InterArrivalTimeProcessor implements Serializable {
             return Durations.seconds(Long.valueOf(bufferTime));
         }
 
-        private static void writeInterArrivalTimeStateModel(final List<InterArrivalTimeStateModel> stateModels,
+        private static void writeInterArrivalTimeStateModel(final List<InterArrivalTime> interArrivalTimes,
                                                             final DriverConfig driverConfig) {
             final AmazonDynamoDBClient dynamoDBClient = getAmazonDynamoDBClient(driverConfig.getDynamoDBEndpoint());
             final DynamoDBMapper dynamoDBMapper = Strings.isNullOrEmpty(driverConfig.getDynamoPrefix()) ?
                     new DynamoDBMapper(dynamoDBClient) : new DynamoDBMapper(dynamoDBClient,
                     new DynamoDBMapperConfig(withTableNamePrefix(driverConfig.getDynamoPrefix())));
 
-            final List<InterArrivalTime> collect = stateModels.stream()
-                    .map(InterArrivalTimeStateModel::getInterArrivalTime).filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+            // remove any null's
+            final List<InterArrivalTime> collect =
+                    interArrivalTimes.stream().filter(Objects::nonNull).collect(Collectors.toList());
+
             if (!collect.isEmpty()) {
                 final List<DynamoDBMapper.FailedBatch> failedBatches = dynamoDBMapper.batchSave(collect);
                 failedBatches.parallelStream().forEach(failedBatch -> {
