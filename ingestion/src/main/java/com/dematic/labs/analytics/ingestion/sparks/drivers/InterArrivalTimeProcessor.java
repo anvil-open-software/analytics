@@ -24,7 +24,11 @@ import scala.Tuple2;
 
 import java.io.Serializable;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Spliterator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -85,9 +89,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
                     if (!skipDynamoDBwrite && !collect.isEmpty()) {
                         writeInterArrivalTimeStateModel(collect, driverConfig);
                     } else {
-                        collect.parallelStream().forEach(interArrivalTime -> {
-                            LOGGER.info("IAT: >{}<", interArrivalTime);
-                        });
+                        collect.parallelStream()
+                                .forEach(interArrivalTime -> LOGGER.info("IAT: >{}<", interArrivalTime));
                     }
                 });
             });
