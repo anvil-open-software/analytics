@@ -203,7 +203,6 @@ public final class Functions implements Serializable {
                         Long.valueOf(driverConfig.getBufferTime()), new InterArrivalTime(nodeId), events.get(), null);
                 state.update(interArrivalTimeState);
             }
-
             return com.google.common.base.Optional.of(calculatedInterArrivalTime(interArrivalTimeState, true,
                     driverConfig.getMediumInterArrivalTime()));
         }
