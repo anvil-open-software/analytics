@@ -79,7 +79,7 @@ public final class InterArrivalTimeCalculator {
             // calculate the inter-arrival time from the last event in dynamoDB
             if (lastEventTime == null) {
                 // if only 1 event and either no last last event time, just log
-                LOGGER.info("IAT: no previous event to calculate IAT for event {} and nodeId >{}<",
+                LOGGER.debug("IAT: no previous event to calculate IAT for event {} and nodeId >{}<",
                         singleEvent.toString(), interArrivalTime.getNodeId());
             } else if (interArrivalTimeBetweenBatches(lastEventTime, eventsWithoutErrors) == -1) {
                 // last event time is >, then current event, just add to the error count
