@@ -90,7 +90,9 @@ public final class InterArrivalTimeProcessor implements Serializable {
                         writeInterArrivalTimeStateModel(collect, driverConfig);
                     } else {
                         collect.parallelStream()
-                                .forEach(interArrivalTime -> LOGGER.info("IAT: >{}<", interArrivalTime));
+                                .forEach(interArrivalTime -> {
+                                   // LOGGER.info("IAT: >{}<", interArrivalTime);
+                                });
                     }
                 });
             });
@@ -118,7 +120,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                     // for now, not going to retry, just going to log the exception, the next time spark processes a
                     // batch the IAT will be saved. That is, all IAT calculations are saved in spark state, nothing will
                     // get lost unless there is a jvm crash, this still needs to be worked out
-                 //   LOGGER.error("IAT: unprocessed IAT's", failedBatch.getException());
+                    LOGGER.error("IAT: unprocessed IAT's", failedBatch.getException());
                 });
             }
         }
