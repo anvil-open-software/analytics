@@ -41,7 +41,7 @@ import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
-//
+
 public final class InterArrivalTimeProcessor implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(InterArrivalTimeProcessor.class);
     public static final String INTER_ARRIVAL_TIME_LEASE_TABLE_NAME = TABLE_NAME + "_LT";
@@ -90,9 +90,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                         writeInterArrivalTimeStateModel(collect, driverConfig);
                     } else {
                         collect.parallelStream()
-                                .forEach(interArrivalTime -> {
-                                   // LOGGER.info("IAT: >{}<", interArrivalTime);
-                                });
+                                .forEach(interArrivalTime -> LOGGER.debug("IAT: >{}<", interArrivalTime));
                     }
                 });
             });
