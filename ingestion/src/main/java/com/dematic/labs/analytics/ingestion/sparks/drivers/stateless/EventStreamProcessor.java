@@ -1,4 +1,4 @@
-package com.dematic.labs.analytics.ingestion.sparks.drivers;
+package com.dematic.labs.analytics.ingestion.sparks.drivers.stateless;
 
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import org.apache.spark.streaming.api.java.JavaDStream;

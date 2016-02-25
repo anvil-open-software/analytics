@@ -1,8 +1,8 @@
-package com.dematic.labs.analytics.ingestion.sparks.drivers;
+package com.dematic.labs.analytics.ingestion.sparks.drivers.stateless;
 
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
-import com.dematic.labs.analytics.ingestion.sparks.Functions.AggregateEventToBucketFunction;
-import com.dematic.labs.analytics.ingestion.sparks.Functions.CreateStreamingContextFunction;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.Functions.AggregateEventToBucketFunction;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.Functions.CreateStreamingContextFunction;
 import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
 import com.dematic.labs.toolkit.communication.Event;
 import org.apache.spark.api.java.JavaRDD;
@@ -19,7 +19,7 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import static com.dematic.labs.analytics.ingestion.sparks.Functions.SUM_REDUCER;
+import static com.dematic.labs.analytics.ingestion.sparks.drivers.Functions.SUM_REDUCER;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 /**

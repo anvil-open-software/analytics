@@ -4,7 +4,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.dematic.labs.analytics.common.sparks.DriverConsts;
-import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeProcessor;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.InterArrivalTimeProcessor;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
 import com.dematic.labs.toolkit.SystemPropertyRule;
@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
-import static com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeProcessor.INTER_ARRIVAL_TIME_LEASE_TABLE_NAME;
+import static com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.InterArrivalTimeProcessor.INTER_ARRIVAL_TIME_LEASE_TABLE_NAME;
 import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeUtils.findInterArrivalTime;
 import static com.dematic.labs.toolkit.aws.Connections.deleteDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;

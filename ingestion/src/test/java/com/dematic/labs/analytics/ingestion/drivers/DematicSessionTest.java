@@ -6,7 +6,7 @@ import com.dematic.labs.analytics.common.sparks.DriverUtils;
 import org.apache.spark.streaming.Duration;
 import org.junit.Test;
 
-import static com.dematic.labs.analytics.ingestion.sparks.drivers.EventStreamAggregator.EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME;
+import static com.dematic.labs.analytics.ingestion.sparks.drivers.stateless.EventStreamAggregator.EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 

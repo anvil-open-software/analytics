@@ -1,11 +1,11 @@
-package com.dematic.labs.analytics.ingestion.sparks.drivers;
+package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.dematic.labs.analytics.common.sparks.DriverConfig;
 import com.dematic.labs.analytics.common.sparks.DriverConsts;
-import com.dematic.labs.analytics.ingestion.sparks.Functions;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.Functions.StatefulEventByNodeFunction;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
-import static com.dematic.labs.analytics.ingestion.sparks.Functions.CreateStreamingContextFunction;
+import static com.dematic.labs.analytics.ingestion.sparks.drivers.Functions.CreateStreamingContextFunction;
 import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime.TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
@@ -73,7 +73,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                             .flatMap(Collection::stream).collect(Collectors.toList()));
             final JavaMapWithStateDStream<String, List<Event>, InterArrivalTimeState, InterArrivalTime>
                     mapWithStateDStream = nodeToEvents.mapWithState(
-                    StateSpec.function(new Functions.StatefulEventByNodeFunction(driverConfig))
+                    StateSpec.function(new StatefulEventByNodeFunction(driverConfig))
                             .timeout(bufferTimeOut(driverConfig.getBufferTime())));
 
             mapWithStateDStream.foreachRDD(rdd -> {
