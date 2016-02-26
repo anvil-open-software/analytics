@@ -19,7 +19,7 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import static com.dematic.labs.analytics.ingestion.sparks.drivers.AggregateFunctions.SUM_REDUCER;
+import static com.dematic.labs.analytics.common.spark.CalculateFunctions.*;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 /**

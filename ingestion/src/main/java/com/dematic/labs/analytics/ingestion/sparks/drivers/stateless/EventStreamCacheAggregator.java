@@ -27,8 +27,8 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
+import static com.dematic.labs.analytics.common.spark.CalculateFunctions.*;
 import static com.dematic.labs.analytics.ingestion.sparks.drivers.stateless.AggregationDriverUtils.createOrUpdateDynamoDBBucket;
-import static com.dematic.labs.analytics.ingestion.sparks.drivers.AggregateFunctions.SUM_REDUCER;
 import static com.dematic.labs.toolkit.aws.Connections.*;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
