@@ -24,8 +24,8 @@ import java.util.Spliterator;
 import java.util.stream.Collectors;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
-import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
-import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
+import static com.dematic.labs.analytics.common.spark.DriverUtils.getJavaDStream;
+import static com.dematic.labs.analytics.common.spark.DriverUtils.getStreamingContext;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;

@@ -1,6 +1,6 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
-import com.dematic.labs.analytics.common.sparks.DriverConfig;
+import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Optional;
@@ -13,21 +13,23 @@ import java.util.List;
 import static com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.InterArrivalTimeCalculator.computeInterArrivalTime;
 import static java.lang.Integer.valueOf;
 
-public class Functions {
+public final class InterArrivalTimeFunctions {
+    private InterArrivalTimeFunctions() {
+    }
 
-    public static final class StatefulEventByNodeFunction implements Function4<Time, String,
+    public static final class EventByNodeFunction implements Function4<Time, String,
             Optional<List<Event>>, State<InterArrivalTimeState>,
             Optional<InterArrivalTime>> {
         private final DriverConfig driverConfig;
 
-        public StatefulEventByNodeFunction(final DriverConfig driverConfig) {
+        public EventByNodeFunction(final DriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 
         @Override
         public Optional<InterArrivalTime> call(final Time time, final String nodeId,
-                                                                      final Optional<List<Event>> events,
-                                                                      final State<InterArrivalTimeState> state) throws Exception {
+                                               final Optional<List<Event>> events,
+                                               final State<InterArrivalTimeState> state) throws Exception {
 
             // keeps the buffered events
             final InterArrivalTimeState interArrivalTimeState;

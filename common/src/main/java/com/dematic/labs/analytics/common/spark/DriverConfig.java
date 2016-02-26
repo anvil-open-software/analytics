@@ -1,4 +1,4 @@
-package com.dematic.labs.analytics.common.sparks;
+package com.dematic.labs.analytics.common.spark;
 
 import com.google.common.base.Strings;
 import org.apache.spark.streaming.Duration;

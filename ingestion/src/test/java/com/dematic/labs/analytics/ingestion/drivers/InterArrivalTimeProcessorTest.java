@@ -3,7 +3,7 @@ package com.dematic.labs.analytics.ingestion.drivers;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
-import com.dematic.labs.analytics.common.sparks.DriverConsts;
+import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.InterArrivalTimeProcessor;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;

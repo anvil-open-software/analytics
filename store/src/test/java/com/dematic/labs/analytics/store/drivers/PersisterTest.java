@@ -23,8 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNameReplacement;
-import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
-import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
+import static com.dematic.labs.analytics.common.spark.DriverUtils.getJavaDStream;
+import static com.dematic.labs.analytics.common.spark.DriverUtils.getStreamingContext;
 import static com.dematic.labs.analytics.store.sparks.drivers.Persister.RAW_EVENT_LEASE_TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.*;
 import static com.dematic.labs.toolkit.communication.EventUtils.generateEvents;

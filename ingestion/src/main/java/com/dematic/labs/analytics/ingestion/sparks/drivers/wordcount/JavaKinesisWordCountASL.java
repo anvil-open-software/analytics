@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import com.amazonaws.regions.RegionUtils;
-import com.dematic.labs.analytics.common.sparks.DriverConsts;
+import com.dematic.labs.analytics.common.spark.DriverConsts;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.FlatMapFunction;

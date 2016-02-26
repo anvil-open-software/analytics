@@ -1,71 +1,26 @@
-package com.dematic.labs.analytics.ingestion.sparks.drivers;
+package com.dematic.labs.analytics.common.spark;
 
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
-import com.dematic.labs.analytics.common.sparks.DriverConfig;
-import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function0;
-import org.apache.spark.api.java.function.Function2;
-import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
-import scala.Tuple2;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
-import static com.dematic.labs.analytics.common.sparks.DriverUtils.getKinesisCheckpointWindow;
+import static com.dematic.labs.analytics.common.spark.DriverUtils.getKinesisCheckpointWindow;
 import static com.dematic.labs.toolkit.aws.Connections.getNumberOfShards;
 
-@SuppressWarnings("unused")
-public final class Functions implements Serializable {
-    private Functions() {
+public final class StreamFunctions {
+    private StreamFunctions() {
     }
 
-    // Lambda Functions
-    public static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
-
-    public static Function2<List<Long>, Optional<Long>, Optional<Long>> COMPUTE_RUNNING_SUM
-            = (nums, existing) -> {
-        long sum = existing.orElse(0L);
-        for (long i : nums) {
-            sum += i;
-        }
-        return Optional.of(sum);
-    };
-
-    public static Function2<Tuple2<Double, Long>, Tuple2<Double, Long>, Tuple2<Double, Long>> SUM_AND_COUNT_REDUCER
-            = (x, y) -> new Tuple2<>(x._1() + y._1(), x._2() + y._2());
-
-    public static Function2<List<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>>
-            COMPUTE_RUNNING_AVG = (sums, existing) -> {
-        Tuple2<Double, Long> avgAndCount = existing.orElse(new Tuple2<>(0.0, 0L));
-
-        for (final Tuple2<Double, Long> sumAndCount : sums) {
-            final double avg = avgAndCount._1();
-            final long avgCount = avgAndCount._2();
-
-            final double sum = sumAndCount._1();
-            final long sumCount = sumAndCount._2();
-
-            final Long countTotal = avgCount + sumCount;
-            final Double newAvg = ((avgCount * avg) + (sumCount * sum / sumCount)) / countTotal;
-
-            avgAndCount = new Tuple2<>(newAvg, countTotal);
-        }
-        return Optional.of(avgAndCount);
-    };
-
-    // Overridden Functions
-
-    // creation functions
+    // create stream function
     public static final class CreateDStreamFunction implements Function0<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
         private final JavaStreamingContext streamingContext;
@@ -131,23 +86,6 @@ public final class Functions implements Serializable {
             streamingContext.checkpoint(driverConfig.getCheckPointDir());
             // return the streaming context
             return streamingContext;
-        }
-    }
-
-    // driver functions
-    public static final class AggregateEventToBucketFunction implements PairFunction<Event, String, Long> {
-        private final TimeUnit timeUnit;
-
-        public AggregateEventToBucketFunction(final TimeUnit timeUnit) {
-            this.timeUnit = timeUnit;
-        }
-
-        @Override
-        public Tuple2<String, Long> call(final Event event) throws Exception {
-            // Downsampling: where we reduce the event’s ISO 8601 timestamp down to timeUnit precision,
-            // so for instance “2015-06-05T12:54:43.064528” becomes “2015-06-05T12:54:00.000000” for minute.
-            // This downsampling gives us a fast way of bucketing or aggregating events via this downsampled key
-            return new Tuple2<>(event.aggregateBy(timeUnit), 1L);
         }
     }
 }

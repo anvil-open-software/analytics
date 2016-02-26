@@ -45,8 +45,8 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
-import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
-import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
+import static com.dematic.labs.analytics.common.spark.DriverUtils.getJavaDStream;
+import static com.dematic.labs.analytics.common.spark.DriverUtils.getStreamingContext;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 import static com.dematic.labs.toolkit.communication.EventUtils.nowString;

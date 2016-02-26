@@ -1,6 +1,6 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers.stateless;
 
-import com.dematic.labs.analytics.common.sparks.DriverConfig;
+import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;

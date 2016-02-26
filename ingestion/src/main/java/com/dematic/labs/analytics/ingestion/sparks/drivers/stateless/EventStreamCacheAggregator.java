@@ -4,9 +4,9 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.util.StringUtils;
-import com.dematic.labs.analytics.common.sparks.DriverConfig;
-import com.dematic.labs.analytics.ingestion.sparks.drivers.Functions.AggregateEventToBucketFunction;
-import com.dematic.labs.analytics.ingestion.sparks.drivers.Functions.CreateStreamingContextFunction;
+import com.dematic.labs.analytics.common.spark.DriverConfig;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.AggregateFunctions.AggregateEventToBucketFunction;
+import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContextFunction;
 import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Strings;
@@ -28,7 +28,7 @@ import java.util.List;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
 import static com.dematic.labs.analytics.ingestion.sparks.drivers.stateless.AggregationDriverUtils.createOrUpdateDynamoDBBucket;
-import static com.dematic.labs.analytics.ingestion.sparks.drivers.Functions.SUM_REDUCER;
+import static com.dematic.labs.analytics.ingestion.sparks.drivers.AggregateFunctions.SUM_REDUCER;
 import static com.dematic.labs.toolkit.aws.Connections.*;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 

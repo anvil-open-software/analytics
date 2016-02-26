@@ -1,8 +1,8 @@
 package com.dematic.labs.analytics.ingestion.drivers;
 
-import com.dematic.labs.analytics.common.sparks.DriverConfig;
-import com.dematic.labs.analytics.common.sparks.DriverConsts;
-import com.dematic.labs.analytics.common.sparks.DriverUtils;
+import com.dematic.labs.analytics.common.spark.DriverConfig;
+import com.dematic.labs.analytics.common.spark.DriverConsts;
+import com.dematic.labs.analytics.common.spark.DriverUtils;
 import org.apache.spark.streaming.Duration;
 import org.junit.Test;
 
