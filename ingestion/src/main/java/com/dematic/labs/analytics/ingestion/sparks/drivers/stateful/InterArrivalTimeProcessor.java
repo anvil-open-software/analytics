@@ -71,6 +71,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final JavaPairDStream<String, List<Event>> nodeToEvents =
                     nodeToEventsPairs.reduceByKey((events1, events2) -> Stream.of(events1, events2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
+
             final JavaMapWithStateDStream<String, List<Event>, InterArrivalTimeState, InterArrivalTime>
                     mapWithStateDStream = nodeToEvents.mapWithState(
                     StateSpec.function(new EventByNodeFunction(driverConfig))

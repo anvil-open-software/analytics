@@ -30,7 +30,6 @@ public final class InterArrivalTimeFunctions {
         public Optional<InterArrivalTime> call(final Time time, final String nodeId,
                                                final Optional<List<Event>> events,
                                                final State<InterArrivalTimeState> state) throws Exception {
-
             // keeps the buffered events
             final InterArrivalTimeState interArrivalTimeState;
             if (state.exists()) {
