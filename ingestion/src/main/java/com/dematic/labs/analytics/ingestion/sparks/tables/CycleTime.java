@@ -18,6 +18,18 @@ public final class CycleTime {
     private Long numberOfJobs;
     private Set<String> errors;
 
+    public CycleTime() {
+    }
+
+    public CycleTime(final String nodeId, final Long movingAverage, final Long numberOfEvents, final Long numberOfJobs,
+                     final Set<String> errors) {
+        this.nodeId = nodeId;
+        this.movingAverage = movingAverage;
+        this.numberOfEvents = numberOfEvents;
+        this.numberOfJobs = numberOfJobs;
+        this.errors = errors;
+    }
+
     @DynamoDBHashKey()
     public String getNodeId() {
         return nodeId;

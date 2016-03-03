@@ -38,7 +38,7 @@ public final class CycleTimeFunctions {
                 if (timingOut) {
                     // no state has been updated for timeout amount of time, that is, no events associated to the node
                     // has been updated within the configured timeout, calculate any error cases, uuid's without pairs
-                    //todo: may need to have a flag to indicate final model
+                    //todo: may need to have a flag to indicate final model and add logging
                     return Optional.of(cycleTimeState.createModel());
                 } else {
                     // add new UUID grouping to the map
@@ -47,7 +47,7 @@ public final class CycleTimeFunctions {
                 }
             } else {
                 // create and add the initial state
-                cycleTimeState = new CycleTimeState(map.get());
+                cycleTimeState = new CycleTimeState(nodeId, map.get());
                 state.update(cycleTimeState);
             }
 
