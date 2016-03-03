@@ -26,7 +26,32 @@ public final class CycleTimeFunctions {
         @Override
         public Optional<CycleTime> call(final String nodeId, final Optional<Multimap<UUID, Event>> map,
                                         final State<CycleTimeState> state) throws Exception {
-            return null;
+            if (!map.isPresent()) {
+                Optional.absent();
+            }
+
+            final CycleTimeState cycleTimeState;
+            if (state.exists()) {
+                cycleTimeState = state.get();
+
+                final boolean timingOut = state.isTimingOut();
+                if (timingOut) {
+                    // no state has been updated for timeout amount of time, that is, no events associated to the node
+                    // has been updated within the configured timeout, calculate any error cases, uuid's without pairs
+                    //todo: may need to have a flag to indicate final model
+                    return Optional.of(cycleTimeState.createModel());
+                } else {
+                    // add new UUID grouping to the map
+                    cycleTimeState.updateEvents(map.get());
+                    state.update(cycleTimeState);
+                }
+            } else {
+                // create and add the initial state
+                cycleTimeState = new CycleTimeState(map.get());
+                state.update(cycleTimeState);
+            }
+
+            return Optional.of(cycleTimeState.createModel());
         }
     }
 }

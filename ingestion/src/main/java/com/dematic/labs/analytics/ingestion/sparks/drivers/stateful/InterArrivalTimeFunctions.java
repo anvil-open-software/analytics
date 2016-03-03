@@ -45,7 +45,7 @@ public final class InterArrivalTimeFunctions {
                 }
 
                 // determine if we should remove state
-                if (interArrivalTimeState.removeInterArrivalTimeState()) {
+                if (interArrivalTimeState.stateExpired()) {
                     state.remove();
                 } else {
                     // add new events to state
