@@ -1,10 +1,15 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.dematic.labs.analytics.common.spark.DriverConfig;
+import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContextFunction;
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
+import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -13,6 +18,7 @@ import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.StateSpec;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaMapWithStateDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
@@ -20,12 +26,20 @@ import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
 import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Spliterator;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
+import static com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.CycleTimeFunctions.createModel;
 import static com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime.TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
+import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
+import static java.util.Spliterators.spliteratorUnknownSize;
+import static java.util.stream.StreamSupport.stream;
 
 public final class CycleTimeProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(CycleTimeProcessor.class);
@@ -57,7 +71,7 @@ public final class CycleTimeProcessor {
                     });
 
             // reduce to nodeId / events grouped by UUID
-            final JavaPairDStream<String, Multimap<UUID, Event>>  nodeToEvents = nodeToEventsPairs.reduceByKey(
+            final JavaPairDStream<String, Multimap<UUID, Event>> nodeToEvents = nodeToEventsPairs.reduceByKey(
                     (Function2<Multimap<UUID, Event>, Multimap<UUID, Event>, Multimap<UUID, Event>>)
                             (map1, map2) -> {
                                 final Multimap<UUID, Event> nodeToEventsMaps = HashMultimap.create();
@@ -67,10 +81,50 @@ public final class CycleTimeProcessor {
                             });
 
             // create the cycle time Model
-            nodeToEvents.mapWithState(StateSpec.function(new CycleTimeFunctions.createModel(driverConfig))
-                    .timeout(Durations.seconds(30))); // todo: think about timeout...
+            final JavaMapWithStateDStream<String, Multimap<UUID, Event>, CycleTimeState, Optional<CycleTime>>
+                    cycleTimeWithState = nodeToEvents.mapWithState(StateSpec.function(new createModel(driverConfig))
+                    .timeout(Durations.seconds(30)));// todo: think about timeout...
+
+            cycleTimeWithState.foreachRDD(rdd -> {
+                rdd.foreachPartition(partition -> {
+
+                    final List<Optional<CycleTime>> collect =
+                            stream(spliteratorUnknownSize(partition, Spliterator.CONCURRENT), true)
+                                    .collect(Collectors.<Optional<CycleTime>>toList());
+
+                    // just add a flag to be able to turn off reads and writes
+                    boolean skipDynamoDBwrite =
+                            System.getProperty(DriverConsts.SPARK_DRIVER_SKIP_DYNAMODB_WRITE) != null;
+                    if (!skipDynamoDBwrite && !collect.isEmpty()) {
+                        writeCycleTimeStateModel(collect, driverConfig);
+                    } else {
+                        collect.parallelStream().forEach(ct -> LOGGER.debug("CycleTime: >{}<", ct));
+                    }
+                });
+            });
         }
 
+        private static void writeCycleTimeStateModel(final List<Optional<CycleTime>> cycleTimes,
+                                                     final DriverConfig driverConfig) {
+            final AmazonDynamoDBClient dynamoDBClient = getAmazonDynamoDBClient(driverConfig.getDynamoDBEndpoint());
+            final DynamoDBMapper dynamoDBMapper = Strings.isNullOrEmpty(driverConfig.getDynamoPrefix()) ?
+                    new DynamoDBMapper(dynamoDBClient) : new DynamoDBMapper(dynamoDBClient,
+                    new DynamoDBMapperConfig(withTableNamePrefix(driverConfig.getDynamoPrefix())));
+
+            // transform from optional to CT
+            final List<CycleTime> collect =
+                    cycleTimes.stream().filter(Optional::isPresent).map(Optional::get).collect(Collectors.toList());
+
+            if (!collect.isEmpty()) {
+                final List<DynamoDBMapper.FailedBatch> failedBatches = dynamoDBMapper.batchSave(collect);
+                failedBatches.parallelStream().forEach(failedBatch -> {
+                    // for now, not going to retry, just going to log the exception, the next time spark processes a
+                    // batch the CT will be saved. That is, all CT calculations are saved in spark state, nothing will
+                    // get lost unless there is a jvm crash, this still needs to be worked out
+                    LOGGER.error("CycleTime: unprocessed CycleTime model's", failedBatch.getException());
+                });
+            }
+        }
 
         public static <K, V> Multimap<K, V> mergeMaps(Stream<? extends Multimap<K, V>> stream) {
             return stream.collect(HashMultimap::create, Multimap::putAll, Multimap::putAll);
@@ -118,10 +172,10 @@ public final class CycleTimeProcessor {
                 new CreateStreamingContextFunction(driverConfig, new CycleTimeFunction(driverConfig)));
 
         // Start the streaming context and await termination
-        LOGGER.info("IAT: starting Cycle-Time Processor Driver with master URL >{}<",
+        LOGGER.info("CT: starting Cycle-Time Processor Driver with master URL >{}<",
                 streamingContext.sparkContext().master());
         streamingContext.start();
-        LOGGER.info("IAT: spark state: {}", streamingContext.getState().name());
+        LOGGER.info("CT: spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();
 
     }
