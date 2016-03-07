@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Spliterator;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
 import static com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.CycleTimeFunctions.createModel;
@@ -59,7 +58,7 @@ public final class CycleTimeProcessor {
             // get the sql context and use it for dataframes
             //final SQLContext sqlContext = SQLContext.getOrCreate(javaDStream.context().sparkContext());
 
-            // transform the byte[] (byte arrays are json) to a string to events and todo: sort by uuid ?
+            // transform the byte[] (byte arrays are json) to a string to events
             final JavaDStream<Event> eventStream =
                     javaDStream.map(event -> jsonToEvent(new String(event, Charset.defaultCharset())));
 
@@ -73,10 +72,10 @@ public final class CycleTimeProcessor {
             // reduce to nodeId / events grouped by UUID
             final JavaPairDStream<String, Multimap<UUID, Event>> nodeToEvents = nodeToEventsPairs.reduceByKey(
                     (Function2<Multimap<UUID, Event>, Multimap<UUID, Event>, Multimap<UUID, Event>>)
-                            (map1, map2) -> {
+                            (jobs1, jobs2) -> {
                                 final Multimap<UUID, Event> nodeToEventsMaps = HashMultimap.create();
-                                nodeToEventsMaps.putAll(map1);
-                                nodeToEventsMaps.putAll(map2);
+                                nodeToEventsMaps.putAll(jobs1);
+                                nodeToEventsMaps.putAll(jobs2);
                                 return nodeToEventsMaps;
                             });
 
@@ -124,10 +123,6 @@ public final class CycleTimeProcessor {
                     LOGGER.error("CycleTime: unprocessed CycleTime model's", failedBatch.getException());
                 });
             }
-        }
-
-        public static <K, V> Multimap<K, V> mergeMaps(Stream<? extends Multimap<K, V>> stream) {
-            return stream.collect(HashMultimap::create, Multimap::putAll, Multimap::putAll);
         }
     }
 

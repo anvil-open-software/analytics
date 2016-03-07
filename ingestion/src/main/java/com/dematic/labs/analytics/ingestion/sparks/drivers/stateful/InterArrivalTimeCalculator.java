@@ -31,7 +31,7 @@ public final class InterArrivalTimeCalculator {
             return;
         }
         // create the buckets
-        final List<Bucket> buckets = BucketUtils.createBuckets(avgInterArrivalTime);
+        final Set<Bucket> buckets = BucketUtils.createBuckets(avgInterArrivalTime);
 
         // remove and count all errors, that is, events that should have been processed with the last batch
         final List<Event> eventsWithoutErrors = errorChecker(events, lastEventTime);
@@ -56,7 +56,7 @@ public final class InterArrivalTimeCalculator {
                             eventsWithoutErrors.get(0).getTimestamp().getMillis());
                 } else {
                     // update the bucket
-                    BucketUtils.addToBucket(interArrivalTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
+                    BucketUtils.addToBucket(BucketUtils.bucketTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
                 }
             }
 
@@ -70,7 +70,7 @@ public final class InterArrivalTimeCalculator {
                     // events r in order
                     final long interArrivalTimeValue =
                             eventPeekingIterator.peek().getTimestamp().getMillis() - current.getTimestamp().getMillis();
-                    final long interArrivalTimeValueInSeconds = interArrivalTimeInSeconds(interArrivalTimeValue);
+                    final long interArrivalTimeValueInSeconds = BucketUtils.bucketTimeInSeconds(interArrivalTimeValue);
                     BucketUtils.addToBucket(interArrivalTimeValueInSeconds, buckets);
                 }
             }
@@ -91,7 +91,7 @@ public final class InterArrivalTimeCalculator {
             } else {
                 final long interArrivalTimeBetweenBatches =
                         interArrivalTimeBetweenBatches(singleEvent.getTimestamp().getMillis(), eventsWithoutErrors);
-                BucketUtils.addToBucket(interArrivalTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
+                BucketUtils.addToBucket(BucketUtils.bucketTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
             }
         } else {
             final String lastEventTimeString = lastEventTime != null ? dateTime(lastEventTime).toString() : null;
@@ -171,9 +171,5 @@ public final class InterArrivalTimeCalculator {
         // events r in order, if lastEventTime is > then current event, this is an error, just return -1
         final long eventTime = events.get(0).getTimestamp().getMillis();
         return lastEventTime > eventTime ? -1 : eventTime - lastEventTime;
-    }
-
-    private static long interArrivalTimeInSeconds(final long interArrivalTimeInMs) {
-        return interArrivalTimeInMs / 1000;
     }
 }

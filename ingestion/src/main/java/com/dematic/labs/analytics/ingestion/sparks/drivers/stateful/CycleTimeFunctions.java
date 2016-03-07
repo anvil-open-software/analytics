@@ -1,6 +1,7 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
 import com.dematic.labs.analytics.common.spark.DriverConfig;
+import com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils;
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Optional;
@@ -24,9 +25,9 @@ public final class CycleTimeFunctions {
         }
 
         @Override
-        public Optional<CycleTime> call(final String nodeId, final Optional<Multimap<UUID, Event>> map,
+        public Optional<CycleTime> call(final String nodeId, final Optional<Multimap<UUID, Event>> jobs,
                                         final State<CycleTimeState> state) throws Exception {
-            if (!map.isPresent()) {
+            if (!jobs.isPresent()) {
                 Optional.absent();
             }
 
@@ -39,19 +40,19 @@ public final class CycleTimeFunctions {
                     // no state has been updated for timeout amount of time, that is, no events associated to the node
                     // has been updated within the configured timeout, calculate any error cases, uuid's without pairs
                     //todo: may need to have a flag to indicate final model and add logging
-                    return Optional.of(cycleTimeState.createModel());
+                    return Optional.of(cycleTimeState.createModel(true));
                 } else {
                     // add new UUID grouping to the map
-                    cycleTimeState.updateEvents(map.get());
+                    cycleTimeState.updateEvents(jobs.get());
                     state.update(cycleTimeState);
                 }
             } else {
-                // create and add the initial state
-                cycleTimeState = new CycleTimeState(nodeId, map.get());
+                // create and add the initial state, todo: check the db for saved state
+                cycleTimeState = new CycleTimeState(nodeId, jobs.get(), BucketUtils.createBuckets(10));
                 state.update(cycleTimeState);
             }
 
-            return Optional.of(cycleTimeState.createModel());
+            return Optional.of(cycleTimeState.createModel(false));
         }
     }
 }

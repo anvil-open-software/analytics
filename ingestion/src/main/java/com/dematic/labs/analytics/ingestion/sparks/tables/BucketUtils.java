@@ -10,10 +10,11 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Comparator;
+import java.util.Set;
 
 public final class BucketUtils {
     private final static ObjectMapper objectMapper;
@@ -37,8 +38,13 @@ public final class BucketUtils {
         return objectMapper.writeValueAsString(bucket);
     }
 
-    public static List<Bucket> createBuckets(final int avgTime) {
-        final List<Bucket> buckets = Lists.newArrayList();
+    public static Set<Bucket> createBuckets(final int avgTime) {
+        final Set<Bucket> buckets = Sets.newTreeSet(new Comparator<Bucket>() {
+            @Override
+            public int compare(final Bucket b1, final Bucket b2) {
+                return Integer.compare(b1.getLowerBoundry(), b2.getLowerBoundry());
+            }
+        });
         // see https://docs.google.com/document/d/1J9mSW8EbxTwbsGGeZ7b8TVkF5lm8-bnjy59KpHCVlBA/edit# for specs
         for (int i = 0; i < avgTime * 2; i++) {
             final int low = i * avgTime / 5;
@@ -53,7 +59,7 @@ public final class BucketUtils {
         return buckets;
     }
 
-    public static void addToBucket(final long time, final List<Bucket> buckets) {
+    public static void addToBucket(final long time, final Set<Bucket> buckets) {
         final java.util.Optional<Bucket> first = buckets.stream()
                 .filter(bucket -> bucket.isWithinBucket(time)).findFirst();
         if (!first.isPresent()) {
@@ -62,6 +68,10 @@ public final class BucketUtils {
         }
         final Bucket bucket = first.get();
         bucket.incrementCount();
+    }
+
+    public static long bucketTimeInSeconds(final long bucketTimeInMs) {
+        return bucketTimeInMs / 1000;
     }
 
     private final static class BucketSerializer extends JsonSerializer<Bucket> {
