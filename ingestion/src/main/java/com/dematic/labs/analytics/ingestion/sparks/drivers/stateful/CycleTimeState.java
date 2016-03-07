@@ -1,59 +1,70 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
+import com.dematic.labs.analytics.ingestion.sparks.tables.Bucket;
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.collect.Multimap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-public final class CycleTimeState implements Serializable {
-    private final String nodeId;
-    private final Multimap<UUID, Event> mapWithState;
-    private Long movingAverage;
-    private Long processedEventCount;
-    private Long numberOfJobsProcessed;
-    private Long unprocessedEventCount;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.addToBucket;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.bucketTimeInSeconds;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.bucketsToJson;
+import static java.util.Collections.sort;
 
-    public CycleTimeState(final String nodeId, final Multimap<UUID, Event> map) {
+//todo: avg cycle time ? do we need it
+public final class CycleTimeState implements Serializable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CycleTimeState.class);
+
+    private final String nodeId;
+    // keep UUID's to events that were not processed because of missing jobs
+    private final Multimap<UUID, Event> jobs;
+    private Set<Bucket> buckets;
+    private Long jobCount;
+
+
+    public CycleTimeState(final String nodeId, final Multimap<UUID, Event> initialJobs,
+                          final Set<Bucket> initialBuckets) {
         this.nodeId = nodeId;
-        this.mapWithState = map;
-        movingAverage = 0L;
-        processedEventCount = 0L;
-        numberOfJobsProcessed = 0L;
-        unprocessedEventCount = 0L;
+        this.jobs = initialJobs;
+        this.buckets = initialBuckets;
+        jobCount = 0L;
     }
 
     public void updateEvents(final Multimap<UUID, Event> newMap) {
-        mapWithState.putAll(newMap);
+        jobs.putAll(newMap);
     }
 
     public CycleTime createModel() {
-        movingAverage = calculateMovingAvg(movingAverage, mapWithState);
-        numberOfJobsProcessed = calculateNumberOfEvents(processedEventCount, mapWithState);
-        numberOfJobsProcessed = calculateNumberOfJobs(numberOfJobsProcessed, mapWithState);
-        // todo: errors figure out
-        final Set<String> errors = calculateErrors(unprocessedEventCount, mapWithState);
-        return new CycleTime(nodeId, movingAverage, numberOfJobsProcessed, numberOfJobsProcessed, errors);
+        // calculate the CT and add to buckets, todo: parallel
+        jobs.asMap().entrySet().stream().forEach(job -> {
+            if (job.getValue().size() == 1) {
+                //todo: figure out how to handle errors
+            } else {
+                // ensure orderd by start and finish event type
+                final List<Event> completedJobs = new ArrayList<>(job.getValue());
+                sort(completedJobs, (final Event e1, final Event e2) -> e1.getType().compareTo(e2.getType()));
+                // calculate completed job CT
+                if (completedJobs.size() != 2) {
+                    LOGGER.error("CT: Unexpected Error: completed jobs incorrect number of events >{}<", completedJobs);
+                } else {
+                    final Event start = completedJobs.get(0);
+                    final Event end = completedJobs.get(1);
+                    // add to bucket
+                    addToBucket(bucketTimeInSeconds(end.getTimestamp().getMillis() - start.getTimestamp().getMillis()),
+                            buckets);
+                    // remove competed job from jobs and update the job count
+                    jobs.removeAll(job.getKey());
+                    jobCount++;
+                }
+            }
+        });
+        return new CycleTime(nodeId, bucketsToJson(buckets),jobCount);
     }
-
-    private static long calculateMovingAvg(final long movingAverage, final Multimap<UUID, Event> map) {
-        return 0;
-    }
-
-    private static long calculateNumberOfEvents(final long processedEventCount, final Multimap<UUID, Event> map) {
-        return processedEventCount + map.values().size();
-    }
-
-    private static long calculateNumberOfJobs(final long numberOfJobsProcessed, final Multimap<UUID, Event> map) {
-        return numberOfJobsProcessed + map.keys().size();
-    }
-
-    //todo: figure out
-    private static Set<String> calculateErrors(final long unprocessedEventCount, final Multimap<UUID, Event> map) {
-        return Collections.emptySet();
-    }
-
 }

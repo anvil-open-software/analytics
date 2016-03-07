@@ -30,14 +30,6 @@ public final class BucketUtils {
     private BucketUtils() {
     }
 
-    public static Bucket jsonToTimeBucket(final String json) throws IOException {
-        return objectMapper.readValue(json, Bucket.class);
-    }
-
-    public static String timeBucketToJson(final Bucket bucket) throws IOException {
-        return objectMapper.writeValueAsString(bucket);
-    }
-
     public static Set<Bucket> createBuckets(final int avgTime) {
         final Set<Bucket> buckets = Sets.newTreeSet(new Comparator<Bucket>() {
             @Override
@@ -68,6 +60,20 @@ public final class BucketUtils {
         }
         final Bucket bucket = first.get();
         bucket.incrementCount();
+    }
+
+    public static Bucket jsonToTimeBucket(final String json) throws IOException {
+        return objectMapper.readValue(json, Bucket.class);
+    }
+
+    public static String timeBucketToJson(final Bucket bucket) throws IOException {
+        return objectMapper.writeValueAsString(bucket);
+    }
+
+    public static Set<String> bucketsToJson(final Set<Bucket> buckets) {
+        final Set<String> bucketsString = Sets.newHashSet();
+        buckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
+        return bucketsString;
     }
 
     public static long bucketTimeInSeconds(final long bucketTimeInMs) {

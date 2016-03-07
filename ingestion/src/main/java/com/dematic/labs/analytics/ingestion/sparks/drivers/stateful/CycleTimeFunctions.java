@@ -39,8 +39,7 @@ public final class CycleTimeFunctions {
                 if (timingOut) {
                     // no state has been updated for timeout amount of time, that is, no events associated to the node
                     // has been updated within the configured timeout, calculate any error cases, uuid's without pairs
-                    //todo: may need to have a flag to indicate final model and add logging
-                    return Optional.of(cycleTimeState.createModel(true));
+                    return Optional.of(cycleTimeState.createModel());
                 } else {
                     // add new UUID grouping to the map
                     cycleTimeState.updateEvents(jobs.get());
@@ -51,8 +50,7 @@ public final class CycleTimeFunctions {
                 cycleTimeState = new CycleTimeState(nodeId, jobs.get(), BucketUtils.createBuckets(10));
                 state.update(cycleTimeState);
             }
-
-            return Optional.of(cycleTimeState.createModel(false));
+            return Optional.of(cycleTimeState.createModel());
         }
     }
 }
