@@ -1,4 +1,4 @@
-package com.dematic.labs.analytics.ingestion.drivers;
+package com.dematic.labs.analytics.ingestion.drivers.stateless;
 
 import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.dematic.labs.analytics.common.spark.DriverConsts;
@@ -41,5 +41,4 @@ public final class DematicSessionTest {
         Duration newDuration = DriverUtils.getKinesisCheckpointWindow();
         assertEquals(newDuration.milliseconds(), 47 * 1000L);
     }
-
 }

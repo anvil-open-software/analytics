@@ -1,4 +1,4 @@
-package com.dematic.labs.analytics.ingestion.drivers;
+package com.dematic.labs.analytics.ingestion.drivers.stateful;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
