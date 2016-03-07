@@ -5,6 +5,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
 import java.util.Objects;
+import java.util.Set;
 
 @SuppressWarnings("unused")
 @DynamoDBTable(tableName = CycleTime.TABLE_NAME)
@@ -12,15 +13,15 @@ public final class CycleTime {
     public static final String TABLE_NAME = "Cycle_Time";
 
     private String nodeId;
-    private String cycleTimeBuckets;
+    private Set<String> buckets;
     private Long jobCount;
 
     public CycleTime() {
     }
 
-    public CycleTime(final String nodeId, final String cycleTimeBuckets, final Long jobCount) {
+    public CycleTime(final String nodeId, final Set<String> buckets, final Long jobCount) {
         this.nodeId = nodeId;
-        this.cycleTimeBuckets = cycleTimeBuckets;
+        this.buckets = buckets;
         this.jobCount = jobCount;
     }
 
@@ -34,12 +35,12 @@ public final class CycleTime {
     }
 
     @DynamoDBAttribute
-    public String getCycleTimeBuckets() {
-        return cycleTimeBuckets;
+    public Set<String> getBuckets() {
+        return buckets;
     }
 
-    public void setCycleTimeBuckets(final String cycleTimeBuckets) {
-        this.cycleTimeBuckets = cycleTimeBuckets;
+    public void setBuckets(final Set<String> buckets) {
+        this.buckets = buckets;
     }
 
     @DynamoDBAttribute
@@ -61,20 +62,20 @@ public final class CycleTime {
         }
         final CycleTime cycleTime = (CycleTime) o;
         return Objects.equals(nodeId, cycleTime.nodeId) &&
-                Objects.equals(cycleTimeBuckets, cycleTime.cycleTimeBuckets) &&
+                Objects.equals(buckets, cycleTime.buckets) &&
                 Objects.equals(jobCount, cycleTime.jobCount);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nodeId, cycleTimeBuckets, jobCount);
+        return Objects.hash(nodeId, buckets, jobCount);
     }
 
     @Override
     public String toString() {
         return "CycleTime{" +
                 "nodeId='" + nodeId + '\'' +
-                ", cycleTimeBuckets='" + cycleTimeBuckets + '\'' +
+                ", buckets=" + buckets +
                 ", jobCount=" + jobCount +
                 '}';
     }
