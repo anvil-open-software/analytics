@@ -8,14 +8,14 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeUtils.*;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.*;
 
 @SuppressWarnings("unused")
-public final class InterArrivalTimeBucket implements Serializable {
+public final class Bucket implements Serializable {
     private final Set<Integer> pair = Sets.newLinkedHashSet();
     private long count;
 
-    public InterArrivalTimeBucket(final int low, final int high, final long count) {
+    public Bucket(final int low, final int high, final long count) {
         pair.add(low);
         pair.add(high);
         this.count = count;
@@ -52,15 +52,15 @@ public final class InterArrivalTimeBucket implements Serializable {
 
     public String toJson() {
         try {
-            return interArrivalTimeBucketToJson(this);
+            return timeBucketToJson(this);
         } catch (final IOException ioe) {
             throw new IllegalStateException(ioe);
         }
     }
 
-    public static InterArrivalTimeBucket toInterArrivalTimeBucket(final String json) {
+    public static Bucket toTimeBucket(final String json) {
         try {
-            return jsonToInterArrivalTimeBucket(json);
+            return jsonToTimeBucket(json);
         } catch (final IOException ioe) {
             throw new IllegalStateException(ioe);
         }
@@ -70,7 +70,7 @@ public final class InterArrivalTimeBucket implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        InterArrivalTimeBucket that = (InterArrivalTimeBucket) o;
+        Bucket that = (Bucket) o;
         return Objects.equals(pair, that.pair);
     }
 
@@ -81,7 +81,7 @@ public final class InterArrivalTimeBucket implements Serializable {
 
     @Override
     public String toString() {
-        return "InterArrivalTimeBucket{" +
+        return "Bucket{" +
                 "pair=" + pair +
                 ", count=" + count +
                 '}';
