@@ -13,10 +13,11 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.Sets;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Set;
 
-public final class BucketUtils {
+public final class BucketUtils implements Serializable {
     private final static ObjectMapper objectMapper;
 
     static {

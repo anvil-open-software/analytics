@@ -4,12 +4,13 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.Set;
 
 @SuppressWarnings("unused")
 @DynamoDBTable(tableName = CycleTime.TABLE_NAME)
-public final class CycleTime {
+public final class CycleTime implements Serializable {
     public static final String TABLE_NAME = "Cycle_Time";
 
     private String nodeId;

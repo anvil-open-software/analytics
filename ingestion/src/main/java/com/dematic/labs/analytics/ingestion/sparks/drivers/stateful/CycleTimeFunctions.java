@@ -4,8 +4,9 @@ import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Optional;
 import com.google.common.collect.Multimap;
-import org.apache.spark.api.java.function.Function3;
+import org.apache.spark.api.java.function.Function4;
 import org.apache.spark.streaming.State;
+import org.apache.spark.streaming.Time;
 
 import java.util.UUID;
 
@@ -15,7 +16,7 @@ public final class CycleTimeFunctions {
     private CycleTimeFunctions() {
     }
 
-    public static final class createModel implements Function3<String, Optional<Multimap<UUID, Event>>,
+    public static final class createModel implements Function4<Time, String, Optional<Multimap<UUID, Event>>,
             State<CycleTimeState>, Optional<CycleTime>> {
 
         private final CycleTimeDriverConfig driverConfig;
@@ -25,12 +26,8 @@ public final class CycleTimeFunctions {
         }
 
         @Override
-        public Optional<CycleTime> call(final String nodeId, final Optional<Multimap<UUID, Event>> jobs,
+        public Optional<CycleTime> call(final Time time, final String nodeId, final Optional<Multimap<UUID, Event>> jobs,
                                         final State<CycleTimeState> state) throws Exception {
-            if (!jobs.isPresent()) {
-                Optional.absent();
-            }
-
             final CycleTimeState cycleTimeState;
             if (state.exists()) {
                 cycleTimeState = state.get();

@@ -8,7 +8,6 @@ import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingCo
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
-import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -62,14 +61,15 @@ public final class CycleTimeProcessor {
             final JavaDStream<Event> eventStream =
                     javaDStream.map(event -> jsonToEvent(new String(event, Charset.defaultCharset())));
 
-            // group by nodeId
+            // group by nodeId and map by jobID
             final JavaPairDStream<String, Multimap<UUID, Event>> nodeToEventsPairs = eventStream.mapToPair(
                     event -> {
                         final Multimap<UUID, Event> nodeToEvents = HashMultimap.create();
+                        nodeToEvents.put(event.getJobId(), event);
                         return Tuple2.apply(event.getNodeId(), nodeToEvents);
                     });
 
-            // reduce to nodeId / events grouped by UUID
+            // reduce to nodeId / events grouped by jobId UUID
             final JavaPairDStream<String, Multimap<UUID, Event>> nodeToEvents = nodeToEventsPairs.reduceByKey(
                     (Function2<Multimap<UUID, Event>, Multimap<UUID, Event>, Multimap<UUID, Event>>)
                             (jobs1, jobs2) -> {
@@ -80,16 +80,15 @@ public final class CycleTimeProcessor {
                             });
 
             // create the cycle time Model
-            final JavaMapWithStateDStream<String, Multimap<UUID, Event>, CycleTimeState, Optional<CycleTime>>
+            final JavaMapWithStateDStream<String, Multimap<UUID, Event>, CycleTimeState, CycleTime>
                     cycleTimeWithState = nodeToEvents.mapWithState(StateSpec.function(new createModel(driverConfig))
                     .timeout(stateTimeout(driverConfig)));
 
             cycleTimeWithState.foreachRDD(rdd -> {
                 rdd.foreachPartition(partition -> {
-
-                    final List<Optional<CycleTime>> collect =
+                    final List<CycleTime> collect =
                             stream(spliteratorUnknownSize(partition, Spliterator.CONCURRENT), true)
-                                    .collect(Collectors.<Optional<CycleTime>>toList());
+                                    .collect(Collectors.<CycleTime>toList());
 
                     // just add a flag to be able to turn off reads and writes
                     boolean skipDynamoDBwrite =
@@ -110,19 +109,15 @@ public final class CycleTimeProcessor {
             return Durations.milliseconds(timeout);
         }
 
-        private static void writeCycleTimeStateModel(final List<Optional<CycleTime>> cycleTimes,
+        private static void writeCycleTimeStateModel(final List<CycleTime> cycleTimes,
                                                      final CycleTimeDriverConfig driverConfig) {
             final AmazonDynamoDBClient dynamoDBClient = getAmazonDynamoDBClient(driverConfig.getDynamoDBEndpoint());
             final DynamoDBMapper dynamoDBMapper = Strings.isNullOrEmpty(driverConfig.getDynamoPrefix()) ?
                     new DynamoDBMapper(dynamoDBClient) : new DynamoDBMapper(dynamoDBClient,
                     new DynamoDBMapperConfig(withTableNamePrefix(driverConfig.getDynamoPrefix())));
 
-            // transform from optional to CT
-            final List<CycleTime> collect =
-                    cycleTimes.stream().filter(Optional::isPresent).map(Optional::get).collect(Collectors.toList());
-
-            if (!collect.isEmpty()) {
-                final List<DynamoDBMapper.FailedBatch> failedBatches = dynamoDBMapper.batchSave(collect);
+            if (!cycleTimes.isEmpty()) {
+                final List<DynamoDBMapper.FailedBatch> failedBatches = dynamoDBMapper.batchSave(cycleTimes);
                 failedBatches.parallelStream().forEach(failedBatch -> {
                     // for now, not going to retry, just going to log the exception, the next time spark processes a
                     // batch the CT will be saved. That is, all CT calculations are saved in spark state, nothing will
