@@ -90,7 +90,7 @@ public final class BucketUtils {
     }
 
     public static Set<String> bucketsToJson(final Set<Bucket> buckets) {
-        final Set<String> bucketsString = Sets.newHashSet();
+        final Set<String> bucketsString = Sets.newLinkedHashSet();
         buckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
         return bucketsString;
     }

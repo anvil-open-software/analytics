@@ -108,7 +108,7 @@ public final class InterArrivalTimeCalculator {
         // set the buckets
         final Set<String> existingBuckets = interArrivalTime.getBuckets();
         if (existingBuckets == null || existingBuckets.isEmpty()) {
-            final Set<String> bucketsString = Sets.newHashSet();
+            final Set<String> bucketsString = Sets.newLinkedHashSet();
             buckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
             interArrivalTime.setBuckets(bucketsString);
         } else {
@@ -132,7 +132,7 @@ public final class InterArrivalTimeCalculator {
                 }
             });
 
-            final Set<String> bucketsString = Sets.newHashSet();
+            final Set<String> bucketsString = Sets.newLinkedHashSet();
             updatedBuckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
             interArrivalTime.setBuckets(bucketsString);
         }
