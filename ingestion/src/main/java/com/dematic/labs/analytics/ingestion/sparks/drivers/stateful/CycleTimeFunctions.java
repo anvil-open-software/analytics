@@ -42,7 +42,7 @@ public final class CycleTimeFunctions {
                     return Optional.of(cycleTimeState.createModel());
                 } else {
                     // add new UUID grouping to the map
-                    cycleTimeState.updateEvents(jobs.get());
+                    cycleTimeState.updateJobs(jobs.get());
                     state.update(cycleTimeState);
                 }
             } else {

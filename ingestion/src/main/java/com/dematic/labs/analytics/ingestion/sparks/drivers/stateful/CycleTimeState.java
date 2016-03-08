@@ -37,8 +37,8 @@ public final class CycleTimeState implements Serializable {
         jobCount = 0L;
     }
 
-    public void updateEvents(final Multimap<UUID, Event> newMap) {
-        jobs.putAll(newMap);
+    public void updateJobs(final Multimap<UUID, Event> newJobs) {
+        jobs.putAll(newJobs);
     }
 
     public CycleTime createModel() {

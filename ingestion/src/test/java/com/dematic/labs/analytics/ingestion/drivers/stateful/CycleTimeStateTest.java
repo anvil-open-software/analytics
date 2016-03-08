@@ -30,5 +30,15 @@ public final class CycleTimeStateTest {
         final CycleTime model = cycleTimeState.createModel();
         // ensure job count == 1
         Assert.assertEquals(1, model.getJobCount().intValue());
+        // add another pair of events
+        final UUID jobId2 = UUID.randomUUID();
+        // generate pair of events with 5 secs between events
+        final List<Event> secondPair = EventUtils.generateCycleTimeEvents(2, nodeId, jobId2, 5);
+        jobs.putAll(jobId2, secondPair);
+        cycleTimeState.updateJobs(jobs);
+        // create second model
+        final CycleTime secondModel = cycleTimeState.createModel();
+        // ensure job count == 2
+        Assert.assertEquals(2, secondModel.getJobCount().intValue());
     }
 }
