@@ -12,6 +12,7 @@ import com.jayway.awaitility.Awaitility;
 import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -46,7 +47,7 @@ public final class EventStreamAggregatorTest {
     public final TestRule systemPropertyRule =
             RuleChain.outerRule(new SystemPropertyRule()).around(kinesisStreamRule).around(folder);
 
-    @Test
+    @Ignore
     public void aggregateByMinute() throws IOException {
         // start sparks driver, running in the background
         final String kinesisEndpoint = System.getProperty("kinesisEndpoint");
@@ -55,7 +56,6 @@ public final class EventStreamAggregatorTest {
         // append user name to ensure tables are unique to person running tests to avoid collisions
         final String userNamePrefix = System.getProperty("user.name") + "_";
         final String checkpointDir = folder.getRoot().getAbsolutePath();
-
         // create the dynamo event table
         final String tableName = createDynamoTable(System.getProperty("dynamoDBEndpoint"), EventAggregator.class,
                 userNamePrefix);
@@ -69,6 +69,8 @@ public final class EventStreamAggregatorTest {
         final int numSparkThreads = getNumberOfShards(kinesisEndpoint, kinesisInputStream) + 1;
         final JavaStreamingContext streamingContext = getStreamingContext("local[" + numSparkThreads + "]",
                 leaseTable, checkpointDir, pollTime);
+        // allow multiple context, todo: need to come up with a better way
+        streamingContext.sc().sc().conf().set("spark.driver.allowMultipleContexts", "true");
 
         try {
             final ExecutorService executorService = Executors.newCachedThreadPool();

@@ -185,7 +185,6 @@ public final class CycleTimeProcessor {
         streamingContext.start();
         LOGGER.info("CT: spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();
-
     }
 
     private static CycleTimeDriverConfig configure(final String appName, final String kinesisEndpoint,

@@ -53,7 +53,7 @@ public final class CycleTimeProcessorTest {
         // set the checkpoint dir
         final String checkpointDir = folder.getRoot().getAbsolutePath();
         System.setProperty(DriverConsts.SPARK_CHECKPOINT_DIR, checkpointDir);
-
+        System.setProperty("spark.driver.allowMultipleContexts", "true"); //todo: need to figure out multiple context
         // start sparks in a separate thread
         try {
             final ExecutorService executorService = Executors.newCachedThreadPool();
