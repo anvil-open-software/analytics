@@ -3,23 +3,26 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 import com.dematic.labs.analytics.ingestion.sparks.tables.Bucket;
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.communication.Event;
+import com.dematic.labs.toolkit.communication.EventUtils;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import org.joda.time.Seconds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.addToBucket;
-import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.bucketTimeInSeconds;
-import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.bucketsToJson;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.*;
 import static java.util.Collections.sort;
 
 public final class CycleTimeState implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(CycleTimeState.class);
+    private static final int TIME_OUT_IN_SECONDS = 60; // todo: make configurable
 
     private final String nodeId;
     // keep UUID's to events that were not processed because of missing jobs
@@ -39,11 +42,21 @@ public final class CycleTimeState implements Serializable {
         jobs.putAll(newJobs);
     }
 
-    public CycleTime createModel() {
+    public CycleTime createModel(final boolean stateTime) {
         // calculate the CT and add to buckets, todo: parallel
         jobs.asMap().entrySet().stream().forEach(job -> {
-            if (job.getValue().size() == 1) {
-                //
+            // driver state timeout
+            if (stateTime && job.getValue().size() == 1) {
+                // todo: for now, just log, need to store either in bucket or db table
+                // calculate jobs that did not have job pairs, that is, start and end event
+                // remove from jobs
+                final Collection<Event> errors = jobs.removeAll(job.getKey());
+                LOGGER.error("CT: state timeout : >{}< did not have complete set of events >{}<", job.getKey(), errors);
+            } // state did not timeout but job did
+            else if (job.getValue().size() == 1 && jobTimeout(Iterables.getOnlyElement(job.getValue()))) {
+                // calculate jobs that did not have job pairs, that is, start and end event and have timed out
+                final Collection<Event> errors = jobs.removeAll(job.getKey());
+                LOGGER.error("CT: job timeout : >{}< did not have complete set of events >{}<", job.getKey(), errors);
             } else {
                 // ensure orderd by start and finish event type
                 final List<Event> completedJobs = new ArrayList<>(job.getValue());
@@ -64,5 +77,9 @@ public final class CycleTimeState implements Serializable {
             }
         });
         return new CycleTime(nodeId, bucketsToJson(buckets), jobCount);
+    }
+
+    private static boolean jobTimeout(final Event event) {
+        return Seconds.secondsBetween(event.getTimestamp(), EventUtils.now()).getSeconds() >= TIME_OUT_IN_SECONDS;
     }
 }

@@ -126,6 +126,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
     }
 
     // functions
+    @SuppressWarnings("Duplicates")
     public static void main(final String[] args) {
         // master url is only set for testing or running locally
         if (args.length < 6) {
