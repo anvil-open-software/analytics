@@ -31,13 +31,14 @@ public final class BucketUtils {
     }
 
     public static Set<Bucket> createBuckets(final int avgTime) {
+        // see https://docs.google.com/document/d/1J9mSW8EbxTwbsGGeZ7b8TVkF5lm8-bnjy59KpHCVlBA/edit# for specs
         final Set<Bucket> buckets = Sets.newTreeSet(new Comparator<Bucket>() {
             @Override
             public int compare(final Bucket b1, final Bucket b2) {
                 return Integer.compare(b1.getLowerBoundry(), b2.getLowerBoundry());
             }
         });
-        // see https://docs.google.com/document/d/1J9mSW8EbxTwbsGGeZ7b8TVkF5lm8-bnjy59KpHCVlBA/edit# for specs
+
         for (int i = 0; i < avgTime * 2; i++) {
             final int low = i * avgTime / 5;
             final int high = (i + 1) * avgTime / 5;
@@ -48,6 +49,24 @@ public final class BucketUtils {
             }
             buckets.add(new Bucket(low, high, 0L));
         }
+        return buckets;
+    }
+
+    public static Set<Bucket> createCycleTimeBuckets(final int bucketIncrement, final int numberOfBuckets) {
+        // see https://docs.google.com/document/d/1J9mSW8EbxTwbsGGeZ7b8TVkF5lm8-bnjy59KpHCVlBA/edit# for specs
+        // todo: did not follow specs, the numbers did not work out
+        final Set<Bucket> buckets = Sets.newTreeSet(new Comparator<Bucket>() {
+            @Override
+            public int compare(final Bucket b1, final Bucket b2) {
+                return Integer.compare(b1.getLowerBoundry(), b2.getLowerBoundry());
+            }
+        });
+        for (int i = 0; i < numberOfBuckets; i++) {
+            final int low = i * bucketIncrement;
+            buckets.add(new Bucket(low, low + bucketIncrement, 0L));
+        }
+        // add the last bucket
+        buckets.add(new Bucket(bucketIncrement * numberOfBuckets, Integer.MAX_VALUE, 0L));
         return buckets;
     }
 

@@ -47,7 +47,7 @@ public final class CycleTimeFunctions {
                 }
             } else {
                 // create and add the initial state, todo: check the db for saved state
-                cycleTimeState = new CycleTimeState(nodeId, jobs.get(), BucketUtils.createBuckets(10));
+                cycleTimeState = new CycleTimeState(nodeId, jobs.get(), BucketUtils.createCycleTimeBuckets(4, 10));
                 state.update(cycleTimeState);
             }
             return Optional.of(cycleTimeState.createModel());
