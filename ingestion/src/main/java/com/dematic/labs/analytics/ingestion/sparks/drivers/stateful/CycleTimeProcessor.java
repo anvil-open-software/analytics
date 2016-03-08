@@ -3,7 +3,6 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
-import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContextFunction;
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
@@ -15,7 +14,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.StateSpec;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaMapWithStateDStream;
@@ -47,9 +45,9 @@ public final class CycleTimeProcessor {
     // event stream processing function
     @SuppressWarnings("unchecked")
     private static final class CycleTimeFunction implements VoidFunction<JavaDStream<byte[]>> {
-        private final DriverConfig driverConfig;
+        private final CycleTimeDriverConfig driverConfig;
 
-        public CycleTimeFunction(final DriverConfig driverConfig) {
+        public CycleTimeFunction(final CycleTimeDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 
@@ -82,7 +80,7 @@ public final class CycleTimeProcessor {
             // create the cycle time Model
             final JavaMapWithStateDStream<String, Multimap<UUID, Event>, CycleTimeState, Optional<CycleTime>>
                     cycleTimeWithState = nodeToEvents.mapWithState(StateSpec.function(new createModel(driverConfig))
-                    .timeout(Durations.seconds(30)));// todo: think about timeout...
+                    .timeout(driverConfig.getPollTime())); //todo: timeout ?
 
             cycleTimeWithState.foreachRDD(rdd -> {
                 rdd.foreachPartition(partition -> {
@@ -104,7 +102,7 @@ public final class CycleTimeProcessor {
         }
 
         private static void writeCycleTimeStateModel(final List<Optional<CycleTime>> cycleTimes,
-                                                     final DriverConfig driverConfig) {
+                                                     final CycleTimeDriverConfig driverConfig) {
             final AmazonDynamoDBClient dynamoDBClient = getAmazonDynamoDBClient(driverConfig.getDynamoDBEndpoint());
             final DynamoDBMapper dynamoDBMapper = Strings.isNullOrEmpty(driverConfig.getDynamoPrefix()) ?
                     new DynamoDBMapper(dynamoDBClient) : new DynamoDBMapper(dynamoDBClient,
@@ -126,11 +124,13 @@ public final class CycleTimeProcessor {
         }
     }
 
+    @SuppressWarnings("Duplicates")
     public static void main(final String[] args) {
         // master url is only set for testing or running locally
-        if (args.length < 4) {
+        if (args.length < 6) {
             throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB " +
-                    "Endpoint, optional DynamoDB Prefix, optional driver MasterUrl, driver PollTime");
+                    "Endpoint, optional DynamoDB Prefix, optional driver MasterUrl, driver PollTime, " +
+                    "BucketIncrementer, and BucketSize");
         }
         final String kinesisEndpoint = args[0];
         final String kinesisStreamName = args[1];
@@ -138,27 +138,36 @@ public final class CycleTimeProcessor {
         final String dynamoPrefix;
         final String masterUrl;
         final String pollTime;
-        if (args.length == 6) {
+        final String bucketIncrementer;
+        final String bucketSize;
+        if (args.length == 8) {
             dynamoPrefix = args[3];
             masterUrl = args[4];
             pollTime = args[5];
-        } else if (args.length == 5) {
+            bucketIncrementer = args[6];
+            bucketSize = args[7];
+        } else if (args.length == 7) {
             // no master url
             dynamoPrefix = args[3];
             masterUrl = null;
             pollTime = args[4];
+            bucketIncrementer = args[5];
+            bucketSize = args[6];
         } else {
             // no prefix or master url
             dynamoPrefix = null;
             masterUrl = null;
             pollTime = args[3];
+            bucketIncrementer = args[4];
+            bucketSize = args[5];
         }
 
         final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? CYCLE_TIME_PROCESSOR_LEASE_TABLE_NAME :
                 String.format("%s%s", dynamoPrefix, CYCLE_TIME_PROCESSOR_LEASE_TABLE_NAME);
+
         // create the driver configuration and checkpoint dir
-        final DriverConfig driverConfig = configure(appName, kinesisEndpoint, kinesisStreamName, dynamoDBEndpoint,
-                dynamoPrefix, masterUrl, pollTime);
+        final CycleTimeDriverConfig driverConfig = configure(appName, kinesisEndpoint, kinesisStreamName,
+                dynamoDBEndpoint, dynamoPrefix, masterUrl, pollTime, bucketIncrementer, bucketSize);
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // create the table, if it does not exist
         createDynamoTable(driverConfig.getDynamoDBEndpoint(), CycleTime.class, driverConfig.getDynamoPrefix());
@@ -175,17 +184,21 @@ public final class CycleTimeProcessor {
 
     }
 
-    private static DriverConfig configure(final String appName, final String kinesisEndpoint,
-                                          final String kinesisStreamName, final String dynamoDBEndpoint,
-                                          final String dynamoPrefix, final String masterUrl, final String pollTime) {
-        return GenericBuilder.of(DriverConfig::new)
-                .with(DriverConfig::setAppName, appName)
-                .with(DriverConfig::setKinesisEndpoint, kinesisEndpoint)
-                .with(DriverConfig::setKinesisStreamName, kinesisStreamName)
-                .with(DriverConfig::setDynamoDBEndpoint, dynamoDBEndpoint)
-                .with(DriverConfig::setDynamoPrefix, dynamoPrefix)
-                .with(DriverConfig::setMasterUrl, masterUrl)
-                .with(DriverConfig::setPollTime, pollTime)
+    private static CycleTimeDriverConfig configure(final String appName, final String kinesisEndpoint,
+                                                   final String kinesisStreamName, final String dynamoDBEndpoint,
+                                                   final String dynamoPrefix, final String masterUrl,
+                                                   final String pollTime, final String bucketIncrementer,
+                                                   final String bucketSize) {
+        return GenericBuilder.of(CycleTimeDriverConfig::new)
+                .with(CycleTimeDriverConfig::setAppName, appName)
+                .with(CycleTimeDriverConfig::setKinesisEndpoint, kinesisEndpoint)
+                .with(CycleTimeDriverConfig::setKinesisStreamName, kinesisStreamName)
+                .with(CycleTimeDriverConfig::setDynamoDBEndpoint, dynamoDBEndpoint)
+                .with(CycleTimeDriverConfig::setDynamoPrefix, dynamoPrefix)
+                .with(CycleTimeDriverConfig::setMasterUrl, masterUrl)
+                .with(CycleTimeDriverConfig::setPollTime, pollTime)
+                .with(CycleTimeDriverConfig::setBucketIncrementer, bucketIncrementer)
+                .with(CycleTimeDriverConfig::setBucketSize, bucketSize)
                 .build();
     }
 }

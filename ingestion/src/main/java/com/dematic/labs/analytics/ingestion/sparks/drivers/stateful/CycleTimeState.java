@@ -18,7 +18,6 @@ import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.buc
 import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.bucketsToJson;
 import static java.util.Collections.sort;
 
-//todo: avg cycle time ? do we need it
 public final class CycleTimeState implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(CycleTimeState.class);
 
@@ -27,7 +26,6 @@ public final class CycleTimeState implements Serializable {
     private final Multimap<UUID, Event> jobs;
     private Set<Bucket> buckets;
     private Long jobCount;
-
 
     public CycleTimeState(final String nodeId, final Multimap<UUID, Event> initialJobs,
                           final Set<Bucket> initialBuckets) {
@@ -45,7 +43,7 @@ public final class CycleTimeState implements Serializable {
         // calculate the CT and add to buckets, todo: parallel
         jobs.asMap().entrySet().stream().forEach(job -> {
             if (job.getValue().size() == 1) {
-                //todo: figure out how to handle errors and time for how long to leave in memory
+                //
             } else {
                 // ensure orderd by start and finish event type
                 final List<Event> completedJobs = new ArrayList<>(job.getValue());

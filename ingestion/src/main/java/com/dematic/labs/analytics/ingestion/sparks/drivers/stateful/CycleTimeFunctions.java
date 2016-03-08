@@ -1,7 +1,5 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
-import com.dematic.labs.analytics.common.spark.DriverConfig;
-import com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils;
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Optional;
@@ -11,6 +9,8 @@ import org.apache.spark.streaming.State;
 
 import java.util.UUID;
 
+import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.createCycleTimeBuckets;
+
 public final class CycleTimeFunctions {
     private CycleTimeFunctions() {
     }
@@ -18,9 +18,9 @@ public final class CycleTimeFunctions {
     public static final class createModel implements Function3<String, Optional<Multimap<UUID, Event>>,
             State<CycleTimeState>, Optional<CycleTime>> {
 
-        private final DriverConfig driverConfig;
+        private final CycleTimeDriverConfig driverConfig;
 
-        public createModel(final DriverConfig driverConfig) {
+        public createModel(final CycleTimeDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 
@@ -47,11 +47,17 @@ public final class CycleTimeFunctions {
                 }
             } else {
                 // create and add the initial state, todo: check the db for saved state
-                cycleTimeState = new CycleTimeState(nodeId, jobs.get(), BucketUtils.createCycleTimeBuckets(4, 10));
+                cycleTimeState = new CycleTimeState(nodeId, jobs.get(),
+                        createCycleTimeBuckets(asInt(driverConfig.getBucketIncrementer()),
+                                asInt(driverConfig.getBucketSize())));
                 state.update(cycleTimeState);
             }
             return Optional.of(cycleTimeState.createModel());
         }
+    }
+
+    private static int asInt(final String intString){
+        return Integer.parseInt(intString);
     }
 }
 
