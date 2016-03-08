@@ -14,6 +14,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.streaming.Duration;
+import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.StateSpec;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaMapWithStateDStream;
@@ -80,7 +82,7 @@ public final class CycleTimeProcessor {
             // create the cycle time Model
             final JavaMapWithStateDStream<String, Multimap<UUID, Event>, CycleTimeState, Optional<CycleTime>>
                     cycleTimeWithState = nodeToEvents.mapWithState(StateSpec.function(new createModel(driverConfig))
-                    .timeout(driverConfig.getPollTime())); //todo: timeout ?
+                    .timeout(stateTimeout(driverConfig)));
 
             cycleTimeWithState.foreachRDD(rdd -> {
                 rdd.foreachPartition(partition -> {
@@ -99,6 +101,13 @@ public final class CycleTimeProcessor {
                     }
                 });
             });
+        }
+
+        // state timeout is 3 * polltime, this means if no jobs are received within 3 batches, remove state
+        private static Duration stateTimeout(final CycleTimeDriverConfig driverConfig) {
+            final Duration pollTime = driverConfig.getPollTime();
+            final long timeout = 3 * pollTime.milliseconds();
+            return Durations.milliseconds(timeout);
         }
 
         private static void writeCycleTimeStateModel(final List<Optional<CycleTime>> cycleTimes,

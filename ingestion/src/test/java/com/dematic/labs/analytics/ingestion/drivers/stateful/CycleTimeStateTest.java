@@ -27,7 +27,7 @@ public final class CycleTimeStateTest {
         final Multimap<UUID, Event> jobs = HashMultimap.create();
         jobs.putAll(jobId, firstPair);
         final CycleTimeState cycleTimeState = new CycleTimeState(nodeId, jobs, buckets);
-        final CycleTime model = cycleTimeState.createModel();
+        final CycleTime model = cycleTimeState.createModel(false);
         // ensure job count == 1
         Assert.assertEquals(1, model.getJobCount().intValue());
         // add another pair of events
@@ -37,7 +37,7 @@ public final class CycleTimeStateTest {
         jobs.putAll(jobId2, secondPair);
         cycleTimeState.updateJobs(jobs);
         // create second model
-        final CycleTime secondModel = cycleTimeState.createModel();
+        final CycleTime secondModel = cycleTimeState.createModel(false);
         // ensure job count == 2
         Assert.assertEquals(2, secondModel.getJobCount().intValue());
     }

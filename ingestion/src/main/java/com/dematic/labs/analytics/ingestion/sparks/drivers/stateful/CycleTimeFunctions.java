@@ -39,7 +39,7 @@ public final class CycleTimeFunctions {
                 if (timingOut) {
                     // no state has been updated for timeout amount of time, that is, no events associated to the node
                     // has been updated within the configured timeout, calculate any error cases, uuid's without pairs
-                    return Optional.of(cycleTimeState.createModel());
+                    return Optional.of(cycleTimeState.createModel(true));
                 } else {
                     // add new UUID grouping to the map
                     cycleTimeState.updateJobs(jobs.get());
@@ -52,7 +52,7 @@ public final class CycleTimeFunctions {
                                 asInt(driverConfig.getBucketSize())));
                 state.update(cycleTimeState);
             }
-            return Optional.of(cycleTimeState.createModel());
+            return Optional.of(cycleTimeState.createModel(false));
         }
     }
 
