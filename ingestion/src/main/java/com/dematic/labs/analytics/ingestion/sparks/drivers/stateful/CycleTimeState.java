@@ -65,6 +65,6 @@ public final class CycleTimeState implements Serializable {
                 }
             }
         });
-        return new CycleTime(nodeId, bucketsToJson(buckets),jobCount);
+        return new CycleTime(nodeId, bucketsToJson(buckets), jobCount);
     }
 }
