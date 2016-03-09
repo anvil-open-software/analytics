@@ -22,19 +22,23 @@ public final class EventStreamCheckpointedAggregator implements Serializable {
     public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Checkpoint_LT";
 
     public static void main(final String[] args) {
+        try {
+            final DriverConfig session = new DriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME, args);
+            session.setCheckPointDirectoryFromSystemProperties(true);
 
-        final DriverConfig session = new DriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME, args);
-        session.setCheckPointDirectoryFromSystemProperties(true);
+            // create the table, if it does not exist
+            createDynamoTable(session.getDynamoDBEndpoint(), EventAggregator.class, session.getDynamoPrefix());
 
-        // create the table, if it does not exist
-        createDynamoTable(session.getDynamoDBEndpoint(), EventAggregator.class, session.getDynamoPrefix());
-
-        final SimpleEventStreamAggregator eventStreamAggregator = new SimpleEventStreamAggregator();
-        final JavaStreamingContext streamingContext = AggregationDriverUtils.initializeCheckpointedSparkSession(session,
-                null, eventStreamAggregator);
-        streamingContext.start();
-        LOGGER.info("spark state: {}", streamingContext.getState().name());
-        streamingContext.awaitTermination();
+            final SimpleEventStreamAggregator eventStreamAggregator = new SimpleEventStreamAggregator();
+            final JavaStreamingContext streamingContext = AggregationDriverUtils.initializeCheckpointedSparkSession(session,
+                    null, eventStreamAggregator);
+            streamingContext.start();
+            LOGGER.info("spark state: {}", streamingContext.getState().name());
+            streamingContext.awaitTermination();
+        } catch (final Throwable any) {
+            any.printStackTrace();
+            throw any;
+        }
     }
 
 }
