@@ -1,11 +1,11 @@
-package com.dematic.labs.analytics.ingestion.sparks.drivers;
+package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
-import com.dematic.labs.analytics.common.sparks.DriverConfig;
-import com.dematic.labs.analytics.common.sparks.DriverConsts;
-import com.dematic.labs.analytics.ingestion.sparks.Functions;
+import com.dematic.labs.analytics.common.spark.DriverConfig;
+import com.dematic.labs.analytics.common.spark.DriverConsts;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.InterArrivalTimeFunctions.EventByNodeFunction;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
-import static com.dematic.labs.analytics.ingestion.sparks.Functions.CreateStreamingContextFunction;
+import static com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContextFunction;
 import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime.TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
@@ -41,7 +41,7 @@ import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
-//
+
 public final class InterArrivalTimeProcessor implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(InterArrivalTimeProcessor.class);
     public static final String INTER_ARRIVAL_TIME_LEASE_TABLE_NAME = TABLE_NAME + "_LT";
@@ -71,9 +71,10 @@ public final class InterArrivalTimeProcessor implements Serializable {
             final JavaPairDStream<String, List<Event>> nodeToEvents =
                     nodeToEventsPairs.reduceByKey((events1, events2) -> Stream.of(events1, events2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
+
             final JavaMapWithStateDStream<String, List<Event>, InterArrivalTimeState, InterArrivalTime>
                     mapWithStateDStream = nodeToEvents.mapWithState(
-                    StateSpec.function(new Functions.StatefulEventByNodeFunction(driverConfig))
+                    StateSpec.function(new EventByNodeFunction(driverConfig))
                             .timeout(bufferTimeOut(driverConfig.getBufferTime())));
 
             mapWithStateDStream.foreachRDD(rdd -> {
@@ -90,9 +91,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
                         writeInterArrivalTimeStateModel(collect, driverConfig);
                     } else {
                         collect.parallelStream()
-                                .forEach(interArrivalTime -> {
-                                   // LOGGER.info("IAT: >{}<", interArrivalTime);
-                                });
+                                .forEach(interArrivalTime -> LOGGER.debug("IAT: >{}<", interArrivalTime));
                     }
                 });
             });
@@ -127,6 +126,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
     }
 
     // functions
+    @SuppressWarnings("Duplicates")
     public static void main(final String[] args) {
         // master url is only set for testing or running locally
         if (args.length < 6) {

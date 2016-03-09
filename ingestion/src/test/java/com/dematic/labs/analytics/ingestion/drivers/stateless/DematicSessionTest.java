@@ -1,12 +1,12 @@
-package com.dematic.labs.analytics.ingestion.drivers;
+package com.dematic.labs.analytics.ingestion.drivers.stateless;
 
-import com.dematic.labs.analytics.common.sparks.DriverConfig;
-import com.dematic.labs.analytics.common.sparks.DriverConsts;
-import com.dematic.labs.analytics.common.sparks.DriverUtils;
+import com.dematic.labs.analytics.common.spark.DriverConfig;
+import com.dematic.labs.analytics.common.spark.DriverConsts;
+import com.dematic.labs.analytics.common.spark.DriverUtils;
 import org.apache.spark.streaming.Duration;
 import org.junit.Test;
 
-import static com.dematic.labs.analytics.ingestion.sparks.drivers.EventStreamAggregator.EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME;
+import static com.dematic.labs.analytics.ingestion.sparks.drivers.stateless.EventStreamAggregator.EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -41,5 +41,4 @@ public final class DematicSessionTest {
         Duration newDuration = DriverUtils.getKinesisCheckpointWindow();
         assertEquals(newDuration.milliseconds(), 47 * 1000L);
     }
-
 }

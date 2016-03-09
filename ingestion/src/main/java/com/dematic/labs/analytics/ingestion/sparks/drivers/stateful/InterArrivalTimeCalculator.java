@@ -1,7 +1,8 @@
-package com.dematic.labs.analytics.ingestion.sparks.drivers;
+package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
+import com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
-import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
+import com.dematic.labs.analytics.ingestion.sparks.tables.Bucket;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -14,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket.toInterArrivalTimeBucket;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.Bucket.toTimeBucket;
 import static com.dematic.labs.toolkit.communication.EventUtils.dateTime;
 
 public final class InterArrivalTimeCalculator {
@@ -30,7 +31,7 @@ public final class InterArrivalTimeCalculator {
             return;
         }
         // create the buckets
-        final List<InterArrivalTimeBucket> buckets = createBuckets(avgInterArrivalTime);
+        final Set<Bucket> buckets = BucketUtils.createBuckets(avgInterArrivalTime);
 
         // remove and count all errors, that is, events that should have been processed with the last batch
         final List<Event> eventsWithoutErrors = errorChecker(events, lastEventTime);
@@ -55,7 +56,7 @@ public final class InterArrivalTimeCalculator {
                             eventsWithoutErrors.get(0).getTimestamp().getMillis());
                 } else {
                     // update the bucket
-                    addToBucket(interArrivalTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
+                    BucketUtils.addToBucket(BucketUtils.bucketTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
                 }
             }
 
@@ -69,8 +70,8 @@ public final class InterArrivalTimeCalculator {
                     // events r in order
                     final long interArrivalTimeValue =
                             eventPeekingIterator.peek().getTimestamp().getMillis() - current.getTimestamp().getMillis();
-                    final long interArrivalTimeValueInSeconds = interArrivalTimeInSeconds(interArrivalTimeValue);
-                    addToBucket(interArrivalTimeValueInSeconds, buckets);
+                    final long interArrivalTimeValueInSeconds = BucketUtils.bucketTimeInSeconds(interArrivalTimeValue);
+                    BucketUtils.addToBucket(interArrivalTimeValueInSeconds, buckets);
                 }
             }
         } else if (eventsWithoutErrors.size() == 1) {
@@ -90,7 +91,7 @@ public final class InterArrivalTimeCalculator {
             } else {
                 final long interArrivalTimeBetweenBatches =
                         interArrivalTimeBetweenBatches(singleEvent.getTimestamp().getMillis(), eventsWithoutErrors);
-                addToBucket(interArrivalTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
+                BucketUtils.addToBucket(BucketUtils.bucketTimeInSeconds(interArrivalTimeBetweenBatches), buckets);
             }
         } else {
             final String lastEventTimeString = lastEventTime != null ? dateTime(lastEventTime).toString() : null;
@@ -107,61 +108,34 @@ public final class InterArrivalTimeCalculator {
         // set the buckets
         final Set<String> existingBuckets = interArrivalTime.getBuckets();
         if (existingBuckets == null || existingBuckets.isEmpty()) {
-            final Set<String> bucketsString = Sets.newHashSet();
+            final Set<String> bucketsString = Sets.newLinkedHashSet();
             buckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
             interArrivalTime.setBuckets(bucketsString);
         } else {
             // add existing and new,
-            final List<InterArrivalTimeBucket> updatedBuckets = Lists.newArrayList();
+            final List<Bucket> updatedBuckets = Lists.newArrayList();
             interArrivalTime.getBuckets().stream().
-                    forEach(bucket -> updatedBuckets.add(toInterArrivalTimeBucket(bucket)));
+                    forEach(bucket -> updatedBuckets.add(toTimeBucket(bucket)));
 
             buckets.stream().forEach(newBucket -> {
                 final int bucketIndex = updatedBuckets.indexOf(newBucket);
                 if (bucketIndex > -1) {
-                    final InterArrivalTimeBucket existingInterArrivalTimeBucket = updatedBuckets.remove(bucketIndex);
+                    final Bucket existingBucket = updatedBuckets.remove(bucketIndex);
                     // add the counts
-                    final long existingCount = existingInterArrivalTimeBucket.getCount();
+                    final long existingCount = existingBucket.getCount();
                     final long newCount = newBucket.getCount();
-                    existingInterArrivalTimeBucket.setCount(existingCount + newCount);
-                    updatedBuckets.add(existingInterArrivalTimeBucket);
+                    existingBucket.setCount(existingCount + newCount);
+                    updatedBuckets.add(existingBucket);
                 } else {
                     // new bucket
                     updatedBuckets.add(newBucket);
                 }
             });
 
-            final Set<String> bucketsString = Sets.newHashSet();
+            final Set<String> bucketsString = Sets.newLinkedHashSet();
             updatedBuckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
             interArrivalTime.setBuckets(bucketsString);
         }
-    }
-
-    private static List<InterArrivalTimeBucket> createBuckets(final int avgInterArrivalTime) {
-        final List<InterArrivalTimeBucket> buckets = Lists.newArrayList();
-        // see https://docs.google.com/document/d/1J9mSW8EbxTwbsGGeZ7b8TVkF5lm8-bnjy59KpHCVlBA/edit# for specs
-        for (int i = 0; i < avgInterArrivalTime * 2; i++) {
-            final int low = i * avgInterArrivalTime / 5;
-            final int high = (i + 1) * avgInterArrivalTime / 5;
-            if (high > avgInterArrivalTime * 2) {
-                // add the last bucket
-                buckets.add(new InterArrivalTimeBucket(low, Integer.MAX_VALUE, 0L));
-                break;
-            }
-            buckets.add(new InterArrivalTimeBucket(low, high, 0L));
-        }
-        return buckets;
-    }
-
-    private static void addToBucket(final long intervalTime, final List<InterArrivalTimeBucket> buckets) {
-        final java.util.Optional<InterArrivalTimeBucket> first = buckets.stream()
-                .filter(bucket -> bucket.isWithinBucket(intervalTime)).findFirst();
-        if (!first.isPresent()) {
-            throw new IllegalStateException(String.format("IAT: - Unexpected Error: intervalTime >%s<" +
-                    " not contained within buckets >%s<", intervalTime, buckets));
-        }
-        final InterArrivalTimeBucket interArrivalTimeBucket = first.get();
-        interArrivalTimeBucket.incrementCount();
     }
 
     private static List<Event> errorChecker(final List<Event> unprocessedEvents, final Long lastEventTime) {
@@ -197,9 +171,5 @@ public final class InterArrivalTimeCalculator {
         // events r in order, if lastEventTime is > then current event, this is an error, just return -1
         final long eventTime = events.get(0).getTimestamp().getMillis();
         return lastEventTime > eventTime ? -1 : eventTime - lastEventTime;
-    }
-
-    private static long interArrivalTimeInSeconds(final long interArrivalTimeInMs) {
-        return interArrivalTimeInMs / 1000;
     }
 }

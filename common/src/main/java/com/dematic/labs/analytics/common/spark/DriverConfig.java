@@ -1,4 +1,4 @@
-package com.dematic.labs.analytics.common.sparks;
+package com.dematic.labs.analytics.common.spark;
 
 import com.google.common.base.Strings;
 import org.apache.spark.streaming.Duration;
@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  * Holder for spark driver session details including input parameters
  */
 // todo: still needs more cleanup
-public final class DriverConfig implements Serializable {
+public class DriverConfig implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(DriverConfig.class);
     private static final long serialVersionUID = 1896518324147474596L;
 
@@ -29,7 +29,7 @@ public final class DriverConfig implements Serializable {
     private String masterUrl;
     private Duration pollTime;
     private TimeUnit timeUnit;
-
+    // todo: add in another class
     private String mediumInterArrivalTime;
     private String bufferTime;
 

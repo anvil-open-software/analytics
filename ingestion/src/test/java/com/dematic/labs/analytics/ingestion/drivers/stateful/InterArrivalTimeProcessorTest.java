@@ -1,12 +1,14 @@
-package com.dematic.labs.analytics.ingestion.drivers;
+package com.dematic.labs.analytics.ingestion.drivers.stateful;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
-import com.dematic.labs.analytics.common.sparks.DriverConsts;
-import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeProcessor;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
+import com.dematic.labs.analytics.common.spark.DriverConsts;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.InterArrivalTimeProcessor;
+import com.dematic.labs.analytics.ingestion.sparks.tables.Bucket;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
-import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeBucket;
 import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
@@ -25,8 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
-import static com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeProcessor.INTER_ARRIVAL_TIME_LEASE_TABLE_NAME;
-import static com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTimeUtils.findInterArrivalTime;
+import static com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.InterArrivalTimeProcessor.INTER_ARRIVAL_TIME_LEASE_TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.deleteDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
 import static org.junit.Assert.assertEquals;
@@ -143,8 +144,7 @@ public final class InterArrivalTimeProcessorTest {
         }
         final Set<String> buckets = interArrivalTime.getBuckets();
         for (final String bucket : buckets) {
-            final InterArrivalTimeBucket interArrivalTimeBucket =
-                    InterArrivalTimeBucket.toInterArrivalTimeBucket(bucket);
+            final Bucket interArrivalTimeBucket = Bucket.toTimeBucket(bucket);
             final int bucketLowerBoundry = interArrivalTimeBucket.getLowerBoundry();
             final int bucketUpperBoundry = interArrivalTimeBucket.getUpperBoundry();
             if (lowerBoundry == bucketLowerBoundry && upperBoundry == bucketUpperBoundry) {
@@ -152,5 +152,17 @@ public final class InterArrivalTimeProcessorTest {
             }
         }
         return 0;
+    }
+
+    private static InterArrivalTime findInterArrivalTime(final String nodeId, final DynamoDBMapper dynamoDBMapper) {
+        // lookup buckets by nodeId
+        final PaginatedQueryList<InterArrivalTime> query = dynamoDBMapper.query(InterArrivalTime.class,
+                new DynamoDBQueryExpression<InterArrivalTime>()
+                        .withHashKeyValues(new InterArrivalTime(nodeId)));
+        if (query == null || query.isEmpty()) {
+            return null;
+        }
+        // only 1 should exists
+        return query.get(0);
     }
 }

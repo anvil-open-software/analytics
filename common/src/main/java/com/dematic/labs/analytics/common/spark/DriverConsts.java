@@ -1,4 +1,4 @@
-package com.dematic.labs.analytics.common.sparks;
+package com.dematic.labs.analytics.common.spark;
 
 /**
  * Keep track of all parameters here

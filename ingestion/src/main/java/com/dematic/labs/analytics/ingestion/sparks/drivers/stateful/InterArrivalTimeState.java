@@ -1,4 +1,4 @@
-package com.dematic.labs.analytics.ingestion.sparks.drivers;
+package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.toolkit.communication.Event;
@@ -40,7 +40,7 @@ public final class InterArrivalTimeState implements Serializable {
         return Seconds.secondsBetween(dateTime(startTimeInMs), dateTime(timeInMs)).getSeconds() >= bufferTimeInsSconds;
     }
 
-    public boolean removeInterArrivalTimeState() {
+    public boolean stateExpired() {
         // remove state if list is empty, i.e. all events have been processed and exceeded trigger time
         return events.isEmpty();
     }

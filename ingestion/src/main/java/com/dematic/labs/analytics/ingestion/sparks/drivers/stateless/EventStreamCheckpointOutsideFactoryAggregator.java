@@ -1,4 +1,4 @@
-package com.dematic.labs.analytics.ingestion.sparks.drivers;
+package com.dematic.labs.analytics.ingestion.sparks.drivers.stateless;
 
 import com.dematic.labs.analytics.ingestion.sparks.tables.EventAggregator;
 import com.google.common.base.Strings;
@@ -12,8 +12,8 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
-import static com.dematic.labs.analytics.common.sparks.DriverUtils.getJavaDStream;
-import static com.dematic.labs.analytics.common.sparks.DriverUtils.getStreamingContext;
+import static com.dematic.labs.analytics.common.spark.DriverUtils.getJavaDStream;
+import static com.dematic.labs.analytics.common.spark.DriverUtils.getStreamingContext;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 
 public final class EventStreamCheckpointOutsideFactoryAggregator implements Serializable {

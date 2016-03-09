@@ -1,6 +1,6 @@
-package com.dematic.labs.analytics.ingestion.drivers;
+package com.dematic.labs.analytics.ingestion.drivers.stateful;
 
-import com.dematic.labs.analytics.ingestion.sparks.drivers.InterArrivalTimeState;
+import com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.InterArrivalTimeState;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.toolkit.communication.Event;
 import org.junit.Test;
