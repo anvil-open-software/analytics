@@ -10,13 +10,14 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.dematic.labs.analytics.common.spark.DriverUtils.getKinesisCheckpointWindow;
 import static com.dematic.labs.toolkit.aws.Connections.getNumberOfShards;
 
-public final class StreamFunctions {
+public final class StreamFunctions implements Serializable {
     private StreamFunctions() {
     }
 

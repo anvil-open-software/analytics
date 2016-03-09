@@ -8,11 +8,12 @@ import org.apache.spark.api.java.function.Function4;
 import org.apache.spark.streaming.State;
 import org.apache.spark.streaming.Time;
 
+import java.io.Serializable;
 import java.util.UUID;
 
 import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.createCycleTimeBuckets;
 
-public final class CycleTimeFunctions {
+public final class CycleTimeFunctions implements Serializable {
     private CycleTimeFunctions() {
     }
 

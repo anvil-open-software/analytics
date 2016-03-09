@@ -8,12 +8,13 @@ import org.apache.spark.api.java.function.Function4;
 import org.apache.spark.streaming.State;
 import org.apache.spark.streaming.Time;
 
+import java.io.Serializable;
 import java.util.List;
 
 import static com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.InterArrivalTimeCalculator.computeInterArrivalTime;
 import static java.lang.Integer.valueOf;
 
-public final class InterArrivalTimeFunctions {
+public final class InterArrivalTimeFunctions implements Serializable {
     private InterArrivalTimeFunctions() {
     }
 

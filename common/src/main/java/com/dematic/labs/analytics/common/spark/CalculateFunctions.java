@@ -3,11 +3,12 @@ package com.dematic.labs.analytics.common.spark;
 import org.apache.spark.api.java.function.Function2;
 import scala.Tuple2;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
-public final class CalculateFunctions {
+public final class CalculateFunctions implements Serializable {
     private CalculateFunctions() {
     }
 
