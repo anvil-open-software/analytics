@@ -4,6 +4,7 @@ import com.dematic.labs.analytics.ingestion.sparks.tables.Bucket;
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.communication.Event;
 import com.dematic.labs.toolkit.communication.EventUtils;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import org.joda.time.Seconds;
@@ -43,8 +44,9 @@ public final class CycleTimeState implements Serializable {
     }
 
     public CycleTime createModel(final boolean stateTime) {
-        // calculate the CT and add to buckets, todo: parallel
-        jobs.asMap().entrySet().stream().forEach(job -> {
+        final Multimap<UUID, Event> jobsCopy = HashMultimap.create(jobs);
+        // calculate the CT and add to buckets
+        jobsCopy.asMap().entrySet().stream().forEach(job -> {
             // driver state timeout
             if (stateTime && job.getValue().size() == 1) {
                 // todo: for now, just log, need to store either in bucket or db table
