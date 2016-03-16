@@ -165,26 +165,32 @@ public final class CycleTimeProcessor {
             bucketIncrementer = args[4];
             bucketSize = args[5];
         }
+        try {
 
-        final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? CYCLE_TIME_PROCESSOR_LEASE_TABLE_NAME :
-                String.format("%s%s", dynamoPrefix, CYCLE_TIME_PROCESSOR_LEASE_TABLE_NAME);
 
-        // create the driver configuration and checkpoint dir
-        final CycleTimeDriverConfig driverConfig = configure(appName, kinesisEndpoint, kinesisStreamName,
-                dynamoDBEndpoint, dynamoPrefix, masterUrl, pollTime, bucketIncrementer, bucketSize);
-        driverConfig.setCheckPointDirectoryFromSystemProperties(true);
-        // create the table, if it does not exist
-        createDynamoTable(driverConfig.getDynamoDBEndpoint(), CycleTime.class, driverConfig.getDynamoPrefix());
-        // master url will be set using the spark submit driver command
-        final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
-                new CreateStreamingContextFunction(driverConfig, new CycleTimeFunction(driverConfig)));
+            final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? CYCLE_TIME_PROCESSOR_LEASE_TABLE_NAME :
+                    String.format("%s%s", dynamoPrefix, CYCLE_TIME_PROCESSOR_LEASE_TABLE_NAME);
 
-        // Start the streaming context and await termination
-        LOGGER.info("CT: starting Cycle-Time Processor Driver with master URL >{}<",
-                streamingContext.sparkContext().master());
-        streamingContext.start();
-        LOGGER.info("CT: spark state: {}", streamingContext.getState().name());
-        streamingContext.awaitTermination();
+            // create the driver configuration and checkpoint dir
+            final CycleTimeDriverConfig driverConfig = configure(appName, kinesisEndpoint, kinesisStreamName,
+                    dynamoDBEndpoint, dynamoPrefix, masterUrl, pollTime, bucketIncrementer, bucketSize);
+            driverConfig.setCheckPointDirectoryFromSystemProperties(true);
+            // create the table, if it does not exist
+            createDynamoTable(driverConfig.getDynamoDBEndpoint(), CycleTime.class, driverConfig.getDynamoPrefix());
+            // master url will be set using the spark submit driver command
+            final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
+                    new CreateStreamingContextFunction(driverConfig, new CycleTimeFunction(driverConfig)));
+
+            // Start the streaming context and await termination
+            LOGGER.info("CT: starting Cycle-Time Processor Driver with master URL >{}<",
+                    streamingContext.sparkContext().master());
+            streamingContext.start();
+            LOGGER.info("CT: spark state: {}", streamingContext.getState().name());
+            streamingContext.awaitTermination();
+        } catch (final Throwable any) {
+            LOGGER.error("-------- " + any.getMessage());
+            any.printStackTrace();
+        }
     }
 
     private static CycleTimeDriverConfig configure(final String appName, final String kinesisEndpoint,
