@@ -1,10 +1,12 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
+import com.dematic.labs.analytics.ingestion.sparks.tables.Bucket;
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.communication.Event;
 import com.dematic.labs.toolkit.communication.EventUtils;
 import com.google.common.base.Optional;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import org.apache.spark.api.java.function.Function4;
 import org.apache.spark.streaming.State;
 import org.apache.spark.streaming.Time;
@@ -12,9 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.Comparator;
+import java.util.Set;
 import java.util.UUID;
 
-import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.createCycleTimeBuckets;
 
 public final class CycleTimeFunctions implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(CycleTimeFunctions.class);
@@ -63,6 +66,24 @@ public final class CycleTimeFunctions implements Serializable {
 
     private static int asInt(final String intString){
         return Integer.parseInt(intString);
+    }
+
+    public static Set<Bucket> createCycleTimeBuckets(final int bucketIncrement, final int numberOfBuckets) {
+        // see https://docs.google.com/document/d/1J9mSW8EbxTwbsGGeZ7b8TVkF5lm8-bnjy59KpHCVlBA/edit# for specs
+        // todo: did not follow specs, the numbers did not work out
+        final Set<Bucket> buckets = Sets.newTreeSet(new Comparator<Bucket>() {
+            @Override
+            public int compare(final Bucket b1, final Bucket b2) {
+                return Integer.compare(b1.getLowerBoundry(), b2.getLowerBoundry());
+            }
+        });
+        for (int i = 0; i < numberOfBuckets; i++) {
+            final int low = i * bucketIncrement;
+            buckets.add(new Bucket(low, low + bucketIncrement, 0L));
+        }
+        // add the last bucket
+        buckets.add(new Bucket(bucketIncrement * numberOfBuckets, Integer.MAX_VALUE, 0L));
+        return buckets;
     }
 }
 

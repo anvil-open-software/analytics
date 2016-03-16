@@ -78,7 +78,9 @@ public final class CycleTimeState implements Serializable {
                 }
             }
         });
-        return new CycleTime(nodeId, bucketsToJson(buckets), jobCount);
+        final CycleTime cycleTime = new CycleTime(nodeId, bucketsToJson(buckets), jobCount);
+        LOGGER.info("CT: created new >{}<", cycleTime);
+        return cycleTime;
     }
 
     @Override
