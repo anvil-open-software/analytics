@@ -17,7 +17,7 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Set;
 
-public class BucketUtils implements Serializable {
+public final class BucketUtils {
     private final static ObjectMapper objectMapper;
 
     static {
@@ -28,14 +28,12 @@ public class BucketUtils implements Serializable {
         objectMapper.registerModule(module);
     }
 
+    private BucketUtils() {
+    }
+
     public static Set<Bucket> createBuckets(final int avgTime) {
         // see https://docs.google.com/document/d/1J9mSW8EbxTwbsGGeZ7b8TVkF5lm8-bnjy59KpHCVlBA/edit# for specs
-        final Set<Bucket> buckets = Sets.newTreeSet(new Comparator<Bucket>() {
-            @Override
-            public int compare(final Bucket b1, final Bucket b2) {
-                return Integer.compare(b1.getLowerBoundry(), b2.getLowerBoundry());
-            }
-        });
+        final Set<Bucket> buckets = Sets.newTreeSet(new BucketComparator());
 
         for (int i = 0; i < avgTime * 2; i++) {
             final int low = i * avgTime / 5;
@@ -53,12 +51,7 @@ public class BucketUtils implements Serializable {
     public static Set<Bucket> createCycleTimeBuckets(final int bucketIncrement, final int numberOfBuckets) {
         // see https://docs.google.com/document/d/1J9mSW8EbxTwbsGGeZ7b8TVkF5lm8-bnjy59KpHCVlBA/edit# for specs
         // todo: did not follow specs, the numbers did not work out
-        final Set<Bucket> buckets = Sets.newTreeSet(new Comparator<Bucket>() {
-            @Override
-            public int compare(final Bucket b1, final Bucket b2) {
-                return Integer.compare(b1.getLowerBoundry(), b2.getLowerBoundry());
-            }
-        });
+        final Set<Bucket> buckets = Sets.newTreeSet(new BucketComparator());
         for (int i = 0; i < numberOfBuckets; i++) {
             final int low = i * bucketIncrement;
             buckets.add(new Bucket(low, low + bucketIncrement, 0L));
@@ -134,6 +127,13 @@ public class BucketUtils implements Serializable {
             final long count = eventCountNode.asLong();
 
             return new Bucket(low, high, count);
+        }
+    }
+
+    private static class BucketComparator implements Comparator<Bucket>, Serializable {
+        @Override
+        public int compare(final Bucket b1, final Bucket b2) {
+            return Integer.compare(b1.getLowerBoundry(), b2.getLowerBoundry());
         }
     }
 }
