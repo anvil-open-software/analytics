@@ -2,11 +2,14 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.communication.Event;
+import com.dematic.labs.toolkit.communication.EventUtils;
 import com.google.common.base.Optional;
 import com.google.common.collect.Multimap;
 import org.apache.spark.api.java.function.Function4;
 import org.apache.spark.streaming.State;
 import org.apache.spark.streaming.Time;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -14,6 +17,8 @@ import java.util.UUID;
 import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.createCycleTimeBuckets;
 
 public final class CycleTimeFunctions implements Serializable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CycleTimeFunctions.class);
+
     private CycleTimeFunctions() {
     }
 
@@ -35,6 +40,7 @@ public final class CycleTimeFunctions implements Serializable {
 
                 final boolean timingOut = state.isTimingOut();
                 if (timingOut) {
+                    LOGGER.info("CT: node >{}< state timeout >{}<", nodeId, EventUtils.nowString());
                     // no state has been updated for timeout amount of time, that is, no events associated to the node
                     // has been updated within the configured timeout, calculate any error cases, uuid's without pairs
                     return Optional.of(cycleTimeState.createModel(true));
@@ -48,6 +54,7 @@ public final class CycleTimeFunctions implements Serializable {
                 cycleTimeState = new CycleTimeState(nodeId, jobs.get(),
                         createCycleTimeBuckets(asInt(driverConfig.getBucketIncrementer()),
                                 asInt(driverConfig.getBucketSize())));
+                LOGGER.info("CT: node >{}< created state >{}<", nodeId, cycleTimeState);
                 state.update(cycleTimeState);
             }
             return Optional.of(cycleTimeState.createModel(false));

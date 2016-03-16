@@ -59,7 +59,7 @@ public final class CycleTimeState implements Serializable {
                 // calculate jobs that did not have job pairs, that is, start and end event and have timed out
                 final Collection<Event> errors = jobs.removeAll(job.getKey());
                 LOGGER.error("CT: job timeout : >{}< did not have complete set of events >{}<", job.getKey(), errors);
-            } else {
+            } else { //todo: better errors
                 // ensure orderd by start and finish event type
                 final List<Event> completedJobs = new ArrayList<>(job.getValue());
                 sort(completedJobs, (final Event e1, final Event e2) -> e1.getType().compareTo(e2.getType()));
@@ -79,6 +79,16 @@ public final class CycleTimeState implements Serializable {
             }
         });
         return new CycleTime(nodeId, bucketsToJson(buckets), jobCount);
+    }
+
+    @Override
+    public String toString() {
+        return "CycleTimeState{" +
+                "nodeId='" + nodeId + '\'' +
+                ", jobs=" + jobs +
+                ", buckets=" + buckets +
+                ", jobCount=" + jobCount +
+                '}';
     }
 
     private static boolean jobTimeout(final Event event) {

@@ -96,7 +96,7 @@ public final class CycleTimeProcessor {
                     if (!skipDynamoDBwrite && !collect.isEmpty()) {
                         writeCycleTimeStateModel(collect, driverConfig);
                     } else {
-                        collect.parallelStream().forEach(ct -> LOGGER.debug("CycleTime: >{}<", ct));
+                        collect.parallelStream().forEach(ct -> LOGGER.debug("CT: >{}<", ct));
                     }
                 });
             });
@@ -105,7 +105,7 @@ public final class CycleTimeProcessor {
         // state timeout is 3 * polltime, this means if no jobs are received within 3 batches, remove state
         private static Duration stateTimeout(final CycleTimeDriverConfig driverConfig) {
             final Duration pollTime = driverConfig.getPollTime();
-            final long timeout = 3 * pollTime.milliseconds();
+            final long timeout = 12 * pollTime.milliseconds();
             return Durations.milliseconds(timeout);
         }
 
@@ -117,12 +117,13 @@ public final class CycleTimeProcessor {
                     new DynamoDBMapperConfig(withTableNamePrefix(driverConfig.getDynamoPrefix())));
 
             if (!cycleTimes.isEmpty()) {
+                LOGGER.info("CT: writing >{}<", cycleTimes);
                 final List<DynamoDBMapper.FailedBatch> failedBatches = dynamoDBMapper.batchSave(cycleTimes);
                 failedBatches.parallelStream().forEach(failedBatch -> {
                     // for now, not going to retry, just going to log the exception, the next time spark processes a
                     // batch the CT will be saved. That is, all CT calculations are saved in spark state, nothing will
                     // get lost unless there is a jvm crash, this still needs to be worked out
-                    LOGGER.error("CycleTime: unprocessed CycleTime model's", failedBatch.getException());
+                    LOGGER.error("CT: unprocessed CycleTime model's", failedBatch.getException());
                 });
             }
         }
