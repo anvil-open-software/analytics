@@ -17,7 +17,7 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Set;
 
-public final class BucketUtils implements Serializable {
+public class BucketUtils implements Serializable {
     private final static ObjectMapper objectMapper;
 
     static {
@@ -26,9 +26,6 @@ public final class BucketUtils implements Serializable {
         module.addDeserializer(Bucket.class, new BucketDeserializer());
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(module);
-    }
-
-    private BucketUtils() {
     }
 
     public static Set<Bucket> createBuckets(final int avgTime) {
