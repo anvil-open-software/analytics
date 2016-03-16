@@ -12,6 +12,7 @@ import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
 import com.jayway.awaitility.Awaitility;
+import org.apache.spark.streaming.StreamingContext;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -66,6 +67,10 @@ public final class CycleTimeProcessorTest {
             // ensure all use-cases succeed
             checkJobCount(dynamoDBEndpoint, userNamePrefix);
         } finally {
+            try {
+                StreamingContext.getActive().get().stop(true, false);
+            } catch (final Throwable ignore) {
+            }
             // delete dynamo tables
             final AmazonDynamoDBClient amazonDynamoDBClient = getAmazonDynamoDBClient(dynamoDBEndpoint);
             try {
