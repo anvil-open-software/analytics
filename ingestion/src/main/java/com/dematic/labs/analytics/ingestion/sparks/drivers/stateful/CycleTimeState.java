@@ -23,7 +23,7 @@ import static java.util.Collections.sort;
 
 public final class CycleTimeState implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(CycleTimeState.class);
-    private static final int TIME_OUT_IN_SECONDS = 60; // todo: make configurable
+    private static final int TIME_OUT_IN_SECONDS = 180; // todo: make configurable
 
     private final String nodeId;
     // keep UUID's to events that were not processed because of missing jobs
