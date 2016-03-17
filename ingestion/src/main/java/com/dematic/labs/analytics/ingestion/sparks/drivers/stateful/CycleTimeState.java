@@ -60,13 +60,15 @@ public final class CycleTimeState implements Serializable {
                 final Collection<Event> errors = jobs.removeAll(job.getKey());
                 LOGGER.error("CT: job timeout : >{}< did not have complete set of events >{}<", job.getKey(), errors);
             } else {
-                // ensure orderd by start and finish event type
-                final List<Event> completedJobs = new ArrayList<>(job.getValue());
-                sort(completedJobs, (final Event e1, final Event e2) -> e1.getType().compareTo(e2.getType()));
-                // calculate completed job CT
-                if (completedJobs.size() != 2) {
-                    LOGGER.error("CT: Unexpected Error: completed jobs incorrect number of events >{}<", completedJobs);
+                if (job.getValue().size() > 2) {
+                    LOGGER.error("CT: Unexpected Error: duplicate jobs incorrect number of events >{}<", job.getValue());
+                } else if (job.getValue().size() != 2) {
+                    LOGGER.debug("CT: Unexpected Error: missing jobs incorrect number of events >{}<", job.getValue());
                 } else {
+                    // ensure orderd by start and finish event type
+                    final List<Event> completedJobs = new ArrayList<>(job.getValue());
+                    sort(completedJobs, (final Event e1, final Event e2) -> e1.getType().compareTo(e2.getType()));
+                    // calculate completed job CT
                     final Event start = completedJobs.get(0);
                     final Event end = completedJobs.get(1);
                     // add to bucket
