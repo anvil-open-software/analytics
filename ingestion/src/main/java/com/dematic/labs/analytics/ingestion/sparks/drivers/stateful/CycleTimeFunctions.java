@@ -57,13 +57,16 @@ public final class CycleTimeFunctions implements Serializable {
                 // create and add the initial state, see if existing state in DB
                 final CycleTime cycleTimeByNodeId = findCycleTimeByNodeId(nodeId,
                         getDynamoDBMapper(driverConfig.getDynamoDBEndpoint(), driverConfig.getDynamoPrefix()));
-                final Long jobCount = cycleTimeByNodeId != null ? cycleTimeByNodeId.getJobCount() : 0L;
                 final Set<Bucket> buckets = cycleTimeByNodeId != null ?
                         createCycleTimeBuckets(cycleTimeByNodeId.getBuckets()) :
                         createCycleTimeBuckets(asInt(driverConfig.getBucketIncrementer()),
                                 asInt(driverConfig.getBucketSize()));
+                final Long jobCount = cycleTimeByNodeId != null ? cycleTimeByNodeId.getJobCount() : 0L;
+                final Long errorStartCount = cycleTimeByNodeId != null ? cycleTimeByNodeId.getErrorStartCount() : 0L;
+                final Long errorEndCount = cycleTimeByNodeId != null ? cycleTimeByNodeId.getErrorEndCount() : 0L;
 
-                cycleTimeState = new CycleTimeState(nodeId, jobs.get(), buckets, jobCount);
+                cycleTimeState = new CycleTimeState(nodeId, jobs.get(), buckets, jobCount, errorStartCount,
+                        errorEndCount);
                 LOGGER.debug("CT: node >{}< created state >{}<", nodeId, cycleTimeState);
                 state.update(cycleTimeState);
             }

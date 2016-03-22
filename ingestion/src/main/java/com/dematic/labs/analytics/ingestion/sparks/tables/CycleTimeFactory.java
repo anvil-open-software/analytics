@@ -12,7 +12,7 @@ public final class CycleTimeFactory {
         // lookup by nodeId
         final PaginatedQueryList<CycleTime> query = dynamoDBMapper.query(CycleTime.class,
                 new DynamoDBQueryExpression<CycleTime>()
-                        .withHashKeyValues(new CycleTime(nodeId, null, null)));
+                        .withHashKeyValues(new CycleTime(nodeId, null, null, null, null)));
         if (query == null || query.isEmpty()) {
             return null;
         }
