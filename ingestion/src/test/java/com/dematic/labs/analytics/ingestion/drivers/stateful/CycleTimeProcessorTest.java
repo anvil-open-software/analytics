@@ -2,12 +2,10 @@ package com.dematic.labs.analytics.ingestion.drivers.stateful;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.CycleTimeProcessor;
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
+import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTimeFactory;
 import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
@@ -24,7 +22,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
 import static com.dematic.labs.toolkit.aws.Connections.deleteDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
 import static com.dematic.labs.toolkit.communication.EventUtils.generateCycleTimeEvents;
@@ -91,38 +88,14 @@ public final class CycleTimeProcessorTest {
         // push job pair to kinesis
         kinesisStreamRule.pushEventsToKinesis(generateCycleTimeEvents(2, NODE_ID, JOB_ID, 5));
 
-
         // set the defaults timeouts
         Awaitility.setDefaultTimeout(3, TimeUnit.MINUTES);
 
-        final DynamoDBMapper dynamoDBMapper = getDynamoDBMapper(dynamoDBEndpoint, tablePrefix);
+        final DynamoDBMapper dynamoDBMapper = Connections.getDynamoDBMapper(dynamoDBEndpoint, tablePrefix);
         // poll dynamoDB CT table and ensure job count == 1
         Awaitility.with().pollInterval(10, TimeUnit.SECONDS).and().with().
                 pollDelay(10, TimeUnit.SECONDS).await().
-                until(() -> assertEquals(1, getJobCount(NODE_ID, dynamoDBMapper)));
-    }
-
-    private static DynamoDBMapper getDynamoDBMapper(final String dynamoDBEndpoint, final String tablePrefix) {
-        final AmazonDynamoDBClient dynamoDBClient = Connections.getAmazonDynamoDBClient(dynamoDBEndpoint);
-        return new DynamoDBMapper(dynamoDBClient, new DynamoDBMapperConfig(withTableNamePrefix(tablePrefix)));
-    }
-
-    private static long getJobCount(final String nodeId, final DynamoDBMapper dynamoDBMapper) {
-        final CycleTime cycleTime = findCycleTimeByNodeId(nodeId, dynamoDBMapper);
-        return cycleTime != null ? cycleTime.getJobCount() : 0;
-
-    }
-
-    private static CycleTime findCycleTimeByNodeId(final String nodeId, final DynamoDBMapper dynamoDBMapper) {
-        // lookup by nodeId
-        final PaginatedQueryList<CycleTime> query = dynamoDBMapper.query(CycleTime.class,
-                new DynamoDBQueryExpression<CycleTime>()
-                        .withHashKeyValues(new CycleTime(nodeId, null, null)));
-        if (query == null || query.isEmpty()) {
-            return null;
-        }
-        // only 1 should exists
-        return query.get(0);
+                until(() -> assertEquals(1, CycleTimeFactory.getJobCount(NODE_ID, dynamoDBMapper)));
     }
 }
 
