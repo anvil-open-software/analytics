@@ -8,6 +8,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.InterArrivalTimeProcessor;
 import com.dematic.labs.analytics.ingestion.sparks.tables.Bucket;
+import com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils;
 import com.dematic.labs.analytics.ingestion.sparks.tables.InterArrivalTime;
 import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.aws.Connections;
@@ -144,7 +145,7 @@ public final class InterArrivalTimeProcessorTest {
         }
         final Set<String> buckets = interArrivalTime.getBuckets();
         for (final String bucket : buckets) {
-            final Bucket interArrivalTimeBucket = Bucket.toTimeBucket(bucket);
+            final Bucket interArrivalTimeBucket = BucketUtils.jsonToBucketUnchecked(bucket);
             final int bucketLowerBoundry = interArrivalTimeBucket.getLowerBoundry();
             final int bucketUpperBoundry = interArrivalTimeBucket.getUpperBoundry();
             if (lowerBoundry == bucketLowerBoundry && upperBoundry == bucketUpperBoundry) {

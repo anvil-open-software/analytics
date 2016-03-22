@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static com.dematic.labs.analytics.ingestion.sparks.tables.Bucket.toTimeBucket;
 import static com.dematic.labs.toolkit.communication.EventUtils.dateTime;
 
 public final class InterArrivalTimeCalculator {
@@ -109,13 +108,13 @@ public final class InterArrivalTimeCalculator {
         final Set<String> existingBuckets = interArrivalTime.getBuckets();
         if (existingBuckets == null || existingBuckets.isEmpty()) {
             final Set<String> bucketsString = Sets.newLinkedHashSet();
-            buckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
+            buckets.stream().forEach(bucket -> bucketsString.add(BucketUtils.bucketToJsonUnchecked(bucket)));
             interArrivalTime.setBuckets(bucketsString);
         } else {
             // add existing and new,
             final List<Bucket> updatedBuckets = Lists.newArrayList();
             interArrivalTime.getBuckets().stream().
-                    forEach(bucket -> updatedBuckets.add(toTimeBucket(bucket)));
+                    forEach(bucket -> updatedBuckets.add(BucketUtils.jsonToBucketUnchecked(bucket)));
 
             buckets.stream().forEach(newBucket -> {
                 final int bucketIndex = updatedBuckets.indexOf(newBucket);
@@ -133,7 +132,7 @@ public final class InterArrivalTimeCalculator {
             });
 
             final Set<String> bucketsString = Sets.newLinkedHashSet();
-            updatedBuckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
+            updatedBuckets.stream().forEach(bucket -> bucketsString.add(BucketUtils.bucketToJsonUnchecked(bucket)));
             interArrivalTime.setBuckets(bucketsString);
         }
     }

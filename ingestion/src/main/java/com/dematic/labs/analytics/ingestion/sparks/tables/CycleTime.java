@@ -16,14 +16,19 @@ public final class CycleTime implements Serializable {
     private String nodeId;
     private Set<String> buckets;
     private Long jobCount;
+    private Long errorStartCount;
+    private Long errorEndCount;
 
     public CycleTime() {
     }
 
-    public CycleTime(final String nodeId, final Set<String> buckets, final Long jobCount) {
+    public CycleTime(final String nodeId, final Set<String> buckets, final Long jobCount, final Long errorStartCount,
+                     final Long errorEndCount) {
         this.nodeId = nodeId;
         this.buckets = buckets;
         this.jobCount = jobCount;
+        this.errorStartCount = errorStartCount;
+        this.errorEndCount = errorEndCount;
     }
 
     @DynamoDBHashKey()
@@ -53,6 +58,24 @@ public final class CycleTime implements Serializable {
         this.jobCount = jobCount;
     }
 
+    @DynamoDBAttribute
+    public Long getErrorStartCount() {
+        return errorStartCount;
+    }
+
+    public void setErrorStartCount(Long errorStartCount) {
+        this.errorStartCount = errorStartCount;
+    }
+
+    @DynamoDBAttribute
+    public Long getErrorEndCount() {
+        return errorEndCount;
+    }
+
+    public void setErrorEndCount(Long errorEndCount) {
+        this.errorEndCount = errorEndCount;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -64,12 +87,14 @@ public final class CycleTime implements Serializable {
         final CycleTime cycleTime = (CycleTime) o;
         return Objects.equals(nodeId, cycleTime.nodeId) &&
                 Objects.equals(buckets, cycleTime.buckets) &&
-                Objects.equals(jobCount, cycleTime.jobCount);
+                Objects.equals(jobCount, cycleTime.jobCount) &&
+                Objects.equals(errorStartCount, cycleTime.errorStartCount) &&
+                Objects.equals(errorEndCount, cycleTime.errorEndCount);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(nodeId, buckets, jobCount);
+        return Objects.hash(nodeId, buckets, jobCount, errorStartCount, errorEndCount);
     }
 
     @Override
@@ -78,6 +103,8 @@ public final class CycleTime implements Serializable {
                 "nodeId='" + nodeId + '\'' +
                 ", buckets=" + buckets +
                 ", jobCount=" + jobCount +
+                ", errorStartCount=" + errorStartCount +
+                ", errorEndCount=" + errorEndCount +
                 '}';
     }
 }

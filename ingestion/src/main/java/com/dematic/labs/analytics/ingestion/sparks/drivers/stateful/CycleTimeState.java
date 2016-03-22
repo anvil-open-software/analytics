@@ -3,6 +3,7 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 import com.dematic.labs.analytics.ingestion.sparks.tables.Bucket;
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.communication.Event;
+import com.dematic.labs.toolkit.communication.EventType;
 import com.dematic.labs.toolkit.communication.EventUtils;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
@@ -30,13 +31,18 @@ public final class CycleTimeState implements Serializable {
     private final Multimap<UUID, Event> jobs;
     private Set<Bucket> buckets;
     private Long jobCount;
+    private Long errorStartCount;
+    private Long errorEndCount;
 
-    public CycleTimeState(final String nodeId, final Multimap<UUID, Event> initialJobs,
-                          final Set<Bucket> initialBuckets) {
-        this.nodeId = nodeId;
-        this.jobs = initialJobs;
-        this.buckets = initialBuckets;
-        jobCount = 0L;
+    public CycleTimeState(final String initialNodeId, final Multimap<UUID, Event> initialJobs,
+                          final Set<Bucket> initialBuckets, final Long initialJobCount,
+                          final Long initialErrorStartCount, final Long initialErrorEndCount) {
+        nodeId = initialNodeId;
+        jobs = initialJobs;
+        buckets = initialBuckets;
+        jobCount = initialJobCount;
+        errorStartCount = initialErrorStartCount;
+        errorEndCount = initialErrorEndCount;
     }
 
     public void updateJobs(final Multimap<UUID, Event> newJobs) {
@@ -49,15 +55,18 @@ public final class CycleTimeState implements Serializable {
         jobsCopy.asMap().entrySet().stream().forEach(job -> {
             // driver state timeout
             if (stateTime && job.getValue().size() == 1) {
-                // todo: for now, just log, need to store either in bucket or db table
                 // calculate jobs that did not have job pairs, that is, start and end event
                 // remove from jobs
                 final Collection<Event> errors = jobs.removeAll(job.getKey());
+                // update the error count
+                updateErrorCount(errors);
                 LOGGER.error("CT: state timeout : >{}< did not have complete set of events >{}<", job.getKey(), errors);
             } // state did not timeout but job did
             else if (job.getValue().size() == 1 && jobTimeout(Iterables.getOnlyElement(job.getValue()))) {
                 // calculate jobs that did not have job pairs, that is, start and end event and have timed out
                 final Collection<Event> errors = jobs.removeAll(job.getKey());
+                // update the error count
+                updateErrorCount(errors);
                 LOGGER.error("CT: job timeout : >{}< did not have complete set of events >{}<", job.getKey(), errors);
             } else {
                 if (job.getValue().size() > 2) {
@@ -80,7 +89,21 @@ public final class CycleTimeState implements Serializable {
                 }
             }
         });
-        return new CycleTime(nodeId, bucketsToJson(buckets), jobCount);
+        return new CycleTime(nodeId, bucketsToJson(buckets), jobCount, errorStartCount, errorEndCount);
+    }
+
+    private void updateErrorCount(final Collection<Event> errors) {
+        errors.stream().forEach(event -> {
+            final EventType type = event.getType();
+            if (EventType.END == type) {
+                // update the start
+                errorStartCount++;
+            }
+            if (EventType.START == type) {
+                // update the end
+                errorEndCount++;
+            }
+        });
     }
 
     @Override
@@ -90,6 +113,8 @@ public final class CycleTimeState implements Serializable {
                 ", jobs=" + jobs +
                 ", buckets=" + buckets +
                 ", jobCount=" + jobCount +
+                ", errorStartCount=" + errorStartCount +
+                ", errorEndCount=" + errorEndCount +
                 '}';
     }
 
