@@ -70,6 +70,7 @@ public final class CycleTimeFunctions implements Serializable {
                 LOGGER.debug("CT: node >{}< created state >{}<", nodeId, cycleTimeState);
                 state.update(cycleTimeState);
             }
+            
             return Optional.of(cycleTimeState.createModel(false));
         }
     }
