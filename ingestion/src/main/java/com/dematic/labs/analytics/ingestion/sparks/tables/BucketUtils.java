@@ -61,6 +61,12 @@ public final class BucketUtils {
         return buckets;
     }
 
+    public static Set<Bucket> createCycleTimeBuckets(final Set<String> existingBuckets) {
+        final Set<Bucket> buckets = Sets.newTreeSet(new BucketComparator());
+        existingBuckets.stream().forEach(bucket -> buckets.add(jsonToBucketUnchecked(bucket)));
+        return buckets;
+    }
+
     public static void addToBucket(final long time, final Set<Bucket> buckets) {
         final java.util.Optional<Bucket> first = buckets.stream()
                 .filter(bucket -> bucket.isWithinBucket(time)).findFirst();
@@ -72,17 +78,33 @@ public final class BucketUtils {
         bucket.incrementCount();
     }
 
-    public static Bucket jsonToTimeBucket(final String json) throws IOException {
+    public static Bucket jsonToBucketUnchecked(final String json) {
+        try {
+            return jsonToBucket(json);
+        } catch (final IOException ioe) {
+            throw new IllegalStateException(ioe);
+        }
+    }
+
+    public static String bucketToJsonUnchecked(final Bucket bucket) {
+        try {
+            return bucketToJson(bucket);
+        } catch (final IOException ioe) {
+            throw new IllegalStateException(ioe);
+        }
+    }
+
+    public static Bucket jsonToBucket(final String json) throws IOException {
         return objectMapper.readValue(json, Bucket.class);
     }
 
-    public static String timeBucketToJson(final Bucket bucket) throws IOException {
+    public static String bucketToJson(final Bucket bucket) throws IOException {
         return objectMapper.writeValueAsString(bucket);
     }
 
     public static Set<String> bucketsToJson(final Set<Bucket> buckets) {
         final Set<String> bucketsString = Sets.newLinkedHashSet();
-        buckets.stream().forEach(bucket -> bucketsString.add(bucket.toJson()));
+        buckets.stream().forEach(bucket -> bucketsString.add(bucketToJsonUnchecked(bucket)));
         return bucketsString;
     }
 

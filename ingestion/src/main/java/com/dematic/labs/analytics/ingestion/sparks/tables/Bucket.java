@@ -3,12 +3,9 @@ package com.dematic.labs.analytics.ingestion.sparks.tables;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.Set;
-
-import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.*;
 
 @SuppressWarnings("unused")
 public final class Bucket implements Serializable {
@@ -48,22 +45,6 @@ public final class Bucket implements Serializable {
 
     public void setCount(final long count) {
         this.count = count;
-    }
-
-    public String toJson() {
-        try {
-            return timeBucketToJson(this);
-        } catch (final IOException ioe) {
-            throw new IllegalStateException(ioe);
-        }
-    }
-
-    public static Bucket toTimeBucket(final String json) {
-        try {
-            return jsonToTimeBucket(json);
-        } catch (final IOException ioe) {
-            throw new IllegalStateException(ioe);
-        }
     }
 
     @Override

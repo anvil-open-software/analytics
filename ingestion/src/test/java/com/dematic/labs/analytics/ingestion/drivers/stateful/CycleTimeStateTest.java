@@ -26,7 +26,7 @@ public final class CycleTimeStateTest {
         final Set<Bucket> buckets = BucketUtils.createCycleTimeBuckets(5, 10);
         final Multimap<UUID, Event> jobs = HashMultimap.create();
         jobs.putAll(jobId, firstPair);
-        final CycleTimeState cycleTimeState = new CycleTimeState(nodeId, jobs, buckets);
+        final CycleTimeState cycleTimeState = new CycleTimeState(nodeId, jobs, buckets, 0L);
         final CycleTime model = cycleTimeState.createModel(false);
         // ensure job count == 1
         Assert.assertEquals(1, model.getJobCount().intValue());

@@ -1,5 +1,6 @@
 package com.dematic.labs.analytics.ingestion.sparks.drivers.stateful;
 
+import com.dematic.labs.analytics.ingestion.sparks.tables.Bucket;
 import com.dematic.labs.analytics.ingestion.sparks.tables.CycleTime;
 import com.dematic.labs.toolkit.communication.Event;
 import com.dematic.labs.toolkit.communication.EventUtils;
@@ -12,9 +13,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.createCycleTimeBuckets;
+import static com.dematic.labs.analytics.ingestion.sparks.tables.CycleTimeFactory.findCycleTimeByNodeId;
+import static com.dematic.labs.toolkit.aws.Connections.getDynamoDBMapper;
 
 public final class CycleTimeFunctions implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(CycleTimeFunctions.class);
@@ -50,10 +54,16 @@ public final class CycleTimeFunctions implements Serializable {
                     state.update(cycleTimeState);
                 }
             } else {
-                // create and add the initial state, todo: check the db for saved state
-                cycleTimeState = new CycleTimeState(nodeId, jobs.get(),
+                // create and add the initial state, see if existing state in DB
+                final CycleTime cycleTimeByNodeId = findCycleTimeByNodeId(nodeId,
+                        getDynamoDBMapper(driverConfig.getDynamoDBEndpoint(), driverConfig.getDynamoPrefix()));
+                final Long jobCount = cycleTimeByNodeId != null ? cycleTimeByNodeId.getJobCount() : 0L;
+                final Set<Bucket> buckets = cycleTimeByNodeId != null ?
+                        createCycleTimeBuckets(cycleTimeByNodeId.getBuckets()) :
                         createCycleTimeBuckets(asInt(driverConfig.getBucketIncrementer()),
-                                asInt(driverConfig.getBucketSize())));
+                                asInt(driverConfig.getBucketSize()));
+
+                cycleTimeState = new CycleTimeState(nodeId, jobs.get(), buckets, jobCount);
                 LOGGER.debug("CT: node >{}< created state >{}<", nodeId, cycleTimeState);
                 state.update(cycleTimeState);
             }
@@ -61,7 +71,7 @@ public final class CycleTimeFunctions implements Serializable {
         }
     }
 
-    private static int asInt(final String intString){
+    private static int asInt(final String intString) {
         return Integer.parseInt(intString);
     }
 }

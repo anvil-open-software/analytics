@@ -31,12 +31,12 @@ public final class CycleTimeState implements Serializable {
     private Set<Bucket> buckets;
     private Long jobCount;
 
-    public CycleTimeState(final String nodeId, final Multimap<UUID, Event> initialJobs,
-                          final Set<Bucket> initialBuckets) {
-        this.nodeId = nodeId;
-        this.jobs = initialJobs;
-        this.buckets = initialBuckets;
-        jobCount = 0L;
+    public CycleTimeState(final String initialNodeId, final Multimap<UUID, Event> initialJobs,
+                          final Set<Bucket> initialBuckets, final Long initialJobCount) {
+        nodeId = initialNodeId;
+        jobs = initialJobs;
+        buckets = initialBuckets;
+        jobCount = initialJobCount;
     }
 
     public void updateJobs(final Multimap<UUID, Event> newJobs) {
