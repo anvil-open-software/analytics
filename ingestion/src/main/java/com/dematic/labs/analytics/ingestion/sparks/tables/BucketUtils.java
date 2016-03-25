@@ -94,11 +94,11 @@ public final class BucketUtils {
         }
     }
 
-    public static Bucket jsonToBucket(final String json) throws IOException {
+    private static Bucket jsonToBucket(final String json) throws IOException {
         return objectMapper.readValue(json, Bucket.class);
     }
 
-    public static String bucketToJson(final Bucket bucket) throws IOException {
+    private static String bucketToJson(final Bucket bucket) throws IOException {
         return objectMapper.writeValueAsString(bucket);
     }
 

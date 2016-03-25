@@ -55,7 +55,7 @@ public final class EventStreamNoDupAggregator {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamNoDupAggregator.class);
 
     // functions
-    public static final class AggregateEvents implements Function2<Collection<String>, Collection<String>,
+    private static final class AggregateEvents implements Function2<Collection<String>, Collection<String>,
             Collection<String>> {
         @Override
         public Collection<String> call(final Collection<String> aggregateEventsOne,
@@ -64,10 +64,10 @@ public final class EventStreamNoDupAggregator {
         }
     }
 
-    public static final class AggregateEvent implements PairFunction<Event, String, Collection<String>> {
+    private static final class AggregateEvent implements PairFunction<Event, String, Collection<String>> {
         private final TimeUnit timeUnit;
 
-        public AggregateEvent(final TimeUnit timeUnit) {
+        AggregateEvent(final TimeUnit timeUnit) {
             this.timeUnit = timeUnit;
         }
 
@@ -83,7 +83,7 @@ public final class EventStreamNoDupAggregator {
     private static final int MAX_RETRY = 3;
     private static final int MAX_CHUNK_SIZE = 18000;
 
-    public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_NoDup_LT";
+    private static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_NoDup_LT";
 
     public static void main(final String[] args) {
         if (args.length < 5) {
@@ -129,8 +129,8 @@ public final class EventStreamNoDupAggregator {
         streamingContext.awaitTermination();
     }
 
-    public void aggregateEvents(final JavaDStream<byte[]> byteStream, final String dynamoDBEndpoint,
-                                final String tablePrefix, final TimeUnit timeUnit) {
+    private void aggregateEvents(final JavaDStream<byte[]> byteStream, final String dynamoDBEndpoint,
+                                 final String tablePrefix, final TimeUnit timeUnit) {
 
         // transform the byte[] (byte arrays are json) to a string to events, and ensure distinct within stream
         final JavaDStream<Event> eventStream =
@@ -288,8 +288,14 @@ public final class EventStreamNoDupAggregator {
         try (ObjectOutputStream objectOut = new ObjectOutputStream(gzipOut)) {
             objectOut.writeObject(uuidSet);
         } finally {
-            gzipOut.finish();
-            baos.flush();
+            try {
+                gzipOut.finish();
+            } catch (final Throwable ignore) {
+            }
+            try {
+                baos.flush();
+            } catch (final Throwable ignore) {
+            }
         }
         return baos.toByteArray();
     }

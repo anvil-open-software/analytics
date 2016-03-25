@@ -12,7 +12,7 @@ public final class Bucket implements Serializable {
     private final Set<Integer> pair = Sets.newLinkedHashSet();
     private long count;
 
-    public Bucket(final int low, final int high, final long count) {
+    Bucket(final int low, final int high, final long count) {
         pair.add(low);
         pair.add(high);
         this.count = count;
@@ -31,7 +31,7 @@ public final class Bucket implements Serializable {
     }
 
     // inclusive/exclusive
-    public boolean isWithinBucket(final long interArrivalTime) {
+    boolean isWithinBucket(final long interArrivalTime) {
         return getLowerBoundry() <= interArrivalTime && getUpperBoundry() > interArrivalTime;
     }
 
@@ -39,7 +39,7 @@ public final class Bucket implements Serializable {
         return count;
     }
 
-    public void incrementCount() {
+    void incrementCount() {
         count++;
     }
 

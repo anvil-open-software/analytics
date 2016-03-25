@@ -14,16 +14,17 @@ import java.util.List;
 import static com.dematic.labs.analytics.ingestion.sparks.drivers.stateful.InterArrivalTimeCalculator.computeInterArrivalTime;
 import static java.lang.Integer.valueOf;
 
-public final class InterArrivalTimeFunctions implements Serializable {
+final class InterArrivalTimeFunctions implements Serializable {
     private InterArrivalTimeFunctions() {
     }
 
-    public static final class EventByNodeFunction implements Function4<Time, String,
+    @SuppressWarnings({"Guava", "OptionalUsedAsFieldOrParameterType", "OptionalGetWithoutIsPresent"})
+    static final class EventByNodeFunction implements Function4<Time, String,
             Optional<List<Event>>, State<InterArrivalTimeState>,
             Optional<InterArrivalTime>> {
         private final DriverConfig driverConfig;
 
-        public EventByNodeFunction(final DriverConfig driverConfig) {
+        EventByNodeFunction(final DriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 

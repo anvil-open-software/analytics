@@ -51,7 +51,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
     private static final class InterArrivalTimeFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
 
-        public InterArrivalTimeFunction(final DriverConfig driverConfig) {
+        InterArrivalTimeFunction(final DriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 

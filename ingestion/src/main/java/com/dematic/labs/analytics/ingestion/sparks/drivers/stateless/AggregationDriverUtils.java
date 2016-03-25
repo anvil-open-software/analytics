@@ -20,7 +20,7 @@ import static com.dematic.labs.toolkit.communication.EventUtils.nowString;
 /**
  * Shared
  */
-public final class AggregationDriverUtils {
+final class AggregationDriverUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(AggregationDriverUtils.class);
     private static final int MAX_RETRY = 3;
 
@@ -31,9 +31,9 @@ public final class AggregationDriverUtils {
     /**
      * To checkpoint, need to create the stream inside the factory before calling checkpoint.
      */
-    public static JavaStreamingContext initializeCheckpointedSparkSession(final DriverConfig session,
-                                                                          final String masterUrl,
-                                                                          final EventStreamProcessor aggregator) {
+    static JavaStreamingContext initializeCheckpointedSparkSession(final DriverConfig session,
+                                                                   final String masterUrl,
+                                                                   final EventStreamProcessor aggregator) {
         final String checkPointDir = session.getCheckPointDir();
         final JavaStreamingContextFactory factory = () -> {
             // Spark config
@@ -66,8 +66,8 @@ public final class AggregationDriverUtils {
                 JavaStreamingContext.getOrCreate(checkPointDir, factory);
     }
 
-    public static void createOrUpdateDynamoDBBucket(final Tuple2<String, Long> bucket,
-                                                    final DynamoDBMapper dynamoDBMapper) {
+    static void createOrUpdateDynamoDBBucket(final Tuple2<String, Long> bucket,
+                                             final DynamoDBMapper dynamoDBMapper) {
         int count = 1;
         do {
             EventAggregator eventAggregator = null;

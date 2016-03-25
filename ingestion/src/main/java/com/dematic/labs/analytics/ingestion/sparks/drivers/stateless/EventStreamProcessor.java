@@ -11,6 +11,6 @@ import java.io.Serializable;
  * Old school, probably could redo this functionally...
  */
 
-public interface EventStreamProcessor<T> extends Serializable {
+interface EventStreamProcessor<T> extends Serializable {
     void processEvents(final DriverConfig driverConfig, final JavaDStream<T> javaDStream);
 }

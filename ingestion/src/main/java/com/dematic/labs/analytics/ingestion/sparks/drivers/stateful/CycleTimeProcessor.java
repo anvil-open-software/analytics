@@ -48,7 +48,7 @@ public final class CycleTimeProcessor {
     private static final class CycleTimeFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final CycleTimeDriverConfig driverConfig;
 
-        public CycleTimeFunction(final CycleTimeDriverConfig driverConfig) {
+        CycleTimeFunction(final CycleTimeDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 
@@ -88,7 +88,7 @@ public final class CycleTimeProcessor {
                 rdd.foreachPartition(partition -> {
                     final List<CycleTime> collect =
                             stream(spliteratorUnknownSize(partition, Spliterator.CONCURRENT), true)
-                                    .collect(Collectors.<CycleTime>toList());
+                                    .collect(Collectors.toList());
 
                     // just add a flag to be able to turn off reads and writes
                     boolean skipDynamoDBwrite =

@@ -20,18 +20,19 @@ import static com.dematic.labs.analytics.ingestion.sparks.tables.BucketUtils.cre
 import static com.dematic.labs.analytics.ingestion.sparks.tables.CycleTimeFactory.findCycleTimeByNodeId;
 import static com.dematic.labs.toolkit.aws.Connections.getDynamoDBMapper;
 
-public final class CycleTimeFunctions implements Serializable {
+final class CycleTimeFunctions implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(CycleTimeFunctions.class);
 
     private CycleTimeFunctions() {
     }
 
-    public static final class createModel implements Function4<Time, String, Optional<Multimap<UUID, Event>>,
+    @SuppressWarnings({"Guava", "OptionalUsedAsFieldOrParameterType", "OptionalGetWithoutIsPresent"})
+    static final class createModel implements Function4<Time, String, Optional<Multimap<UUID, Event>>,
             State<CycleTimeState>, Optional<CycleTime>> {
 
         private final CycleTimeDriverConfig driverConfig;
 
-        public createModel(final CycleTimeDriverConfig driverConfig) {
+        createModel(final CycleTimeDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 
@@ -70,7 +71,6 @@ public final class CycleTimeFunctions implements Serializable {
                 LOGGER.debug("CT: node >{}< created state >{}<", nodeId, cycleTimeState);
                 state.update(cycleTimeState);
             }
-            
             return Optional.of(cycleTimeState.createModel(false));
         }
     }
