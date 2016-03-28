@@ -24,7 +24,6 @@ package com.dematic.labs.analytics.ingestion.sparks.drivers.diagnostics;
 public final class ImmediatelyThrowsErrorDriver {
 
     public static void main(String[] args) {
-
        throw new NullPointerException("ImmediatelyThrowsErrorDriver throws NullPointerException on Launch");
     }
 }
