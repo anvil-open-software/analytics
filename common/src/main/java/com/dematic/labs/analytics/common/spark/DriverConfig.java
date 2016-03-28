@@ -44,7 +44,7 @@ public class DriverConfig implements Serializable {
         setParametersFromArgumentsForAggregation(args);
     }
 
-    public void setParametersFromArgumentsForAggregation(final String args[]) {
+    private void setParametersFromArgumentsForAggregation(final String args[]) {
         if (args.length < 5) {
             throw new IllegalArgumentException("Driver requires Kinesis Endpoint, Kinesis StreamName, DynamoDB Endpoint,"
                     + "optional DynamoDB Prefix, driver PollTime, and aggregation by time {MINUTES,DAYS}");

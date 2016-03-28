@@ -33,7 +33,7 @@ import static com.dematic.labs.toolkit.aws.Connections.*;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 public final class EventStreamCacheAggregator implements Serializable {
-    public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Cache_LT";
+    private static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Cache_LT";
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamCacheAggregator.class);
 
     // cache pool
@@ -53,7 +53,7 @@ public final class EventStreamCacheAggregator implements Serializable {
     private static final class AggregateEventFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
 
-        public AggregateEventFunction(final DriverConfig driverConfig) {
+        AggregateEventFunction(final DriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 

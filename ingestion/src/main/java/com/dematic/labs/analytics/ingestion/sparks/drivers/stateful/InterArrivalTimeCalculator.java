@@ -17,15 +17,15 @@ import java.util.Set;
 
 import static com.dematic.labs.toolkit.communication.EventUtils.dateTime;
 
-public final class InterArrivalTimeCalculator {
+final class InterArrivalTimeCalculator {
     private static final Logger LOGGER = LoggerFactory.getLogger(InterArrivalTimeCalculator.class);
 
     private InterArrivalTimeCalculator() {
     }
 
-    public static void computeInterArrivalTime(final InterArrivalTime interArrivalTime,
-                                               final List<Event> events,
-                                               final Long lastEventTime, final int avgInterArrivalTime) {
+    static void computeInterArrivalTime(final InterArrivalTime interArrivalTime,
+                                        final List<Event> events,
+                                        final Long lastEventTime, final int avgInterArrivalTime) {
         if (events == null || events.isEmpty()) {
             return;
         }

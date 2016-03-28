@@ -22,11 +22,11 @@ public final class StreamFunctions implements Serializable {
     }
 
     // create stream function
-    public static final class CreateDStreamFunction implements Function0<JavaDStream<byte[]>> {
+    private static final class CreateDStreamFunction implements Function0<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
         private final JavaStreamingContext streamingContext;
 
-        public CreateDStreamFunction(final DriverConfig driverConfig, final JavaStreamingContext streamingContext) {
+        CreateDStreamFunction(final DriverConfig driverConfig, final JavaStreamingContext streamingContext) {
             this.driverConfig = driverConfig;
             this.streamingContext = streamingContext;
         }

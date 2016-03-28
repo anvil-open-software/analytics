@@ -48,7 +48,7 @@ public final class EventAggregatorBucket implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         EventAggregatorBucket that = (EventAggregatorBucket) o;
         return Objects.equals(bucketId, that.bucketId) &&
-                Objects.equals(uuids, that.uuids);
+                Arrays.equals(uuids, that.uuids);
     }
 
     @Override

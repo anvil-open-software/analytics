@@ -36,16 +36,16 @@ public final class InterArrivalTimeState implements Serializable {
         this.lastEventTime = lastEventTime;
     }
 
-    public boolean triggerInterArrivalTimeProcessing(final long timeInMs) {
+    private boolean triggerInterArrivalTimeProcessing(final long timeInMs) {
         return Seconds.secondsBetween(dateTime(startTimeInMs), dateTime(timeInMs)).getSeconds() >= bufferTimeInsSconds;
     }
 
-    public boolean stateExpired() {
+    boolean stateExpired() {
         // remove state if list is empty, i.e. all events have been processed and exceeded trigger time
         return events.isEmpty();
     }
 
-    public void addNewEvents(final List<Event> newEvents) {
+    void addNewEvents(final List<Event> newEvents) {
         events.addAll(newEvents);
         events = Ordering.from(new Comparator<Event>() {
             @Override
@@ -79,11 +79,11 @@ public final class InterArrivalTimeState implements Serializable {
         }
     }
 
-    public InterArrivalTime getInterArrivalTime() {
+    InterArrivalTime getInterArrivalTime() {
         return interArrivalTime;
     }
 
-    public Long getLastEventTime() {
+    Long getLastEventTime() {
         return lastEventTime;
     }
 
@@ -109,7 +109,7 @@ public final class InterArrivalTimeState implements Serializable {
         return copy;
     }
 
-    public List<Event> allInterArrivalTimeEvents() {
+    List<Event> allInterArrivalTimeEvents() {
         return copy(events);
     }
 

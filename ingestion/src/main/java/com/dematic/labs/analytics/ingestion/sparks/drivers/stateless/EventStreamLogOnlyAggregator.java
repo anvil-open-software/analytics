@@ -26,14 +26,14 @@ import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
  * Aggregator with dynamodb bucket writes removed.
  */
 public final class EventStreamLogOnlyAggregator implements Serializable {
-    public static final String EVENT_STREAM_LOGGING_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Log_LT";
+    private static final String EVENT_STREAM_LOGGING_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Log_LT";
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamLogOnlyAggregator.class);
 
     // event stream processing function
     private static final class AggregateEventFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
 
-        public AggregateEventFunction(final DriverConfig driverConfig) {
+        AggregateEventFunction(final DriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 

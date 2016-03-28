@@ -19,7 +19,7 @@ import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 public final class EventStreamCheckpointedAggregator implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamCheckpointedAggregator.class);
 
-    public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Checkpoint_LT";
+    private static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Checkpoint_LT";
 
     public static void main(final String[] args) {
         try {
@@ -40,5 +40,4 @@ public final class EventStreamCheckpointedAggregator implements Serializable {
             throw any;
         }
     }
-
 }

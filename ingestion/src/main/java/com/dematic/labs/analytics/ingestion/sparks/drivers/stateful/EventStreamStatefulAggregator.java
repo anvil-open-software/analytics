@@ -40,7 +40,8 @@ public final class EventStreamStatefulAggregator implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamStatefulAggregator.class);
 
     // function class
-    public static final class RunningEventDuplicates implements Function2<List<Tuple2<Long, Boolean>>,
+    @SuppressWarnings({"Guava", "OptionalUsedAsFieldOrParameterType", "OptionalGetWithoutIsPresent"})
+    private static final class RunningEventDuplicates implements Function2<List<Tuple2<Long, Boolean>>,
             Optional<Tuple2<Long, Boolean>>, Optional<Tuple2<Long, Boolean>>> {
         @Override
         public Optional<Tuple2<Long, Boolean>> call(final List<Tuple2<Long, Boolean>> values,
@@ -60,21 +61,21 @@ public final class EventStreamStatefulAggregator implements Serializable {
         }
     }
 
-    public static final class StatefulEvent implements PairFunction<Event, Event, Tuple2<Long, Boolean>> {
+    private static final class StatefulEvent implements PairFunction<Event, Event, Tuple2<Long, Boolean>> {
         @Override
         public Tuple2<Event, Tuple2<Long, Boolean>> call(final Event event) {
             return new Tuple2<>(event, new Tuple2<>(event.getTimestamp().getMillis(), false));
         }
     }
 
-    public static final class EventFilter implements Function<Tuple2<Event, Tuple2<Long, Boolean>>, Boolean> {
+    private static final class EventFilter implements Function<Tuple2<Event, Tuple2<Long, Boolean>>, Boolean> {
         @Override
         public Boolean call(final Tuple2<Event, Tuple2<Long, Boolean>> duplicate) throws Exception {
             return !duplicate._2()._2();
         }
     }
 
-    public static JavaPairDStream<Event, Tuple2<Long, Boolean>> eventProcessor(final JavaDStream<Event> eventJavaDStream) {
+    private static JavaPairDStream<Event, Tuple2<Long, Boolean>> eventProcessor(final JavaDStream<Event> eventJavaDStream) {
         return eventJavaDStream.mapToPair(new StatefulEvent()).
                 updateStateByKey(new RunningEventDuplicates()).
                 filter(new EventFilter());
@@ -85,7 +86,7 @@ public final class EventStreamStatefulAggregator implements Serializable {
 
     private static final int MAX_RETRY = 3;
 
-    public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Stateful_LT";
+    private static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_Stateful_LT";
 
     public static void main(final String[] args) {
         if (args.length < 5) {
@@ -136,8 +137,8 @@ public final class EventStreamStatefulAggregator implements Serializable {
         streamingContext.awaitTermination();
     }
 
-    public void aggregateEvents(final JavaDStream<byte[]> byteStream, final String dynamoDBEndpoint,
-                                final String tablePrefix, final TimeUnit timeUnit) {
+    private void aggregateEvents(final JavaDStream<byte[]> byteStream, final String dynamoDBEndpoint,
+                                 final String tablePrefix, final TimeUnit timeUnit) {
 
         // transform the byte[] (byte arrays are json) to a string to events, and ensure distinct within stream
         final JavaDStream<Event> eventStream =
