@@ -57,9 +57,9 @@ public final class Persister implements Serializable {
         final String keySpace;
         final String pollTime;
         if (args.length == 6) {
-            masterUrl = args[2];
-            host = args[3];
-            keySpace = args[4];
+            host = args[2];
+            keySpace = args[3];
+            masterUrl = args[4];
             pollTime = args[5];
         } else {
             // no master url
@@ -75,12 +75,6 @@ public final class Persister implements Serializable {
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
                 new StreamFunctions.CreateStreamingContextFunction(driverConfig, new PersistFunction(driverConfig)));
-        // set the cassandra configuration
-        streamingContext.sc().getConf().set("spark.cassandra.connection.host", driverConfig.getHost());
-        // authorization properties come from system properties
-        streamingContext.sc().getConf().set("spark.cassandra.auth.username", driverConfig.getUsername());
-        streamingContext.sc().getConf().set("spark.cassandra.auth.password", driverConfig.getPassword());
-
         //create the cassandra table, if it does not exist
         createTable(createTableCql(driverConfig.getKeySpace()),
                 CassandraConnector.apply(streamingContext.sc().getConf()));
