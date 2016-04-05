@@ -1,9 +1,9 @@
-package com.dematic.labs.analytics.store.drivers;
+package com.dematic.labs.analytics.store.drivers.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
-import com.dematic.labs.analytics.store.sparks.drivers.Persister;
+import com.dematic.labs.analytics.store.sparks.drivers.dynamodb.Persister;
 import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.aws.KinesisStreamRule;
 import com.dematic.labs.toolkit.communication.Event;
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNameReplacement;
 import static com.dematic.labs.analytics.common.spark.DriverUtils.getJavaDStream;
 import static com.dematic.labs.analytics.common.spark.DriverUtils.getStreamingContext;
-import static com.dematic.labs.analytics.store.sparks.drivers.Persister.RAW_EVENT_LEASE_TABLE_NAME;
+import static com.dematic.labs.analytics.store.sparks.drivers.dynamodb.Persister.RAW_EVENT_LEASE_TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.*;
 import static com.dematic.labs.toolkit.communication.EventUtils.generateEvents;
 import static org.junit.Assert.assertTrue;
