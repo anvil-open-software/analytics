@@ -1,4 +1,4 @@
-package com.dematic.labs.analytics.store.sparks.drivers;
+package com.dematic.labs.analytics.store.sparks.drivers.dynamodb;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;

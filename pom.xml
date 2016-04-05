@@ -61,43 +61,6 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-        <!-- LRU cache -->
-        <dependency>
-            <groupId>com.google.code.simplelrucache</groupId>
-            <artifactId>simplelrucache</artifactId>
-            <version>1.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- spark sql/data frames/data sets -->
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.11</artifactId>
-            <version>1.6.1</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>jets3t</artifactId>
-                    <groupId>net.java.dev.jets3t</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>commons-httpclient</artifactId>
-                    <groupId>commons-httpclient</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>slf4j-log4j12</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <!-- spark streaming dependencies -->
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -130,7 +93,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- todo: fix, pull from commom -->
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>amazon-kinesis-client</artifactId>
