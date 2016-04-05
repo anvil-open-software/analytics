@@ -21,7 +21,7 @@ import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 public final class Persister implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(Persister.class);
-    private static final String RAW_EVENT_LEASE_TABLE_NAME = "Raw_Event_LT";
+    private static final String APP_NAME = "RAW_EVENTS";
 
     // event stream processing function
     private static final class PersistFunction implements VoidFunction<JavaDStream<byte[]>> {
@@ -69,7 +69,7 @@ public final class Persister implements Serializable {
             pollTime = args[4];
         }
         // create the driver configuration and checkpoint dir
-        final PersisterDriverConfig driverConfig = configure(RAW_EVENT_LEASE_TABLE_NAME, kinesisEndpoint,
+        final PersisterDriverConfig driverConfig = configure(APP_NAME, kinesisEndpoint,
                 kinesisStreamName, host, keySpace, masterUrl, pollTime);
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // master url will be set using the spark submit driver command
