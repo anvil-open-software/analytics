@@ -1,5 +1,6 @@
 package com.dematic.labs.analytics.store.sparks.drivers.cassandra;
 
+import com.datastax.spark.connector.cql.CassandraConnector;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
@@ -14,6 +15,8 @@ import java.nio.charset.Charset;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
+import static com.dematic.labs.analytics.common.cassandra.Connections.createTable;
+import static com.dematic.labs.toolkit.communication.Event.createTableCql;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 public final class Persister implements Serializable {
@@ -69,8 +72,6 @@ public final class Persister implements Serializable {
         final PersisterDriverConfig driverConfig = configure(RAW_EVENT_LEASE_TABLE_NAME, kinesisEndpoint,
                 kinesisStreamName, host, keySpace, masterUrl, pollTime);
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
-        //todo: create the cassandra table, if it does not exist
-
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
                 new StreamFunctions.CreateStreamingContextFunction(driverConfig, new PersistFunction(driverConfig)));
@@ -79,6 +80,10 @@ public final class Persister implements Serializable {
         // authorization properties come from system properties
         streamingContext.sc().getConf().set("spark.cassandra.auth.username", driverConfig.getUsername());
         streamingContext.sc().getConf().set("spark.cassandra.auth.password", driverConfig.getPassword());
+
+        //create the cassandra table, if it does not exist
+        createTable(createTableCql(driverConfig.getKeySpace()),
+                CassandraConnector.apply(streamingContext.sc().getConf()));
 
         // Start the streaming context and await termination
         LOGGER.info("CP: starting Cassendra Persister Driver with master URL >{}<",
