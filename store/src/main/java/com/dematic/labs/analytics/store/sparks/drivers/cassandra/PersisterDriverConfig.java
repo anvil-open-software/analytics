@@ -3,6 +3,7 @@ package com.dematic.labs.analytics.store.sparks.drivers.cassandra;
 import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.google.common.base.Strings;
 
+@SuppressWarnings("unused")
 final class PersisterDriverConfig extends DriverConfig {
     private String keySpace;
     private String host;
@@ -33,6 +34,8 @@ final class PersisterDriverConfig extends DriverConfig {
     }
 
     void setHost(final String host) {
+        //set the host as system properties, todo: come back to
+        System.setProperty("spark.cassandra.connection.host", host);
         this.host = host;
     }
 
