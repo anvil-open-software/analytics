@@ -1,6 +1,7 @@
 package com.dematic.labs.analytics.store.sparks.drivers.cassandra;
 
 import com.datastax.spark.connector.cql.CassandraConnector;
+import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
@@ -25,9 +26,9 @@ public final class Persister implements Serializable {
 
     // event stream processing function
     private static final class PersistFunction implements VoidFunction<JavaDStream<byte[]>> {
-        private final PersisterDriverConfig driverConfig;
+        private final CassandraDriverConfig driverConfig;
 
-        PersistFunction(final PersisterDriverConfig driverConfig) {
+        PersistFunction(final CassandraDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 
@@ -39,7 +40,6 @@ public final class Persister implements Serializable {
             eventStream.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Event.TABLE_NAME,
                         mapToRow(Event.class)).saveToCassandra();
-
             });
         }
     }
@@ -69,12 +69,12 @@ public final class Persister implements Serializable {
             pollTime = args[4];
         }
         // create the driver configuration and checkpoint dir
-        final PersisterDriverConfig driverConfig = configure(APP_NAME, kinesisEndpoint,
+        final CassandraDriverConfig driverConfig = configure(APP_NAME, kinesisEndpoint,
                 kinesisStreamName, host, keySpace, masterUrl, pollTime);
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
-                new StreamFunctions.CreateStreamingContextFunction(driverConfig, new PersistFunction(driverConfig)));
+                new StreamFunctions.CreateCassandraStreamingContextFunction(driverConfig, new PersistFunction(driverConfig)));
         //create the cassandra table, if it does not exist
         createTable(createTableCql(driverConfig.getKeySpace()),
                 CassandraConnector.apply(streamingContext.sc().getConf()));
@@ -87,18 +87,18 @@ public final class Persister implements Serializable {
         streamingContext.awaitTermination();
     }
 
-    private static PersisterDriverConfig configure(final String appName, final String kinesisEndpoint,
+    private static CassandraDriverConfig configure(final String appName, final String kinesisEndpoint,
                                                    final String kinesisStreamName, final String host,
                                                    final String keySpace, final String masterUrl,
                                                    final String pollTime) {
-        return GenericBuilder.of(PersisterDriverConfig::new)
-                .with(PersisterDriverConfig::setAppName, appName)
-                .with(PersisterDriverConfig::setKinesisEndpoint, kinesisEndpoint)
-                .with(PersisterDriverConfig::setKinesisStreamName, kinesisStreamName)
-                .with(PersisterDriverConfig::setHost, host)
-                .with(PersisterDriverConfig::setKeySpace, keySpace)
-                .with(PersisterDriverConfig::setMasterUrl, masterUrl)
-                .with(PersisterDriverConfig::setPollTime, pollTime)
+        return GenericBuilder.of(CassandraDriverConfig::new)
+                .with(CassandraDriverConfig::setAppName, appName)
+                .with(CassandraDriverConfig::setKinesisEndpoint, kinesisEndpoint)
+                .with(CassandraDriverConfig::setKinesisStreamName, kinesisStreamName)
+                .with(CassandraDriverConfig::setHost, host)
+                .with(CassandraDriverConfig::setKeySpace, keySpace)
+                .with(CassandraDriverConfig::setMasterUrl, masterUrl)
+                .with(CassandraDriverConfig::setPollTime, pollTime)
                 .build();
     }
 }

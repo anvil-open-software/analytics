@@ -89,4 +89,42 @@ public final class StreamFunctions implements Serializable {
             return streamingContext;
         }
     }
+
+    public static final class CreateCassandraStreamingContextFunction implements Function0<JavaStreamingContext> {
+        private final CassandraDriverConfig driverConfig;
+        private final VoidFunction<JavaDStream<byte[]>> eventStreamProcessor;
+
+        public CreateCassandraStreamingContextFunction(final CassandraDriverConfig driverConfig,
+                                                       final VoidFunction<JavaDStream<byte[]>> eventStreamProcessor) {
+            this.driverConfig = driverConfig;
+            this.eventStreamProcessor = eventStreamProcessor;
+        }
+
+        @Override
+        public JavaStreamingContext call() throws Exception {
+            // create spark configure
+            final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName());
+            // if master url set, apply
+            if (!Strings.isNullOrEmpty(driverConfig.getMasterUrl())) {
+                sparkConfiguration.setMaster(driverConfig.getMasterUrl());
+            }
+            // set the authorization
+            sparkConfiguration.set(CassandraDriverConfig.AUTH_USERNAME_PROP, driverConfig.getUsername());
+            sparkConfiguration.set(CassandraDriverConfig.AUTH_PASSWORD_PROP, driverConfig.getPassword());
+            // set the connection host
+            sparkConfiguration.set(CassandraDriverConfig.CONNECTION_HOST_PROP, driverConfig.getHost());
+            // create the streaming context
+            final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
+                    driverConfig.getPollTime());
+            // create the dstream
+            final JavaDStream<byte[]> dStream =
+                    new CreateDStreamFunction(driverConfig, streamingContext).call();
+            // work on the streams
+            eventStreamProcessor.call(dStream);
+            // set the checkpoint dir
+            streamingContext.checkpoint(driverConfig.getCheckPointDir());
+            // return the streaming context
+            return streamingContext;
+        }
+    }
 }
