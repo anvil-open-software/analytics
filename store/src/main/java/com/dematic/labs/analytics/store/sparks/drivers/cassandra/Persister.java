@@ -69,7 +69,7 @@ public final class Persister implements Serializable {
             pollTime = args[4];
         }
         // create the driver configuration and checkpoint dir
-        final CassandraDriverConfig driverConfig = configure(APP_NAME, kinesisEndpoint,
+        final CassandraDriverConfig driverConfig = configure(String.format("%s_%s",keySpace, APP_NAME), kinesisEndpoint,
                 kinesisStreamName, host, keySpace, masterUrl, pollTime);
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // master url will be set using the spark submit driver command
