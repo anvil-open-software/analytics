@@ -3,7 +3,7 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.grainger;
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.toolkit.GenericBuilder;
-import com.dematic.labs.toolkit.communication.Event;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.DataFrameWriter;
@@ -12,10 +12,6 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.charset.Charset;
-
-import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 
 public final class ComputeMetrics {
@@ -33,45 +29,16 @@ public final class ComputeMetrics {
 
         @Override
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
-            // transform the byte[] (byte arrays are json) to a string todo reading....
-            final JavaDStream<Event> eventStream =
-                    javaDStream.map(event -> jsonToEvent(new String(event, Charset.defaultCharset())));
-
-            eventStream.foreachRDD(rdd -> {
-
-                /**
-                 * // Convert RDD[String] to RDD[case class] to DataFrame
-                 JavaRDD<JavaRow> rowRDD = rdd.map(new Function<String, JavaRow>() {
-                 public JavaRow call(String word) {
-                 JavaRow record = new JavaRow();
-                 record.setWord(word);
-                 return record;
-                 }
-                 });
-                 DataFrame wordsDataFrame = sqlContext.createDataFrame(rowRDD, JavaRow.class);
-
-                 // Register as table
-                 wordsDataFrame.registerTempTable("words");
-
-                 // Do word count on table using SQL and print it
-                 DataFrame wordCountsDataFrame =
-                 sqlContext.sql("select word, count(*) as total from words group by word");
-                 wordCountsDataFrame.show();
-                 */
-
-
+            // transform the byte[] to signals
+            javaDStream.foreachRDD(rdd -> {
+                final SQLContext sqlContext = SQLContext.getOrCreate(javaDStream.context().sparkContext());
+                final JavaRDD<Signal> signals = rdd.map(signal -> new Signal());
+                final DataFrame signalDataFrame = sqlContext.createDataFrame(signals, Signal.class);
+                signalDataFrame.sqlContext().sql(MetricsSql.FIVE_MINUTES).registerTempTable("FiveMinutesReadings");
+                final DataFrame fiveMinuteSum = sqlContext.sql(MetricsSql.FIVE_MINUTE_SUM);
+                final DataFrameWriter json = fiveMinuteSum.write().format("json");
+                // save to cassandra //todo:
             });
-
-            // get the sql context and use it for data frames
-            final SQLContext sqlContext = SQLContext.getOrCreate(javaDStream.context().sparkContext());
-
-            // compute metrics
-            // 5 minutes
-            sqlContext.sql(MetricsSql.FIVE_MINUTES).registerTempTable("FiveMinutesReadings");
-            final DataFrame fiveMinuteSum = sqlContext.sql(MetricsSql.FIVE_MINUTE_SUM);
-            final DataFrameWriter json = fiveMinuteSum.write().format("json");
-            // save to cassandra //todo:
-
         }
     }
 
