@@ -37,6 +37,31 @@ public final class ComputeMetrics {
             final JavaDStream<Event> eventStream =
                     javaDStream.map(event -> jsonToEvent(new String(event, Charset.defaultCharset())));
 
+            eventStream.foreachRDD(rdd -> {
+
+                /**
+                 * // Convert RDD[String] to RDD[case class] to DataFrame
+                 JavaRDD<JavaRow> rowRDD = rdd.map(new Function<String, JavaRow>() {
+                 public JavaRow call(String word) {
+                 JavaRow record = new JavaRow();
+                 record.setWord(word);
+                 return record;
+                 }
+                 });
+                 DataFrame wordsDataFrame = sqlContext.createDataFrame(rowRDD, JavaRow.class);
+
+                 // Register as table
+                 wordsDataFrame.registerTempTable("words");
+
+                 // Do word count on table using SQL and print it
+                 DataFrame wordCountsDataFrame =
+                 sqlContext.sql("select word, count(*) as total from words group by word");
+                 wordCountsDataFrame.show();
+                 */
+
+
+            });
+
             // get the sql context and use it for data frames
             final SQLContext sqlContext = SQLContext.getOrCreate(javaDStream.context().sparkContext());
 
