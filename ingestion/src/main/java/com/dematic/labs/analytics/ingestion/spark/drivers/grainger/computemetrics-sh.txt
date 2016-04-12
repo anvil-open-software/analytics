@@ -1,0 +1,122 @@
+#!/bin/bash
+
+if [ ${#1} -eq 0 ]
+then
+	echo "HDFS Root Path (example /tmp/Grainger/NEDC)"
+	exit
+fi
+
+if [ ${#2} -eq 0 ]
+then
+	echo "Missing Host URL (example http://example.com)"
+	exit
+fi
+
+echo "Moving Raw Data To Unsorted"
+hadoop fs -mv $1/raw/* $1/staging/Unsorted/
+
+generation=$(uuidgen)
+echo "Generating Generation Scala Script"
+cat computemetrics.scala | sed -e "s|#PATH#|$1|g" -e "s|#GENERATION#|$generation|g" > $generation.scala
+
+echo "Computing Metrics" $generation
+spark-shell -i $generation.scala &> spark.log
+
+echo "Getting Files" $generation
+mkdir $generation
+echo "Getting 5 min"
+hadoop fs -getmerge $1/staging/FiveMinutes/$generation $generation/5min_$generation
+echo "Getting 15 min"
+hadoop fs -getmerge $1/staging/FifteenMinutes/$generation $generation/15min_$generation
+echo "Getting 30 min"
+hadoop fs -getmerge $1/staging/ThirtyMinutes/$generation $generation/30min_$generation
+echo "Getting 1 hour"
+hadoop fs -getmerge $1/staging/Hour/$generation $generation/hour_$generation
+echo "Getting 1 day"
+hadoop fs -getmerge $1/staging/Day/$generation $generation/day_$generation
+
+
+if [ -f $generation/5min_$generation ]
+then
+	linecount=`cat $generation/5min_$generation | sed '/^\s*$/d' | wc -l`
+	if [ $linecount -gt 0 ]
+	then
+		echo "Sending 5 min to" $2
+		uploadresult=`curl -X POST -d @"$generation/5min_$generation" -H "PresharedKey: E6149FA1-052F-441F-9067-39C89572F0AC" $2/OPC/MetricsUploader`
+		if [ "$uploadresult" == "Success" ]
+		then
+			echo "Success"
+		else
+			echo "Failed"
+		fi
+	fi
+fi
+
+if [ -f $generation/15min_$generation ]
+then
+	linecount=`cat $generation/15min_$generation | sed '/^\s*$/d' | wc -l`
+	if [ $linecount -gt 0 ]
+	then
+		echo "Sending 15 min to" $2
+		uploadresult=`curl -X POST -d @"$generation/15min_$generation" -H "PresharedKey: E6149FA1-052F-441F-9067-39C89572F0AC" $2/OPC/MetricsUploader`
+		if [ "$uploadresult" == "Success" ]
+		then
+			echo "Success"
+		else
+			echo "Failed"
+		fi
+	fi
+fi
+
+if [ -f $generation/30min_$generation ]
+then
+	linecount=`cat $generation/30min_$generation | sed '/^\s*$/d' | wc -l`
+	if [ $linecount -gt 0 ]
+	then
+		echo "Sending 30 min to" $2
+		uploadresult=`curl -X POST -d @"$generation/30min_$generation" -H "PresharedKey: E6149FA1-052F-441F-9067-39C89572F0AC" $2/OPC/MetricsUploader`
+		if [ "$uploadresult" == "Success" ]
+		then
+			echo "Success"
+		else
+			echo "Failed"
+		fi
+	fi
+fi
+
+if [ -f $generation/hour_$generation ]
+then
+	linecount=`cat $generation/hour_$generation | sed '/^\s*$/d' | wc -l`
+	if [ $linecount -gt 0 ]
+	then
+		echo "Sending 1 hour to" $2
+		uploadresult=`curl -X POST -d @"$generation/hour_$generation" -H "PresharedKey: E6149FA1-052F-441F-9067-39C89572F0AC" $2/OPC/MetricsUploader`
+		if [ "$uploadresult" == "Success" ]
+		then
+			echo "Success"
+		else
+			echo "Failed"
+		fi
+	fi
+fi
+
+if [ -f $generation/day_$generation ]
+then
+	linecount=`cat $generation/day_$generation | sed '/^\s*$/d' | wc -l`
+	if [ $linecount -gt 0 ]
+	then
+		echo "Sending 1 day to" $2
+		uploadresult=`curl -X POST -d @"$generation/day_$generation" -H "PresharedKey: E6149FA1-052F-441F-9067-39C89572F0AC" $2/OPC/MetricsUploader`
+		if [ "$uploadresult" == "Success" ]
+		then
+			echo "Success"
+		else
+			echo "Failed"
+		fi
+	fi
+fi
+
+echo "Cleaning up"
+rm $generation.scala
+rm -rf ./$generation
+echo "Done"
