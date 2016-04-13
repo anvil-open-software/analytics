@@ -3,6 +3,7 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.grainger;
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.toolkit.GenericBuilder;
+import com.dematic.labs.toolkit.communication.Signal;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.sql.DataFrame;
