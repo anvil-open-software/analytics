@@ -4,6 +4,7 @@ import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
+import com.dematic.labs.toolkit.communication.SignalUtils;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.sql.DataFrame;
@@ -33,7 +34,7 @@ public final class ComputeMetrics {
             // transform the byte[] to signals
             javaDStream.foreachRDD(rdd -> {
                 final SQLContext sqlContext = SQLContext.getOrCreate(javaDStream.context().sparkContext());
-                final JavaRDD<Signal> signals = rdd.map(signal -> new Signal());
+                final JavaRDD<Signal> signals = rdd.map(SignalUtils::jsonByteArrayToSignal);
                 final DataFrame signalDataFrame = sqlContext.createDataFrame(signals, Signal.class);
                 signalDataFrame.sqlContext().sql(MetricsSql.FIVE_MINUTES).registerTempTable("FiveMinutesReadings");
                 final DataFrame fiveMinuteSum = sqlContext.sql(MetricsSql.FIVE_MINUTE_SUM);
