@@ -36,9 +36,15 @@ public final class ComputeMetrics {
                 final SQLContext sqlContext = SQLContext.getOrCreate(javaDStream.context().sparkContext());
                 final JavaRDD<Signal> signals = rdd.map(SignalUtils::jsonByteArrayToSignal);
                 final DataFrame signalDataFrame = sqlContext.createDataFrame(signals, Signal.class);
-                signalDataFrame.sqlContext().sql(MetricsSql.FIVE_MINUTES).registerTempTable("FiveMinutesReadings");
-                final DataFrame fiveMinuteSum = sqlContext.sql(MetricsSql.FIVE_MINUTE_SUM);
-                final DataFrameWriter json = fiveMinuteSum.write().format("json");
+
+                signalDataFrame.registerTempTable("signals");
+
+                final DataFrame signalCountsDataFrame =
+                        sqlContext.sql("select * from signals");
+                signalCountsDataFrame.show();
+                final DataFrameWriter json = signalDataFrame.write().format("json");
+
+                json.save();
                 // save to cassandra //todo:
             });
         }
