@@ -5,6 +5,7 @@ import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
+import com.dematic.labs.toolkit.communication.EventUtils;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
@@ -12,13 +13,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.nio.charset.Charset;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 import static com.dematic.labs.analytics.common.cassandra.Connections.createTable;
 import static com.dematic.labs.toolkit.communication.Event.createTableCql;
-import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 public final class Persister implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(Persister.class);
@@ -35,8 +34,7 @@ public final class Persister implements Serializable {
         @Override
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
             // transform the byte[] (byte arrays are json) to a string to events
-            final JavaDStream<Event> eventStream =
-                    javaDStream.map(event -> jsonToEvent(new String(event, Charset.defaultCharset())));
+            final JavaDStream<Event> eventStream = javaDStream.map(EventUtils::jsonByteArrayToEvent);
             eventStream.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Event.TABLE_NAME,
                         mapToRow(Event.class)).saveToCassandra();
