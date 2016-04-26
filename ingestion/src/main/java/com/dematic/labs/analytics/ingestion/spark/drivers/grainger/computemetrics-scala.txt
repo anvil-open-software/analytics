@@ -1,0 +1,90 @@
+sc.setLogLevel("WARN")
+
+val rootPath ="#PATH#"	// "/tmp/Grainger/NEDC". Needs to be changed to an argument for spark job
+val generationString = "#GENERATION#"	// Unique value. Needs to be changed to an argument for spark job
+
+//val hiveContext = new org.apache.spark.sql.hive.HiveContext(sc)	//default sqlContext is hive
+
+println("Loading Config Data")
+//******* Load the config data *********
+val configPath = "hdfs://sandbox.hortonworks.com:8020" + rootPath + "/config"
+val config_raw = sqlContext.read.json(configPath)
+config_raw.registerTempTable("config_raw");
+
+val config_keys = sqlContext.sql("SELECT OPCMetricID, Timestamp FROM (SELECT OPCMetricID, Timestamp, rank() OVER (PARTITION BY OPCMetricID ORDER BY Timestamp DESC) as rank FROM config_raw) tmp WHERE tmp.rank = 1")
+config_keys.registerTempTable("config_keys")
+
+val config = sqlContext.sql("SELECT config_raw.* FROM config_raw JOIN config_keys ON config_keys.OPCMetricID = config_raw.OPCMetricID WHERE config_keys.Timestamp = config_raw.Timestamp and config_keys.OPCMetricID = config_raw.OPCMetricID")
+config.registerTempTable("config")
+//******* Load the config data *********
+
+
+println("Loading Raw Tags")
+//******* Load Raw Tags *********
+val path = "hdfs://sandbox.hortonworks.com:8020" + rootPath + "/staging/Unsorted"
+val readings = sqlContext.read.json(path)
+readings.registerTempTable("readings")
+//******* Load Raw Tags *********
+
+
+
+println("Calculating 5 Min Metrics")
+//***** FiveMinutes*****
+val FiveMinutes = sqlContext.sql("SELECT readings.*,config.OPCMetricID,config.AggregationType FROM readings JOIN config ON readings.OPCTagID = config.OPCTagID WHERE config.AggregationInterval='FiveMinutes'")
+
+FiveMinutes.registerTempTable("FiveMinutesReadings")
+val FiveMinuteSum = sqlContext.sql("SELECT OPCTagID,OPCMetricID, SUM(Value) as Sum, COUNT(Value) as Count, AVG(Value) as Average, MIN(Value) as Minimum, MAX(Value) as Maximum from FiveMinutesReadings WHERE AggregationType<>'None' GROUP BY OPCTagID, OPCMetricID")
+
+println("Writing 5 Min Metrics")
+FiveMinuteSum.write.format("json").save("hdfs://sandbox.hortonworks.com:8020" + rootPath + "/staging/FiveMinutes/" + generationString)
+//FiveMinuteSum.show()
+//***** FiveMinutes*****
+
+println("Calculating 15 Min Metrics")
+//***** FifteenMinutes*****
+val FifteenMinutes = sqlContext.sql("SELECT readings.*,config.OPCMetricID,config.AggregationType FROM readings JOIN config ON readings.OPCTagID = config.OPCTagID WHERE config.AggregationInterval='FifteenMinutes'")
+
+FifteenMinutes.registerTempTable("FifteenMinutesReadings")
+val FifteenMinutesum = sqlContext.sql("SELECT OPCTagID,OPCMetricID, SUM(Value) as Sum, COUNT(Value) as Count, AVG(Value) as Average, MIN(Value) as Minimum, MAX(Value) as Maximum from FifteenMinutesReadings WHERE AggregationType<>'None' GROUP BY OPCTagID, OPCMetricID")
+
+println("Writing 15 Min Metrics")
+FifteenMinutesum.write.format("json").save("hdfs://sandbox.hortonworks.com:8020" + rootPath + "/staging/FifteenMinutes/" + generationString)
+//FifteenMinutesum.show()
+//***** FifteenMinutes*****
+
+println("Calculating 30 Min Metrics")
+//***** ThirtyMinutes*****
+val ThirtyMinutes = sqlContext.sql("SELECT readings.*,config.OPCMetricID,config.AggregationType FROM readings JOIN config ON readings.OPCTagID = config.OPCTagID WHERE config.AggregationInterval='ThirtyMinutes'")
+
+ThirtyMinutes.registerTempTable("ThirtyMinutesReadings")
+val ThirtyMinutesum = sqlContext.sql("SELECT OPCTagID,OPCMetricID, SUM(Value) as Sum, COUNT(Value) as Count, AVG(Value) as Average, MIN(Value) as Minimum, MAX(Value) as Maximum from ThirtyMinutesReadings WHERE AggregationType<>'None' GROUP BY OPCTagID, OPCMetricID")
+
+println("Writing 30 Min Metrics")
+ThirtyMinutesum.write.format("json").save("hdfs://sandbox.hortonworks.com:8020" + rootPath + "/staging/ThirtyMinutes/" + generationString)
+//ThirtyMinutesum.show()
+//***** ThirtyMinutes*****
+
+println("Calculating 1 Hour Metrics")
+//***** Hour*****
+val Hour = sqlContext.sql("SELECT readings.*,config.OPCMetricID,config.AggregationType FROM readings JOIN config ON readings.OPCTagID = config.OPCTagID WHERE config.AggregationInterval='Hour'")
+
+Hour.registerTempTable("HourReadings")
+val Hoursum = sqlContext.sql("SELECT OPCTagID,OPCMetricID, SUM(Value) as Sum, COUNT(Value) as Count, AVG(Value) as Average, MIN(Value) as Minimum, MAX(Value) as Maximum from HourReadings WHERE AggregationType<>'None' GROUP BY OPCTagID, OPCMetricID")
+
+println("Writing 1 Hour Metrics")
+Hoursum.write.format("json").save("hdfs://sandbox.hortonworks.com:8020" + rootPath + "/staging/Hour/" + generationString)
+//Hoursum.show()
+//***** Hour*****
+
+println("Calculating 1 Day Metrics")
+//***** Day*****
+val Day = sqlContext.sql("SELECT readings.*,config.OPCMetricID,config.AggregationType FROM readings JOIN config ON readings.OPCTagID = config.OPCTagID WHERE config.AggregationInterval='Day'")
+
+Day.registerTempTable("DayReadings")
+val Daysum = sqlContext.sql("SELECT OPCTagID,OPCMetricID, SUM(Value) as Sum, COUNT(Value) as Count, AVG(Value) as Average, MIN(Value) as Minimum, MAX(Value) as Maximum from DayReadings WHERE AggregationType<>'None' GROUP BY OPCTagID, OPCMetricID")
+
+println("Writing 1 Day Metrics")
+Daysum.write.format("json").save("hdfs://sandbox.hortonworks.com:8020" + rootPath + "/staging/Day/" + generationString)
+//Daysum.show()
+//***** Day*****
+exit
