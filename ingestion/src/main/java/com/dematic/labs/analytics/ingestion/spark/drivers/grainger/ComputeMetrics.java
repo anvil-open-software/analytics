@@ -1,25 +1,24 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.grainger;
 
+import com.datastax.spark.connector.cql.CassandraConnector;
+import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.dematic.labs.toolkit.communication.SignalUtils;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.sql.DataFrame;
-import org.apache.spark.sql.DataFrameWriter;
-import org.apache.spark.sql.SQLContext;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.*;
+
 
 public final class ComputeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeMetrics.class);
     public static final String COMPUTE_METRICS_APP_NAME = "GRAINGER_LT";
-
 
     // event stream compute metrics function
     private static final class ComputeMetricsFunction implements VoidFunction<JavaDStream<byte[]>> {
@@ -32,21 +31,13 @@ public final class ComputeMetrics {
         @Override
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
             // transform the byte[] to signals
-            javaDStream.foreachRDD(rdd -> {
-                final SQLContext sqlContext = SQLContext.getOrCreate(javaDStream.context().sparkContext());
-                final JavaRDD<Signal> signals = rdd.map(SignalUtils::jsonByteArrayToSignal);
-                final DataFrame signalDataFrame = sqlContext.createDataFrame(signals, Signal.class);
-
-                signalDataFrame.registerTempTable("signals");
-
-                final DataFrame signalCountsDataFrame =
-                        sqlContext.sql("select * from signals");
-                signalCountsDataFrame.show();
-                final DataFrameWriter json = signalDataFrame.write().format("json");
-
-                json.save();
-                // save to cassandra //todo:
+            final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
+            // 1) save raw signals to cassandra
+            signals.foreachRDD(rdd -> {
+                javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME,
+                        mapToRow(Signal.class)).saveToCassandra();
             });
+            // 2) compute metrics from signals and save results
         }
     }
 
@@ -63,6 +54,7 @@ public final class ComputeMetrics {
         final String keySpace;
         final String pollTime;
 
+        //noinspection Duplicates
         if (args.length == 6) {
             host = args[2];
             keySpace = args[3];
@@ -77,17 +69,17 @@ public final class ComputeMetrics {
         }
 
         // create the driver configuration and checkpoint dir
-        final CassandraDriverConfig driverConfig = configure(String.format("%s_%s",keySpace, COMPUTE_METRICS_APP_NAME), kinesisEndpoint,
-                kinesisStreamName, host, keySpace, masterUrl, pollTime);
+        final CassandraDriverConfig driverConfig = configure(String.format("%s_%s",keySpace, COMPUTE_METRICS_APP_NAME),
+                kinesisEndpoint, kinesisStreamName, host, keySpace, masterUrl, pollTime);
 
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
-                new StreamFunctions.CreateCassandraStreamingContextFunction(driverConfig, new ComputeMetricsFunction(driverConfig)));
-
-        //todo: figure out what tabke looks like.... create the cassandra table, if it does not exist
-        /*createTable(createTableCql(driverConfig.getKeySpace()),
-                CassandraConnector.apply(streamingContext.sc().getConf()));*/
+                new StreamFunctions.CreateCassandraStreamingContextFunction(driverConfig,
+                        new ComputeMetricsFunction(driverConfig)));
+        // creates the table in cassandra to store raw signals
+        Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
+                CassandraConnector.apply(streamingContext.sc().getConf()));
 
         // Start the streaming context and await termination
         LOGGER.info("CM: starting Compute Metrics Driver with master URL >{}<",

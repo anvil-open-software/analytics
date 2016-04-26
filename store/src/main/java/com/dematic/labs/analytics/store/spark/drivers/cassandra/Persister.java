@@ -54,6 +54,7 @@ public final class Persister implements Serializable {
         final String host;
         final String keySpace;
         final String pollTime;
+        //noinspection Duplicates
         if (args.length == 6) {
             host = args[2];
             keySpace = args[3];
@@ -72,7 +73,8 @@ public final class Persister implements Serializable {
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
-                new StreamFunctions.CreateCassandraStreamingContextFunction(driverConfig, new PersistFunction(driverConfig)));
+                new StreamFunctions.CreateCassandraStreamingContextFunction(driverConfig,
+                        new PersistFunction(driverConfig)));
         //create the cassandra table, if it does not exist
         createTable(createTableCql(driverConfig.getKeySpace()),
                 CassandraConnector.apply(streamingContext.sc().getConf()));

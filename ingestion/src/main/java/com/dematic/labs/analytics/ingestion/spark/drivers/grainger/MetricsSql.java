@@ -1,5 +1,6 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.grainger;
 
+@SuppressWarnings("unused") // used to help define sql and groupings
 public interface MetricsSql {
     String CONFIG_KEYS = "SELECT OPCMetricID, Timestamp FROM (SELECT OPCMetricID, Timestamp, rank() OVER (PARTITION BY " +
             "OPCMetricID ORDER BY Timestamp DESC) as rank FROM config_raw) tmp WHERE tmp.rank = 1";
