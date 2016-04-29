@@ -8,12 +8,18 @@ import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.dematic.labs.toolkit.communication.SignalUtils;
 import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoders;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SQLContext;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Tuple2;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.*;
+import static org.apache.spark.sql.functions.col;
 
 
 public final class ComputeMetrics {
@@ -34,10 +40,19 @@ public final class ComputeMetrics {
             final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
             // 1) save raw signals to cassandra
             signals.foreachRDD(rdd -> {
-                javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME,
-                        mapToRow(Signal.class)).saveToCassandra();
+                // 1) save raw signals to cassandra
+                javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
+                        saveToCassandra();
+                // 2) compute metrics from signals and save results
+                final SQLContext sqlContext = SQLContext.getOrCreate(javaDStream.context().sparkContext());
+                // group by opcTagId
+                final Dataset<Signal> signalDs = sqlContext.createDataset(rdd.rdd(), Encoders.bean(Signal.class));
+                // collect all the signal aggregations and save to cassandra
+                final Tuple2<Row, SignalAggregation>[] opcTagIds =
+                        signalDs.groupBy(col("opcTagId")).agg(new AggregationFunctions.ComputeSignalAggregation().
+                        toColumn(Encoders.LONG(), Encoders.bean(SignalAggregation.class))).
+                                collect();
             });
-            // 2) compute metrics from signals and save results
         }
     }
 
