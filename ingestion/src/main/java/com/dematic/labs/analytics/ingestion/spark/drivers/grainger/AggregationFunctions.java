@@ -28,7 +28,7 @@ final class AggregationFunctions implements Serializable {
 
         @Override
         public SignalAggregation finish(final Long reduction) {
-            return signalAggregation;
+            return signalAggregation.computeAggregations(reduction);
         }
 
         @Override
