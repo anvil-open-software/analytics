@@ -2,10 +2,13 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.grainger;
 
 //{"OPCTagID":1549,"OPCMetricID":25,"Sum":7.875713721263E12,"Count":7316,"Average":1.0765054293689175E9,"Minimum":"1000954613","Maximum":"999917866"}
 
+import com.dematic.labs.toolkit.communication.Signal;
+
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
-class SignalAggregation implements Serializable {
+public class SignalAggregation implements Serializable {
     private Long count;
     private Long sum;
     private Long min;
@@ -18,7 +21,12 @@ class SignalAggregation implements Serializable {
         max = 0L;
     }
 
-    SignalAggregation computeAggregations(final Long value) {
+    SignalAggregation computeAggregations(final List<Signal> values) {
+        values.stream().forEach(signal -> computeAggregations(signal.getValue()));
+        return this;
+    }
+
+    private SignalAggregation computeAggregations(final Long value) {
         incrementCount();
         minMax(value);
         sum(value);
@@ -30,31 +38,47 @@ class SignalAggregation implements Serializable {
     }
 
     private void minMax(final Long value) {
-        min = min < value ? min : value;
-        max = max > value ? max : value;
+        min = min <= value ? min : value;
+        max = max >= value ? max : value;
     }
 
     private void sum(final Long value) {
         sum = sum + value;
     }
 
-    Long getCount() {
+    public Long getCount() {
         return count;
     }
 
-    Long getSum() {
+    public void setCount(Long count) {
+        this.count = count;
+    }
+
+    public Long getSum() {
         return sum;
     }
 
-    Long getMin() {
+    public void setSum(Long sum) {
+        this.sum = sum;
+    }
+
+    public Long getMin() {
         return min;
     }
 
-    Long getMax() {
+    public void setMin(Long min) {
+        this.min = min;
+    }
+
+    public Long getMax() {
         return max;
     }
 
-    Double getAvg() {
+    public void setMax(Long max) {
+        this.max = max;
+    }
+
+    public Double getAvg() {
         return getCount() > 0 ? (double) getSum() / getCount() : 0.0d;
     }
 

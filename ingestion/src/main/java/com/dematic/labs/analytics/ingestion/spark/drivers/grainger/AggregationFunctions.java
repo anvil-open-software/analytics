@@ -1,39 +1,44 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.grainger;
 
+import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.dematic.labs.toolkit.communication.Signal;
-import org.apache.spark.sql.expressions.Aggregator;
+import com.google.common.base.Optional;
+import org.apache.spark.api.java.function.Function4;
+import org.apache.spark.streaming.State;
+import org.apache.spark.streaming.Time;
 
 import java.io.Serializable;
+import java.util.List;
 
 final class AggregationFunctions implements Serializable {
     private AggregationFunctions() {
     }
 
-    static class ComputeSignalAggregation extends Aggregator<Signal, Long, SignalAggregation> {
-        private final SignalAggregation signalAggregation;
+    static final class ComputeMovingSignalAggregation implements Function4<Time, String, Optional<List<Signal>>,
+            State<SignalAggregation>, Optional<SignalAggregation>> {
+        private final DriverConfig driverConfig;
 
-        public ComputeSignalAggregation() {
-            signalAggregation = new SignalAggregation();
+        ComputeMovingSignalAggregation(final DriverConfig driverConfig) {
+            this.driverConfig = driverConfig;
         }
 
         @Override
-        public Long zero() {
-            return 0L;
-        }
+        public Optional<SignalAggregation> call(final Time time, final String opcTagId,
+                                                final Optional<List<Signal>> signals,
+                                                final State<SignalAggregation> state) throws Exception {
+            final SignalAggregation signalAggregation;
+            // check for saved state
+            if (state.exists()) {
+                signalAggregation = state.get();
+                signalAggregation.computeAggregations(signals.get());
 
-        @Override
-        public Long reduce(final Long value, final Signal signal) {
-            return value + signal.getValue();
-        }
-
-        @Override
-        public SignalAggregation finish(final Long reduction) {
-            return signalAggregation.computeAggregations(reduction);
-        }
-
-        @Override
-        public Long merge(final Long valueOne, final Long valueTwo) {
-            return valueOne + valueTwo;
+            } else {
+                // create initial state
+                signalAggregation = new SignalAggregation();
+                signalAggregation.computeAggregations(signals.get());
+                state.update(signalAggregation);
+            }
+            return Optional.of(signalAggregation);
         }
     }
 }
