@@ -54,6 +54,10 @@ class SignalAggregation implements Serializable {
         return max;
     }
 
+    Double getAvg() {
+        return getCount() > 0 ? (double) getSum() / getCount() : 0.0d;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -77,6 +81,7 @@ class SignalAggregation implements Serializable {
                 ", sum=" + sum +
                 ", min=" + min +
                 ", max=" + max +
+                ", avg=" + getAvg() +
                 '}';
     }
 }
