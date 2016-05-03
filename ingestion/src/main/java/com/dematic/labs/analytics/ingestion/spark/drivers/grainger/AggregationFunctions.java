@@ -36,13 +36,16 @@ final class AggregationFunctions implements Serializable {
                 final boolean timingOut = state.isTimingOut();
                 if (timingOut) {
                     // no state has been updated for timeout amount of time, just calculate metrics and return
-                    signalAggregation.computeAggregations(signals.get());
-                    return  Optional.of(signalAggregation);
-                } else {
-                    // calculate and update
-                    signalAggregation.computeAggregations(signals.get());
-                    state.update(signalAggregation);
+                    if (signals.isPresent()) {
+                        signalAggregation.computeAggregations(signals.get());
+                        return Optional.of(signalAggregation);
+                    } else {
+                        return Optional.absent();
+                    }
                 }
+                // calculate and update
+                signalAggregation.computeAggregations(signals.get());
+                state.update(signalAggregation);
             } else {
                 // create initial state,
                 // todo: load from cassandra
