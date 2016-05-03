@@ -1,7 +1,5 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.grainger;
 
-import com.datastax.spark.connector.cql.CassandraConnector;
-import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.analytics.ingestion.spark.drivers.grainger.AggregationFunctions.ComputeMovingSignalAggregation;
@@ -22,8 +20,12 @@ import scala.Tuple2;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Spliterator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.Spliterators.spliteratorUnknownSize;
+import static java.util.stream.StreamSupport.stream;
 
 public final class ComputeMovingMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeMovingMetrics.class);
@@ -53,9 +55,19 @@ public final class ComputeMovingMetrics {
             final JavaMapWithStateDStream<String, List<Signal>, SignalAggregation, SignalAggregation>
                     mapWithStateDStream = reduceByKey.mapWithState(StateSpec.function(
                     new ComputeMovingSignalAggregation(driverConfig)).
-                    // buffer timeout in seconds
-                            timeout(Durations.seconds(Long.valueOf(driverConfig.getBufferTime()))));
+                    // default timeout in seconds
+                            timeout(Durations.seconds(30L)));
             // 3) save metrics by bucket to cassandra
+            mapWithStateDStream.foreachRDD(rdd -> {
+                rdd.foreachPartition(partition -> {
+                    final List<SignalAggregation> collect =
+                            stream(spliteratorUnknownSize(partition, Spliterator.CONCURRENT), true).
+                                    collect(Collectors.toList());
+                    if (!collect.isEmpty()) {
+                        collect.forEach(signalAggregation -> LOGGER.info("CMM: {}", signalAggregation));
+                    }
+                });
+            });
         }
     }
 
@@ -95,10 +107,7 @@ public final class ComputeMovingMetrics {
         final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
                 new StreamFunctions.CreateCassandraStreamingContextFunction(driverConfig,
                         new ComputeMovingMetricsFunction(driverConfig)));
-        // creates the table in cassandra to store raw signals
-        Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
-                CassandraConnector.apply(streamingContext.sc().getConf()));
-
+        // todo: creates the table in cassandra to store metrics
         // Start the streaming context and await termination
         LOGGER.info("CMM: starting Compute Moving Metrics Driver with master URL >{}<",
                 streamingContext.sparkContext().master());

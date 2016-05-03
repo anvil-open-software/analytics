@@ -21,16 +21,14 @@ class SignalAggregation implements Serializable {
         sum = 0L;
     }
 
-    SignalAggregation computeAggregations(final List<Signal> values) {
+    void computeAggregations(final List<Signal> values) {
         values.stream().forEach(signal -> computeAggregations(signal.getValue()));
-        return this;
     }
 
-    private SignalAggregation computeAggregations(final Long value) {
+    private void computeAggregations(final Long value) {
         incrementCount();
         minMax(value);
         sum(value);
-        return this;
     }
 
     private void incrementCount() {
