@@ -8,6 +8,7 @@ import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingCo
 import com.dematic.labs.analytics.ingestion.spark.tables.CycleTime;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
+import com.dematic.labs.toolkit.communication.EventUtils;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -24,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.UUID;
@@ -35,7 +35,6 @@ import static com.dematic.labs.analytics.ingestion.spark.drivers.stateful.CycleT
 import static com.dematic.labs.analytics.ingestion.spark.tables.CycleTime.TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
-import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
@@ -59,7 +58,7 @@ public final class CycleTimeProcessor {
 
             // transform the byte[] (byte arrays are json) to a string to events
             final JavaDStream<Event> eventStream =
-                    javaDStream.map(event -> jsonToEvent(new String(event, Charset.defaultCharset())));
+                    javaDStream.map(EventUtils::jsonByteArrayToEvent);
 
             // group by nodeId and map by jobID
             final JavaPairDStream<String, Multimap<UUID, Event>> nodeToEventsPairs = eventStream.mapToPair(
