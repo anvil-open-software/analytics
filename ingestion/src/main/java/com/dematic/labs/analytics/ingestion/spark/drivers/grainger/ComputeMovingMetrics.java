@@ -29,7 +29,7 @@ import static java.util.stream.StreamSupport.stream;
 
 public final class ComputeMovingMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeMovingMetrics.class);
-    public static final String COMPUTE_METRICS_APP_NAME = "GRAINGER_LT";
+    public static final String COMPUTE_METRICS_APP_NAME = "MOVING_METRICS_GRAINGER_LT";
 
     // event stream compute metrics function
     private static final class ComputeMovingMetricsFunction implements VoidFunction<JavaDStream<byte[]>> {
