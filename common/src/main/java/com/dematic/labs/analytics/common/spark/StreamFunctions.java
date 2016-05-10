@@ -2,16 +2,22 @@ package com.dematic.labs.analytics.common.spark;
 
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.google.common.base.Strings;
+import kafka.serializer.DefaultDecoder;
+import kafka.serializer.StringDecoder;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.kafka.KafkaUtils;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 import static com.dematic.labs.analytics.common.spark.DriverUtils.getKinesisCheckpointWindow;
@@ -23,18 +29,18 @@ public final class StreamFunctions implements Serializable {
 
     // create kinesis dstream function
     private static final class CreateKinesisDStream implements Function0<JavaDStream<byte[]>> {
-        private final DriverConfig driverConfig;
+        private final StreamConfig streamConfig;
         private final JavaStreamingContext streamingContext;
 
-        CreateKinesisDStream(final DriverConfig driverConfig, final JavaStreamingContext streamingContext) {
-            this.driverConfig = driverConfig;
+        CreateKinesisDStream(final StreamConfig streamConfig, final JavaStreamingContext streamingContext) {
+            this.streamConfig = streamConfig;
             this.streamingContext = streamingContext;
         }
 
         @Override
         public JavaDStream<byte[]> call() throws Exception {
-            final String kinesisEndpoint = driverConfig.getKinesisEndpoint();
-            final String streamName = driverConfig.getKinesisStreamName();
+            final String kinesisEndpoint = streamConfig.getStreamEndpoint();
+            final String streamName = streamConfig.getStreamName();
             // create the dstream
             final int shards = getNumberOfShards(kinesisEndpoint, streamName);
             // create 1 Kinesis Worker/Receiver/DStream for each shard
@@ -59,17 +65,28 @@ public final class StreamFunctions implements Serializable {
 
     // create kafka dstream function
     private static final class CreateKafkaDStream implements Function0<JavaDStream<byte[]>> {
+        private final StreamConfig streamConfig;
+        private final JavaStreamingContext streamingContext;
+
+        CreateKafkaDStream(final StreamConfig streamConfig, final JavaStreamingContext streamingContext) {
+            this.streamConfig = streamConfig;
+            this.streamingContext = streamingContext;
+        }
+
         @Override
         public JavaDStream<byte[]> call() throws Exception {
+            final JavaPairInputDStream<String, Byte[]> directStream =
+                    KafkaUtils.createDirectStream(streamingContext, String.class, Byte[].class,
+                            StringDecoder.class, DefaultDecoder.class, new HashMap<String, String>(), new HashSet<String>());
             return null;
         }
     }
 
     public static final class CreateStreamingContext implements Function0<JavaStreamingContext> {
-        private final DriverConfig driverConfig;
+        private final DefaultDriverConfig driverConfig;
         private final VoidFunction<JavaDStream<byte[]>> streamProcessor;
 
-        public CreateStreamingContext(final DriverConfig driverConfig,
+        public CreateStreamingContext(final DefaultDriverConfig driverConfig,
                                       final VoidFunction<JavaDStream<byte[]>> streamProcessor) {
             this.driverConfig = driverConfig;
             this.streamProcessor = streamProcessor;
@@ -85,12 +102,12 @@ public final class StreamFunctions implements Serializable {
             }
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
-                    driverConfig.getPollTime());
+                    driverConfig.getPollTimeInSeconds());
 
             //todo: which type of stream
             // create the dstream
             final JavaDStream<byte[]> dStream =
-                    new CreateKinesisDStream(driverConfig, streamingContext).call();
+                    new CreateKinesisDStream(driverConfig.getStreamConfig(), streamingContext).call();
 
             // work on the streams
             streamProcessor.call(dStream);
@@ -126,11 +143,11 @@ public final class StreamFunctions implements Serializable {
             sparkConfiguration.set(CassandraDriverConfig.CONNECTION_HOST_PROP, driverConfig.getHost());
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
-                    driverConfig.getPollTime());
+                    driverConfig.getPollTimeInSeconds());
 
             //todo: create the dstream
             final JavaDStream<byte[]> dStream =
-                    new CreateKinesisDStream(driverConfig, streamingContext).call();
+                    new CreateKinesisDStream(driverConfig.getStreamConfig(), streamingContext).call();
             // work on the streams
             streamProcessor.call(dStream);
             // set the checkpoint dir

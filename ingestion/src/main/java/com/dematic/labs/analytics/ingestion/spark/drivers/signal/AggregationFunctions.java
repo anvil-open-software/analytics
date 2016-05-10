@@ -1,6 +1,6 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.signal;
 
-import com.dematic.labs.analytics.common.spark.DriverConfig;
+import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.google.common.base.Optional;
 import org.apache.spark.api.java.function.Function4;
@@ -17,9 +17,9 @@ public final class AggregationFunctions implements Serializable {
     public static final class ComputeMovingSignalAggregation implements Function4<Time, String, Optional<List<Signal>>,
             State<SignalAggregation>, Optional<SignalAggregation>> {
         @SuppressWarnings("unused") // todo: will be used when retrieving data from cassandra
-        private final DriverConfig driverConfig;
+        private final CassandraDriverConfig driverConfig;
 
-        public ComputeMovingSignalAggregation(final DriverConfig driverConfig) {
+        public ComputeMovingSignalAggregation(final CassandraDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 

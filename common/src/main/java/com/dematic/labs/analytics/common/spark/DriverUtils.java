@@ -18,6 +18,10 @@ import java.util.List;
 
 import static com.dematic.labs.toolkit.aws.Connections.getNumberOfShards;
 
+/**
+ * Use <class><com.dematic.labs.analytics.common.spark.StreamFunctions/class>
+ */
+@Deprecated
 public final class DriverUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(DriverUtils.class);
 

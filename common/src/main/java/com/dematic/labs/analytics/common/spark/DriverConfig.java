@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Holder for spark driver session details including input parameters
  */
-// todo: still needs more cleanup
+@Deprecated
 public class DriverConfig implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(DriverConfig.class);
     private static final long serialVersionUID = 1896518324147474596L;
