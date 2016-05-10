@@ -100,6 +100,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- kinesis support -->
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming-kinesis-asl_2.11</artifactId>
@@ -115,6 +116,26 @@
             <groupId>com.amazonaws</groupId>
             <artifactId>amazon-kinesis-client</artifactId>
             <version>1.6.1</version>
+        </dependency>
+        <!-- kafka support -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming-kafka_2.11</artifactId>
+            <version>1.6.1</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>jets3t</artifactId>
+                    <groupId>net.java.dev.jets3t</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>commons-httpclient</artifactId>
+                    <groupId>commons-httpclient</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>slf4j-log4j12</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- declare tests dependencies -->
         <dependency>
