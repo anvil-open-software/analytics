@@ -6,7 +6,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.util.StringUtils;
 import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.dematic.labs.analytics.ingestion.spark.drivers.event.AggregateFunctions.AggregateEventToBucketFunction;
-import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContextFunction;
+import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContext;
 import com.dematic.labs.analytics.ingestion.spark.tables.event.EventAggregator;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Strings;
@@ -103,7 +103,7 @@ public final class EventStreamCacheAggregator implements Serializable {
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext =
                 JavaStreamingContext.getOrCreate(config.getCheckPointDir(),
-                        new CreateStreamingContextFunction(config, new AggregateEventFunction(config)));
+                        new CreateStreamingContext(config, new AggregateEventFunction(config)));
 
         // Start the streaming context and await termination
         LOGGER.info("starting Event Cache Aggregator Driver with master URL >{}<",

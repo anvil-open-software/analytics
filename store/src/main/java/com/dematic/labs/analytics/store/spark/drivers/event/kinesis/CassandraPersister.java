@@ -73,7 +73,7 @@ public final class CassandraPersister implements Serializable {
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
-                new StreamFunctions.CreateCassandraStreamingContextFunction(driverConfig,
+                new StreamFunctions.CreateCassandraStreamingContext(driverConfig,
                         new PersistFunction(driverConfig)));
         //create the cassandra table, if it does not exist
         createTable(createTableCql(driverConfig.getKeySpace()),

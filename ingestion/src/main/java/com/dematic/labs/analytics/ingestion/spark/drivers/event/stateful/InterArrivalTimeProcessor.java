@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
-import static com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContextFunction;
+import static com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContext;
 import static com.dematic.labs.analytics.ingestion.spark.tables.event.InterArrivalTime.TABLE_NAME;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
 import static com.dematic.labs.toolkit.aws.Connections.getAmazonDynamoDBClient;
@@ -175,7 +175,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext =
                 JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
-                        new CreateStreamingContextFunction(driverConfig, new InterArrivalTimeFunction(driverConfig)));
+                        new CreateStreamingContext(driverConfig, new InterArrivalTimeFunction(driverConfig)));
 
         // Start the streaming context and await termination
         LOGGER.info("IAT: starting Inter-ArrivalTime Driver with master URL >{}<", streamingContext.sparkContext().master());

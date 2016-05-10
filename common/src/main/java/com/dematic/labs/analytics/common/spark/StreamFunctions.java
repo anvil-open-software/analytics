@@ -21,12 +21,12 @@ public final class StreamFunctions implements Serializable {
     private StreamFunctions() {
     }
 
-    // create stream function
-    private static final class CreateDStreamFunction implements Function0<JavaDStream<byte[]>> {
+    // create kinesis dstream function
+    private static final class CreateKinesisDStream implements Function0<JavaDStream<byte[]>> {
         private final DriverConfig driverConfig;
         private final JavaStreamingContext streamingContext;
 
-        CreateDStreamFunction(final DriverConfig driverConfig, final JavaStreamingContext streamingContext) {
+        CreateKinesisDStream(final DriverConfig driverConfig, final JavaStreamingContext streamingContext) {
             this.driverConfig = driverConfig;
             this.streamingContext = streamingContext;
         }
@@ -57,14 +57,22 @@ public final class StreamFunctions implements Serializable {
         }
     }
 
-    public static final class CreateStreamingContextFunction implements Function0<JavaStreamingContext> {
-        private final DriverConfig driverConfig;
-        private final VoidFunction<JavaDStream<byte[]>> eventStreamProcessor;
+    // create kafka dstream function
+    private static final class CreateKafkaDStream implements Function0<JavaDStream<byte[]>> {
+        @Override
+        public JavaDStream<byte[]> call() throws Exception {
+            return null;
+        }
+    }
 
-        public CreateStreamingContextFunction(final DriverConfig driverConfig,
-                                              final VoidFunction<JavaDStream<byte[]>> eventStreamProcessor) {
+    public static final class CreateStreamingContext implements Function0<JavaStreamingContext> {
+        private final DriverConfig driverConfig;
+        private final VoidFunction<JavaDStream<byte[]>> streamProcessor;
+
+        public CreateStreamingContext(final DriverConfig driverConfig,
+                                      final VoidFunction<JavaDStream<byte[]>> streamProcessor) {
             this.driverConfig = driverConfig;
-            this.eventStreamProcessor = eventStreamProcessor;
+            this.streamProcessor = streamProcessor;
         }
 
         @Override
@@ -78,11 +86,14 @@ public final class StreamFunctions implements Serializable {
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTime());
+
+            //todo: which type of stream
             // create the dstream
             final JavaDStream<byte[]> dStream =
-                    new CreateDStreamFunction(driverConfig, streamingContext).call();
+                    new CreateKinesisDStream(driverConfig, streamingContext).call();
+
             // work on the streams
-            eventStreamProcessor.call(dStream);
+            streamProcessor.call(dStream);
             // set the checkpoint dir
             streamingContext.checkpoint(driverConfig.getCheckPointDir());
             // return the streaming context
@@ -90,14 +101,14 @@ public final class StreamFunctions implements Serializable {
         }
     }
 
-    public static final class CreateCassandraStreamingContextFunction implements Function0<JavaStreamingContext> {
+    public static final class CreateCassandraStreamingContext implements Function0<JavaStreamingContext> {
         private final CassandraDriverConfig driverConfig;
-        private final VoidFunction<JavaDStream<byte[]>> eventStreamProcessor;
+        private final VoidFunction<JavaDStream<byte[]>> streamProcessor;
 
-        public CreateCassandraStreamingContextFunction(final CassandraDriverConfig driverConfig,
-                                                       final VoidFunction<JavaDStream<byte[]>> eventStreamProcessor) {
+        public CreateCassandraStreamingContext(final CassandraDriverConfig driverConfig,
+                                               final VoidFunction<JavaDStream<byte[]>> streamProcessor) {
             this.driverConfig = driverConfig;
-            this.eventStreamProcessor = eventStreamProcessor;
+            this.streamProcessor = streamProcessor;
         }
 
         @Override
@@ -116,11 +127,12 @@ public final class StreamFunctions implements Serializable {
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTime());
-            // create the dstream
+
+            //todo: create the dstream
             final JavaDStream<byte[]> dStream =
-                    new CreateDStreamFunction(driverConfig, streamingContext).call();
+                    new CreateKinesisDStream(driverConfig, streamingContext).call();
             // work on the streams
-            eventStreamProcessor.call(dStream);
+            streamProcessor.call(dStream);
             // set the checkpoint dir
             streamingContext.checkpoint(driverConfig.getCheckPointDir());
             // return the streaming context

@@ -106,7 +106,7 @@ public final class ComputeCumulativeMetrics {
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
-                new StreamFunctions.CreateCassandraStreamingContextFunction(driverConfig,
+                new StreamFunctions.CreateCassandraStreamingContext(driverConfig,
                         new ComputeMovingMetricsFunction(driverConfig)));
         // todo: creates the table in cassandra to store metrics
         // Start the streaming context and await termination
