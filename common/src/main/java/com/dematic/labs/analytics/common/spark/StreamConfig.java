@@ -1,12 +1,10 @@
 package com.dematic.labs.analytics.common.spark;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
-public interface StreamConfig {
-    String BOOTSTRAP_SERVERS_KEY = "bootstrap.servers";
-    String TOPICS_KEY = "topics";
-
+public interface StreamConfig extends Serializable {
     String getStreamEndpoint();
     void setStreamEndpoint(final String streamEndpoint);
 
@@ -14,7 +12,7 @@ public interface StreamConfig {
     void setStreamName(final String streamName);
 
     Map<String, String> getAdditionalConfiguration();
-    void setAdditionalConfiguration(final Map<String, String> configuration);
+    void setAdditionalConfiguration(final Map<String, String> additionalConfiguration);
 
     Set<String> getTopics();
 }
