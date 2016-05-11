@@ -3,6 +3,7 @@ package com.dematic.labs.analytics.common.spark;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public final class KinesisStreamConfig implements StreamConfig, Serializable {
     private String streamEndpoint;
@@ -29,12 +30,17 @@ public final class KinesisStreamConfig implements StreamConfig, Serializable {
     }
 
     @Override
-    public Map<String, String> getStreamConfiguration() {
+    public Map<String, String> getAdditionalConfiguration() {
         throw new IllegalArgumentException("Not supported with Kinesis Stream");
     }
 
     @Override
-    public void setStreamConfiguration(Map<String, String> configuration) {
+    public void setAdditionalConfiguration(Map<String, String> configuration) {
+        throw new IllegalArgumentException("Not supported with Kinesis Stream");
+    }
+
+    @Override
+    public Set<String> getTopics() {
         throw new IllegalArgumentException("Not supported with Kinesis Stream");
     }
 

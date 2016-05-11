@@ -5,18 +5,19 @@ import com.google.common.base.Strings;
 import kafka.serializer.DefaultDecoder;
 import kafka.serializer.StringDecoder;
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
+import scala.Tuple2;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 import static com.dematic.labs.toolkit.aws.Connections.getNumberOfShards;
@@ -73,9 +74,11 @@ public final class StreamFunctions implements Serializable {
 
         @Override
         public JavaDStream<byte[]> call() throws Exception {
-                    KafkaUtils.createDirectStream(streamingContext, String.class, byte[].class,
-                            StringDecoder.class, DefaultDecoder.class, new HashMap<>(), new HashSet<>());
-            return null;
+            final JavaPairInputDStream<String, byte[]> directStream =
+                    KafkaUtils.createDirectStream(streamingContext, String.class, byte[].class, StringDecoder.class,
+                            DefaultDecoder.class, streamConfig.getAdditionalConfiguration(), streamConfig.getTopics());
+            // get the dstream
+            return directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
         }
     }
 
