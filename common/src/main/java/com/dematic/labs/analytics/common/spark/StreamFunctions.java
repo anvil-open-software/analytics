@@ -148,12 +148,12 @@ public final class StreamFunctions implements Serializable {
         }
     }
 
-    public static final class CreateCassandraStreamingContext implements Function0<JavaStreamingContext> {
+    public static final class CreateKinesisCassandraStreamingContext implements Function0<JavaStreamingContext> {
         private final CassandraDriverConfig driverConfig;
         private final VoidFunction<JavaDStream<byte[]>> streamProcessor;
 
-        public CreateCassandraStreamingContext(final CassandraDriverConfig driverConfig,
-                                               final VoidFunction<JavaDStream<byte[]>> streamProcessor) {
+        public CreateKinesisCassandraStreamingContext(final CassandraDriverConfig driverConfig,
+                                                      final VoidFunction<JavaDStream<byte[]>> streamProcessor) {
             this.driverConfig = driverConfig;
             this.streamProcessor = streamProcessor;
         }
@@ -175,9 +175,46 @@ public final class StreamFunctions implements Serializable {
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTimeInSeconds());
 
-            //todo: create the dstream
             final JavaDStream<byte[]> dStream =
                     new CreateKinesisDStream(driverConfig.getStreamConfig(), streamingContext).call();
+            // work on the streams
+            streamProcessor.call(dStream);
+            // set the checkpoint dir
+            streamingContext.checkpoint(driverConfig.getCheckPointDir());
+            // return the streaming context
+            return streamingContext;
+        }
+    }
+
+    public static final class CreateKafkaCassandraStreamingContext implements Function0<JavaStreamingContext> {
+        private final CassandraDriverConfig driverConfig;
+        private final VoidFunction<JavaDStream<byte[]>> streamProcessor;
+
+        public CreateKafkaCassandraStreamingContext(final CassandraDriverConfig driverConfig,
+                                                    final VoidFunction<JavaDStream<byte[]>> streamProcessor) {
+            this.driverConfig = driverConfig;
+            this.streamProcessor = streamProcessor;
+        }
+
+        @Override
+        public JavaStreamingContext call() throws Exception {
+            // create spark configure
+            final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName());
+            // if master url set, apply
+            if (!Strings.isNullOrEmpty(driverConfig.getMasterUrl())) {
+                sparkConfiguration.setMaster(driverConfig.getMasterUrl());
+            }
+            // set the authorization
+            sparkConfiguration.set(CassandraDriverConfig.AUTH_USERNAME_PROP, driverConfig.getUsername());
+            sparkConfiguration.set(CassandraDriverConfig.AUTH_PASSWORD_PROP, driverConfig.getPassword());
+            // set the connection host
+            sparkConfiguration.set(CassandraDriverConfig.CONNECTION_HOST_PROP, driverConfig.getHost());
+            // create the streaming context
+            final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
+                    driverConfig.getPollTimeInSeconds());
+
+            final JavaDStream<byte[]> dStream =
+                    new CreateKafkaDStream(driverConfig.getStreamConfig(), streamingContext).call();
             // work on the streams
             streamProcessor.call(dStream);
             // set the checkpoint dir
