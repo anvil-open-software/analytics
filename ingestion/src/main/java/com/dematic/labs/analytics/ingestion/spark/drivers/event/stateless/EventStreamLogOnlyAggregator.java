@@ -1,6 +1,6 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.event.stateless;
 
-import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContext;
+import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateKinesisStreamingContext;
 import com.dematic.labs.analytics.ingestion.spark.drivers.event.AggregateFunctions.AggregateEventToBucketFunction;
 import com.dematic.labs.analytics.ingestion.spark.tables.event.EventAggregator;
 import com.dematic.labs.toolkit.communication.Event;
@@ -68,7 +68,7 @@ public final class EventStreamLogOnlyAggregator implements Serializable {
           // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext =
                 JavaStreamingContext.getOrCreate(config.getCheckPointDir(),
-                        new CreateStreamingContext(config, new AggregateEventFunction(config)));
+                        new CreateKinesisStreamingContext(config, new AggregateEventFunction(config)));
 
         // Start the streaming context and await termination
         LOGGER.info("starting Event Logging Only Aggregator Driver with master URL >{}<",

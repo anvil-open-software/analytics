@@ -6,7 +6,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.analytics.common.spark.KinesisStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
-import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContext;
+import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateKinesisStreamingContext;
 import com.dematic.labs.analytics.ingestion.spark.tables.event.CycleTime;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Event;
@@ -178,7 +178,7 @@ public final class CycleTimeProcessor {
         createDynamoTable(driverConfig.getDynamoDBEndpoint(), CycleTime.class, driverConfig.getDynamoPrefix());
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
-                new CreateStreamingContext(driverConfig, new CycleTimeFunction(driverConfig)));
+                new CreateKinesisStreamingContext(driverConfig, new CycleTimeFunction(driverConfig)));
 
         // Start the streaming context and await termination
         LOGGER.info("CT: starting Cycle-Time Processor Driver with master URL >{}<",

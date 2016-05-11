@@ -82,12 +82,12 @@ public final class StreamFunctions implements Serializable {
         }
     }
 
-    public static final class CreateStreamingContext implements Function0<JavaStreamingContext> {
+    public static final class CreateKinesisStreamingContext implements Function0<JavaStreamingContext> {
         private final DefaultDriverConfig driverConfig;
         private final VoidFunction<JavaDStream<byte[]>> streamProcessor;
 
-        public CreateStreamingContext(final DefaultDriverConfig driverConfig,
-                                      final VoidFunction<JavaDStream<byte[]>> streamProcessor) {
+        public CreateKinesisStreamingContext(final DefaultDriverConfig driverConfig,
+                                             final VoidFunction<JavaDStream<byte[]>> streamProcessor) {
             this.driverConfig = driverConfig;
             this.streamProcessor = streamProcessor;
         }
@@ -103,12 +103,9 @@ public final class StreamFunctions implements Serializable {
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTimeInSeconds());
-
-            //todo: which type of stream
             // create the dstream
             final JavaDStream<byte[]> dStream =
                     new CreateKinesisDStream(driverConfig.getStreamConfig(), streamingContext).call();
-
             // work on the streams
             streamProcessor.call(dStream);
             // set the checkpoint dir
