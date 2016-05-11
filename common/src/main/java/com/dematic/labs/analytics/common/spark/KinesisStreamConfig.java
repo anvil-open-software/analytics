@@ -1,9 +1,10 @@
 package com.dematic.labs.analytics.common.spark;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 
-public final class KinesisStreamConfig implements StreamConfig {
+public final class KinesisStreamConfig implements StreamConfig, Serializable {
     private String streamEndpoint;
     private String streamName;
 

@@ -29,7 +29,7 @@ import static com.dematic.labs.toolkit.aws.Connections.*;
 import static com.dematic.labs.toolkit.communication.EventUtils.generateEvents;
 import static org.junit.Assert.assertTrue;
 
-public final class CassandraPersisterTest {
+public final class DynamoDbPersisterTest {
     // number of events
     private static final int EVENT_COUNT = 50;
 
