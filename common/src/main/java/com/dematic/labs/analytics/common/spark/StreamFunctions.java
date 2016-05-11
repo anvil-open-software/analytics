@@ -62,26 +62,6 @@ public final class StreamFunctions implements Serializable {
         }
     }
 
-    // create kafka dstream function
-    private static final class CreateKafkaDStream implements Function0<JavaDStream<byte[]>> {
-        private final StreamConfig streamConfig;
-        private final JavaStreamingContext streamingContext;
-
-        CreateKafkaDStream(final StreamConfig streamConfig, final JavaStreamingContext streamingContext) {
-            this.streamConfig = streamConfig;
-            this.streamingContext = streamingContext;
-        }
-
-        @Override
-        public JavaDStream<byte[]> call() throws Exception {
-            final JavaPairInputDStream<String, byte[]> directStream =
-                    KafkaUtils.createDirectStream(streamingContext, String.class, byte[].class, StringDecoder.class,
-                            DefaultDecoder.class, streamConfig.getAdditionalConfiguration(), streamConfig.getTopics());
-            // get the dstream
-            return directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
-        }
-    }
-
     public static final class CreateKinesisStreamingContext implements Function0<JavaStreamingContext> {
         private final DefaultDriverConfig driverConfig;
         private final VoidFunction<JavaDStream<byte[]>> streamProcessor;
@@ -106,6 +86,59 @@ public final class StreamFunctions implements Serializable {
             // create the dstream
             final JavaDStream<byte[]> dStream =
                     new CreateKinesisDStream(driverConfig.getStreamConfig(), streamingContext).call();
+            // work on the streams
+            streamProcessor.call(dStream);
+            // set the checkpoint dir
+            streamingContext.checkpoint(driverConfig.getCheckPointDir());
+            // return the streaming context
+            return streamingContext;
+        }
+    }
+
+    // create kafka dstream function
+    private static final class CreateKafkaDStream implements Function0<JavaDStream<byte[]>> {
+        private final StreamConfig streamConfig;
+        private final JavaStreamingContext streamingContext;
+
+        CreateKafkaDStream(final StreamConfig streamConfig, final JavaStreamingContext streamingContext) {
+            this.streamConfig = streamConfig;
+            this.streamingContext = streamingContext;
+        }
+
+        @Override
+        public JavaDStream<byte[]> call() throws Exception {
+            final JavaPairInputDStream<String, byte[]> directStream =
+                    KafkaUtils.createDirectStream(streamingContext, String.class, byte[].class, StringDecoder.class,
+                            DefaultDecoder.class, streamConfig.getAdditionalConfiguration(), streamConfig.getTopics());
+            // get the dstream
+            return directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
+        }
+    }
+
+    public static final class CreateKafkaStreamingContext implements Function0<JavaStreamingContext> {
+        private final DefaultDriverConfig driverConfig;
+        private final VoidFunction<JavaDStream<byte[]>> streamProcessor;
+
+        public CreateKafkaStreamingContext(final DefaultDriverConfig driverConfig,
+                                           final VoidFunction<JavaDStream<byte[]>> streamProcessor) {
+            this.driverConfig = driverConfig;
+            this.streamProcessor = streamProcessor;
+        }
+
+        @Override
+        public JavaStreamingContext call() throws Exception {
+            // create spark configure
+            final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName());
+            // if master url set, apply
+            if (!Strings.isNullOrEmpty(driverConfig.getMasterUrl())) {
+                sparkConfiguration.setMaster(driverConfig.getMasterUrl());
+            }
+            // create the streaming context
+            final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
+                    driverConfig.getPollTimeInSeconds());
+            // create the dstream
+            final JavaDStream<byte[]> dStream =
+                    new CreateKafkaDStream(driverConfig.getStreamConfig(), streamingContext).call();
             // work on the streams
             streamProcessor.call(dStream);
             // set the checkpoint dir
