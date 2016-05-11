@@ -72,11 +72,8 @@ public final class EventStreamCheckpointOutsideFactoryAggregator implements Seri
 
         eventStreamAggregator.aggregateEvents(javaDStream, dynamoDBEndpoint, dynamoPrefix, timeUnit);
 
-
         streamingContext.start();
         LOGGER.info("spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();
     }
-
-
 }

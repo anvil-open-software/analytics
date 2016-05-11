@@ -1,8 +1,7 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.event.stateless;
 
-import com.dematic.labs.analytics.common.spark.DriverConfig;
-import com.dematic.labs.analytics.ingestion.spark.drivers.event.AggregateFunctions.AggregateEventToBucketFunction;
 import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContext;
+import com.dematic.labs.analytics.ingestion.spark.drivers.event.AggregateFunctions.AggregateEventToBucketFunction;
 import com.dematic.labs.analytics.ingestion.spark.tables.event.EventAggregator;
 import com.dematic.labs.toolkit.communication.Event;
 import org.apache.spark.api.java.JavaRDD;
@@ -19,7 +18,7 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import static com.dematic.labs.analytics.common.spark.CalculateFunctions.*;
+import static com.dematic.labs.analytics.common.spark.CalculateFunctions.SUM_REDUCER;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 /**
@@ -31,9 +30,9 @@ public final class EventStreamLogOnlyAggregator implements Serializable {
 
     // event stream processing function
     private static final class AggregateEventFunction implements VoidFunction<JavaDStream<byte[]>> {
-        private final DriverConfig driverConfig;
+        private final AggregationDriverConfig driverConfig;
 
-        AggregateEventFunction(final DriverConfig driverConfig) {
+        AggregateEventFunction(final AggregationDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 
@@ -63,7 +62,7 @@ public final class EventStreamLogOnlyAggregator implements Serializable {
 
     public static void main(final String[] args) {
         // set the configuration and checkpoint dir
-        final DriverConfig config = new DriverConfig(EVENT_STREAM_LOGGING_LEASE_TABLE_NAME, args);
+        final AggregationDriverConfig config = new AggregationDriverConfig(EVENT_STREAM_LOGGING_LEASE_TABLE_NAME, args);
         config.setCheckPointDirectoryFromSystemProperties(true);
         // create the table, if it does not exist
           // master url will be set using the spark submit driver command

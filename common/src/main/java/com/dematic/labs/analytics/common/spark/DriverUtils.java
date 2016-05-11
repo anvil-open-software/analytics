@@ -5,13 +5,10 @@ import com.google.common.base.Strings;
 import org.apache.spark.SparkConf;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.Duration;
-import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.api.java.JavaStreamingContextFactory;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,8 +20,6 @@ import static com.dematic.labs.toolkit.aws.Connections.getNumberOfShards;
  */
 @Deprecated
 public final class DriverUtils {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DriverUtils.class);
-
     private DriverUtils() {
     }
 
@@ -49,23 +44,6 @@ public final class DriverUtils {
                 JavaStreamingContext.getOrCreate(checkPointDir, factory);
     }
 
-    /**
-     *
-     * @return duration taken from environment variable spark.kinesis.checkpoint.window
-     */
-    public static Duration getKinesisCheckpointWindow() {
-        long default_window = 30; //default 30 seconds.
-        Duration window;
-        String windowStr = System.getProperty(DriverConsts.SPARK_KINESIS_CHECKPOINT_WINDOW_IN_SECONDS);
-        if (!Strings.isNullOrEmpty(windowStr) ) {
-            window = Durations.seconds(Integer.valueOf(windowStr));
-        } else {
-            window= Durations.seconds(default_window);
-        }
-        LOGGER.info("using >{}< Kinesis checkpoiting window", window);
-        return window;
-    }
-
     public static JavaDStream<byte[]> getJavaDStream(final String awsEndpointUrl, final String streamName,
                                                      final JavaStreamingContext streamingContext) {
         final int shards = getNumberOfShards(awsEndpointUrl, streamName);
@@ -74,7 +52,7 @@ public final class DriverUtils {
         for (int i = 0; i < shards; i++) {
             streamsList.add(
                     KinesisUtils.createStream(streamingContext, streamName, awsEndpointUrl,
-                            getKinesisCheckpointWindow(),
+                            DefaultDriverConfig.getKinesisCheckpointWindow(),
                             InitialPositionInStream.TRIM_HORIZON, StorageLevel.MEMORY_ONLY())
             );
         }

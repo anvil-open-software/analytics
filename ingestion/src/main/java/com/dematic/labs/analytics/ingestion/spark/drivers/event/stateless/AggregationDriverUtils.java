@@ -3,7 +3,6 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.event.stateless;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
-import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.dematic.labs.analytics.common.spark.DriverUtils;
 import com.dematic.labs.analytics.ingestion.spark.tables.event.EventAggregator;
 import com.google.common.base.Strings;
@@ -31,7 +30,7 @@ final class AggregationDriverUtils {
     /**
      * To checkpoint, need to create the stream inside the factory before calling checkpoint.
      */
-    static JavaStreamingContext initializeCheckpointedSparkSession(final DriverConfig session,
+    static JavaStreamingContext initializeCheckpointedSparkSession(final AggregationDriverConfig session,
                                                                    final String masterUrl,
                                                                    final EventStreamProcessor aggregator) {
         final String checkPointDir = session.getCheckPointDir();
@@ -44,12 +43,13 @@ final class AggregationDriverUtils {
                 configuration.setMaster(masterUrl);
             }
 
-            final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration, session.getPollTime());
+            final JavaStreamingContext streamingContext = new JavaStreamingContext(configuration,
+                    session.getPollTimeInSeconds());
 
             // we must now create kinesis streams before we checkpoint
-            LOGGER.warn("Creating Kinesis DStreams for " + session.getKinesisStreamName());
-            JavaDStream kinesisDStream = DriverUtils.getJavaDStream(session.getKinesisEndpoint(),
-                    session.getKinesisStreamName(), streamingContext);
+            LOGGER.warn("Creating Kinesis DStreams for " + session.getStreamConfig().getStreamName());
+            JavaDStream kinesisDStream = DriverUtils.getJavaDStream(session.getStreamConfig().getStreamEndpoint(),
+                    session.getStreamConfig().getStreamName(), streamingContext);
 
             // Start the streaming context and await termination
             LOGGER.info("starting Event Aggregator Driver with master URL >{}<", streamingContext.sparkContext().master());

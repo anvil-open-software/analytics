@@ -3,8 +3,6 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.event.stateless;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodbv2.datamodeling.PaginatedQueryList;
 import com.amazonaws.util.StringUtils;
 import com.dematic.labs.analytics.ingestion.spark.tables.event.EventAggregator;
 import com.dematic.labs.toolkit.aws.Connections;
@@ -31,11 +29,10 @@ import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfi
 import static com.dematic.labs.analytics.common.spark.DriverUtils.getJavaDStream;
 import static com.dematic.labs.analytics.common.spark.DriverUtils.getStreamingContext;
 import static com.dematic.labs.toolkit.aws.Connections.createDynamoTable;
-import static com.dematic.labs.toolkit.communication.EventUtils.*;
+import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
 
 public final class EventStreamAggregator implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventStreamAggregator.class);
-    private static final int MAX_RETRY = 3;
 
     public static final String EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME = EventAggregator.TABLE_NAME + "_LT";
 
@@ -109,40 +106,9 @@ public final class EventStreamAggregator implements Serializable {
                     new DynamoDBMapper(amazonDynamoDBClient, new DynamoDBMapperConfig(withTableNamePrefix(tablePrefix)));
             final List<Tuple2<String, Long>> collect = rdd.collect();
             for (final Tuple2<String, Long> bucket : collect) {
-                createOrUpdate(bucket, dynamoDBMapper);
+                AggregationDriverUtils.createOrUpdateDynamoDBBucket(bucket, dynamoDBMapper);
             }
             return null;
         });
-    }
-
-    private static void createOrUpdate(final Tuple2<String, Long> bucket, final DynamoDBMapper dynamoDBMapper) {
-        int count = 1;
-        do {
-            EventAggregator eventAggregator = null;
-            try {
-
-                final PaginatedQueryList<EventAggregator> query = dynamoDBMapper.query(EventAggregator.class,
-                        new DynamoDBQueryExpression<EventAggregator>().withHashKeyValues(
-                                new EventAggregator().withBucket(bucket._1())));
-                if (query == null || query.isEmpty()) {
-                    // create
-                    eventAggregator = new EventAggregator(bucket._1(), null, nowString(), null, bucket._2(), null);
-                    dynamoDBMapper.save(eventAggregator);
-                    break;
-                } else {
-                    // update
-                    // only 1 should exists
-                    eventAggregator = query.get(0);
-                    eventAggregator.setUpdated(nowString());
-                    eventAggregator.setCount(eventAggregator.getCount() + bucket._2());
-                    dynamoDBMapper.save(eventAggregator);
-                    break;
-                }
-            } catch (final Throwable any) {
-                LOGGER.error("unable to save >{}< trying again {}", eventAggregator, count, any);
-            } finally {
-                count++;
-            }
-        } while (count <= MAX_RETRY);
     }
 }

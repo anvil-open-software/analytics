@@ -1,8 +1,7 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.event.stateless;
 
-import com.dematic.labs.analytics.common.spark.DriverConfig;
+import com.dematic.labs.analytics.common.spark.DefaultDriverConfig;
 import com.dematic.labs.analytics.common.spark.DriverConsts;
-import com.dematic.labs.analytics.common.spark.DriverUtils;
 import org.apache.spark.streaming.Duration;
 import org.junit.Test;
 
@@ -22,7 +21,7 @@ public final class DematicSessionTest {
                 "MINUTES"};
 
         String checkpointDir = "/tmp/spark/test";
-        DriverConfig session = new DriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME, args);
+        AggregationDriverConfig session = new AggregationDriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME, args);
         System.clearProperty(DriverConsts.SPARK_CHECKPOINT_DIR);
         session.setCheckPointDirectoryFromSystemProperties(false);
         assertNull(session.getCheckPointDir());
@@ -34,11 +33,11 @@ public final class DematicSessionTest {
     @Test
     public void testKinesisWindowProperties() {
         System.clearProperty(DriverConsts.SPARK_KINESIS_CHECKPOINT_WINDOW_IN_SECONDS);
-        Duration defaultDuration = DriverUtils.getKinesisCheckpointWindow();
+        Duration defaultDuration = DefaultDriverConfig.getKinesisCheckpointWindow();
         assertEquals(defaultDuration.milliseconds(), 30 * 1000L);
 
         System.setProperty(DriverConsts.SPARK_KINESIS_CHECKPOINT_WINDOW_IN_SECONDS, "47");
-        Duration newDuration = DriverUtils.getKinesisCheckpointWindow();
+        Duration newDuration = DefaultDriverConfig.getKinesisCheckpointWindow();
         assertEquals(newDuration.milliseconds(), 47 * 1000L);
     }
 }

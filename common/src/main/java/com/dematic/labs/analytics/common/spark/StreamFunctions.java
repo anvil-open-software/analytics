@@ -9,7 +9,6 @@ import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.KafkaUtils;
 import org.apache.spark.streaming.kinesis.KinesisUtils;
@@ -20,7 +19,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import static com.dematic.labs.analytics.common.spark.DriverUtils.getKinesisCheckpointWindow;
 import static com.dematic.labs.toolkit.aws.Connections.getNumberOfShards;
 
 public final class StreamFunctions implements Serializable {
@@ -48,7 +46,7 @@ public final class StreamFunctions implements Serializable {
             for (int i = 0; i < shards; i++) {
                 streamsList.add(
                         KinesisUtils.createStream(streamingContext, streamName, kinesisEndpoint,
-                                getKinesisCheckpointWindow(), InitialPositionInStream.TRIM_HORIZON,
+                                DefaultDriverConfig.getKinesisCheckpointWindow(), InitialPositionInStream.TRIM_HORIZON,
                                 StorageLevel.MEMORY_ONLY())
                 );
             }
@@ -75,9 +73,8 @@ public final class StreamFunctions implements Serializable {
 
         @Override
         public JavaDStream<byte[]> call() throws Exception {
-            final JavaPairInputDStream<String, Byte[]> directStream =
-                    KafkaUtils.createDirectStream(streamingContext, String.class, Byte[].class,
-                            StringDecoder.class, DefaultDecoder.class, new HashMap<String, String>(), new HashSet<String>());
+                    KafkaUtils.createDirectStream(streamingContext, String.class, byte[].class,
+                            StringDecoder.class, DefaultDecoder.class, new HashMap<>(), new HashSet<>());
             return null;
         }
     }

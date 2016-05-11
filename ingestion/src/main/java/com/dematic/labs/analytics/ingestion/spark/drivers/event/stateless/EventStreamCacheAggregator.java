@@ -4,9 +4,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.util.StringUtils;
-import com.dematic.labs.analytics.common.spark.DriverConfig;
-import com.dematic.labs.analytics.ingestion.spark.drivers.event.AggregateFunctions.AggregateEventToBucketFunction;
 import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContext;
+import com.dematic.labs.analytics.ingestion.spark.drivers.event.AggregateFunctions.AggregateEventToBucketFunction;
 import com.dematic.labs.analytics.ingestion.spark.tables.event.EventAggregator;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Strings;
@@ -27,7 +26,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 import static com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig.TableNameOverride.withTableNamePrefix;
-import static com.dematic.labs.analytics.common.spark.CalculateFunctions.*;
+import static com.dematic.labs.analytics.common.spark.CalculateFunctions.SUM_REDUCER;
 import static com.dematic.labs.analytics.ingestion.spark.drivers.event.stateless.AggregationDriverUtils.createOrUpdateDynamoDBBucket;
 import static com.dematic.labs.toolkit.aws.Connections.*;
 import static com.dematic.labs.toolkit.communication.EventUtils.jsonToEvent;
@@ -51,9 +50,9 @@ public final class EventStreamCacheAggregator implements Serializable {
 
     // event stream processing function
     private static final class AggregateEventFunction implements VoidFunction<JavaDStream<byte[]>> {
-        private final DriverConfig driverConfig;
+        private final AggregationDriverConfig driverConfig;
 
-        AggregateEventFunction(final DriverConfig driverConfig) {
+        AggregateEventFunction(final AggregationDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 
@@ -96,7 +95,8 @@ public final class EventStreamCacheAggregator implements Serializable {
 
     public static void main(final String[] args) {
         // set the configuration and checkpoint dir
-        final DriverConfig config = new DriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME, args);
+        final AggregationDriverConfig config = new AggregationDriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME,
+                args);
         config.setCheckPointDirectoryFromSystemProperties(true);
         // create the table, if it does not exist
         createDynamoTable(config.getDynamoDBEndpoint(), EventAggregator.class, config.getDynamoPrefix());

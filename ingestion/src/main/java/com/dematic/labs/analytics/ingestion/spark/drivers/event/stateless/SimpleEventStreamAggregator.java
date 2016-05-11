@@ -4,7 +4,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.util.StringUtils;
-import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.toolkit.aws.Connections;
 import com.dematic.labs.toolkit.communication.Event;
@@ -28,7 +27,7 @@ public final class SimpleEventStreamAggregator implements EventStreamProcessor<b
     // functions
     private static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
 
-    public void processEvents(final DriverConfig session, final JavaDStream<byte[]> javaDStream) {
+    public void processEvents(final AggregationDriverConfig session, final JavaDStream<byte[]> javaDStream) {
 
         // transform the byte[] (byte arrays are json) to a string to events, and ensure distinct within stream
         final JavaDStream<Event> eventStream =

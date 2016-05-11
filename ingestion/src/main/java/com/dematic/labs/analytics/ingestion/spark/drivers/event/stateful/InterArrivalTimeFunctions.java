@@ -1,6 +1,5 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.event.stateful;
 
-import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.dematic.labs.analytics.ingestion.spark.tables.event.InterArrivalTime;
 import com.dematic.labs.toolkit.communication.Event;
 import com.google.common.base.Optional;
@@ -22,9 +21,9 @@ final class InterArrivalTimeFunctions implements Serializable {
     static final class EventByNodeFunction implements Function4<Time, String,
             Optional<List<Event>>, State<InterArrivalTimeState>,
             Optional<InterArrivalTime>> {
-        private final DriverConfig driverConfig;
+        private final InterArrivalTimeDriverConfig driverConfig;
 
-        EventByNodeFunction(final DriverConfig driverConfig) {
+        EventByNodeFunction(final InterArrivalTimeDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 

@@ -1,6 +1,5 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.event.stateless;
 
-import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.dematic.labs.analytics.ingestion.spark.tables.event.EventAggregator;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
@@ -23,15 +22,15 @@ public final class EventStreamCheckpointedAggregator implements Serializable {
 
     public static void main(final String[] args) {
         try {
-            final DriverConfig session = new DriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME, args);
+            final AggregationDriverConfig session = new AggregationDriverConfig(EVENT_STREAM_AGGREGATOR_LEASE_TABLE_NAME, args);
             session.setCheckPointDirectoryFromSystemProperties(true);
 
             // create the table, if it does not exist
             createDynamoTable(session.getDynamoDBEndpoint(), EventAggregator.class, session.getDynamoPrefix());
 
             final SimpleEventStreamAggregator eventStreamAggregator = new SimpleEventStreamAggregator();
-            final JavaStreamingContext streamingContext = AggregationDriverUtils.initializeCheckpointedSparkSession(session,
-                    null, eventStreamAggregator);
+            final JavaStreamingContext streamingContext =
+                    AggregationDriverUtils.initializeCheckpointedSparkSession(session, null, eventStreamAggregator);
             streamingContext.start();
             LOGGER.info("spark state: {}", streamingContext.getState().name());
             streamingContext.awaitTermination();

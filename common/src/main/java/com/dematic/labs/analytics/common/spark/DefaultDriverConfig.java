@@ -6,7 +6,11 @@ import org.apache.spark.streaming.Durations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultDriverConfig {
+import java.io.Serializable;
+import java.util.Objects;
+
+@SuppressWarnings("unused")
+public class DefaultDriverConfig implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultDriverConfig.class);
 
     private String appName;
@@ -56,6 +60,23 @@ public class DefaultDriverConfig {
         return checkPointDir;
     }
 
+    /**
+     *
+     * @return duration taken from environment variable spark.kinesis.checkpoint.window
+     */
+    public static Duration getKinesisCheckpointWindow() {
+        long default_window = 30; //default 30 seconds.
+        Duration window;
+        String windowStr = System.getProperty(DriverConsts.SPARK_KINESIS_CHECKPOINT_WINDOW_IN_SECONDS);
+        if (!Strings.isNullOrEmpty(windowStr) ) {
+            window = Durations.seconds(Integer.valueOf(windowStr));
+        } else {
+            window= Durations.seconds(default_window);
+        }
+        LOGGER.info("using >{}< Kinesis checkpoiting window", window);
+        return window;
+    }
+
     public void setCheckPointDir(final String checkPointDir) {
         this.checkPointDir = checkPointDir;
     }
@@ -79,5 +100,33 @@ public class DefaultDriverConfig {
         this.streamConfig = streamConfig;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DefaultDriverConfig that = (DefaultDriverConfig) o;
+        return Objects.equals(appName, that.appName) &&
+                Objects.equals(uniqueAppSuffix, that.uniqueAppSuffix) &&
+                Objects.equals(masterUrl, that.masterUrl) &&
+                Objects.equals(pollTime, that.pollTime) &&
+                Objects.equals(checkPointDir, that.checkPointDir) &&
+                Objects.equals(streamConfig, that.streamConfig);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(appName, uniqueAppSuffix, masterUrl, pollTime, checkPointDir, streamConfig);
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultDriverConfig{" +
+                "appName='" + appName + '\'' +
+                ", uniqueAppSuffix='" + uniqueAppSuffix + '\'' +
+                ", masterUrl='" + masterUrl + '\'' +
+                ", pollTime='" + pollTime + '\'' +
+                ", checkPointDir='" + checkPointDir + '\'' +
+                ", streamConfig=" + streamConfig +
+                '}';
+    }
 }

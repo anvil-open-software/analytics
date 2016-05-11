@@ -3,8 +3,9 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.event.stateful;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
-import com.dematic.labs.analytics.common.spark.DriverConfig;
 import com.dematic.labs.analytics.common.spark.DriverConsts;
+import com.dematic.labs.analytics.common.spark.KinesisStreamConfig;
+import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.ingestion.spark.drivers.event.stateful.InterArrivalTimeFunctions.EventByNodeFunction;
 import com.dematic.labs.analytics.ingestion.spark.tables.event.InterArrivalTime;
 import com.dematic.labs.toolkit.GenericBuilder;
@@ -49,9 +50,9 @@ public final class InterArrivalTimeProcessor implements Serializable {
     // event stream processing function
     @SuppressWarnings("unchecked")
     private static final class InterArrivalTimeFunction implements VoidFunction<JavaDStream<byte[]>> {
-        private final DriverConfig driverConfig;
+        private final InterArrivalTimeDriverConfig driverConfig;
 
-        InterArrivalTimeFunction(final DriverConfig driverConfig) {
+        InterArrivalTimeFunction(final InterArrivalTimeDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 
@@ -103,7 +104,7 @@ public final class InterArrivalTimeProcessor implements Serializable {
         }
 
         private static void writeInterArrivalTimeStateModel(final List<InterArrivalTime> interArrivalTimes,
-                                                            final DriverConfig driverConfig) {
+                                                            final InterArrivalTimeDriverConfig driverConfig) {
             final AmazonDynamoDBClient dynamoDBClient = getAmazonDynamoDBClient(driverConfig.getDynamoDBEndpoint());
             final DynamoDBMapper dynamoDBMapper = Strings.isNullOrEmpty(driverConfig.getDynamoPrefix()) ?
                     new DynamoDBMapper(dynamoDBClient) : new DynamoDBMapper(dynamoDBClient,
@@ -167,8 +168,8 @@ public final class InterArrivalTimeProcessor implements Serializable {
         final String appName = Strings.isNullOrEmpty(dynamoPrefix) ? INTER_ARRIVAL_TIME_LEASE_TABLE_NAME :
                 String.format("%s%s", dynamoPrefix, INTER_ARRIVAL_TIME_LEASE_TABLE_NAME);
         // create the driver configuration and checkpoint dir
-        final DriverConfig driverConfig = configure(appName, kinesisEndpoint, kinesisStreamName, dynamoDBEndpoint,
-                dynamoPrefix, masterUrl, pollTime, mediumInterArrivalTime, bufferTime);
+        final InterArrivalTimeDriverConfig driverConfig = configure(appName, kinesisEndpoint, kinesisStreamName,
+                dynamoDBEndpoint, dynamoPrefix, masterUrl, pollTime, mediumInterArrivalTime, bufferTime);
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // create the table, if it does not exist
         createDynamoTable(driverConfig.getDynamoDBEndpoint(), InterArrivalTime.class, driverConfig.getDynamoPrefix());
@@ -178,26 +179,31 @@ public final class InterArrivalTimeProcessor implements Serializable {
                         new CreateStreamingContext(driverConfig, new InterArrivalTimeFunction(driverConfig)));
 
         // Start the streaming context and await termination
-        LOGGER.info("IAT: starting Inter-ArrivalTime Driver with master URL >{}<", streamingContext.sparkContext().master());
+        LOGGER.info("IAT: starting Inter-ArrivalTime Driver with master URL >{}<",
+                streamingContext.sparkContext().master());
         streamingContext.start();
         LOGGER.info("IAT: spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();
     }
 
-    private static DriverConfig configure(final String appName, final String kinesisEndpoint,
+    private static InterArrivalTimeDriverConfig configure(final String appName, final String kinesisEndpoint,
                                           final String kinesisStreamName, final String dynamoDBEndpoint,
                                           final String dynamoPrefix, final String masterUrl, final String pollTime,
                                           final String mediumInterArrivalTime, final String bufferTime) {
-        return GenericBuilder.of(DriverConfig::new)
-                .with(DriverConfig::setAppName, appName)
-                .with(DriverConfig::setKinesisEndpoint, kinesisEndpoint)
-                .with(DriverConfig::setKinesisStreamName, kinesisStreamName)
-                .with(DriverConfig::setDynamoDBEndpoint, dynamoDBEndpoint)
-                .with(DriverConfig::setDynamoPrefix, dynamoPrefix)
-                .with(DriverConfig::setMasterUrl, masterUrl)
-                .with(DriverConfig::setPollTime, pollTime)
-                .with(DriverConfig::setMediumInterArrivalTime, mediumInterArrivalTime)
-                .with(DriverConfig::setBufferTime, bufferTime)
+        final StreamConfig kinesisStreamConfig = GenericBuilder.of(KinesisStreamConfig::new)
+                .with(KinesisStreamConfig::setStreamEndpoint, kinesisEndpoint)
+                .with(KinesisStreamConfig::setStreamName, kinesisStreamName)
+                .build();
+
+        return GenericBuilder.of(InterArrivalTimeDriverConfig::new)
+                .with(InterArrivalTimeDriverConfig::setAppName, appName)
+                .with(InterArrivalTimeDriverConfig::setDynamoDBEndpoint, dynamoDBEndpoint)
+                .with(InterArrivalTimeDriverConfig::setDynamoPrefix, dynamoPrefix)
+                .with(InterArrivalTimeDriverConfig::setMasterUrl, masterUrl)
+                .with(InterArrivalTimeDriverConfig::setPollTime, pollTime)
+                .with(InterArrivalTimeDriverConfig::setStreamConfig, kinesisStreamConfig)
+                .with(InterArrivalTimeDriverConfig::setMediumInterArrivalTime, mediumInterArrivalTime)
+                .with(InterArrivalTimeDriverConfig::setBufferTime, bufferTime)
                 .build();
     }
 }

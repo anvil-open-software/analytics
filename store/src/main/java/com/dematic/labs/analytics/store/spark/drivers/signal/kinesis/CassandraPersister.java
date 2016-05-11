@@ -3,6 +3,8 @@ package com.dematic.labs.analytics.store.spark.drivers.signal.kinesis;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
+import com.dematic.labs.analytics.common.spark.KinesisStreamConfig;
+import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
@@ -69,7 +71,7 @@ public final class CassandraPersister {
         }
 
         // create the driver configuration and checkpoint dir
-        final CassandraDriverConfig driverConfig = configure(String.format("%s_%s",keySpace, APP_NAME),
+        final CassandraDriverConfig driverConfig = configure(String.format("%s_%s", keySpace, APP_NAME),
                 kinesisEndpoint, kinesisStreamName, host, keySpace, masterUrl, pollTime);
 
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
@@ -93,14 +95,19 @@ public final class CassandraPersister {
                                                    final String kinesisStreamName, final String host,
                                                    final String keySpace, final String masterUrl,
                                                    final String pollTime) {
+
+        final StreamConfig kinesisStreamConfig = GenericBuilder.of(KinesisStreamConfig::new).
+                with(KinesisStreamConfig::setStreamEndpoint, kinesisEndpoint).
+                with(KinesisStreamConfig::setStreamName, kinesisStreamName).
+                build();
+
         return GenericBuilder.of(CassandraDriverConfig::new)
                 .with(CassandraDriverConfig::setAppName, appName)
-                .with(CassandraDriverConfig::setKinesisEndpoint, kinesisEndpoint)
-                .with(CassandraDriverConfig::setKinesisStreamName, kinesisStreamName)
                 .with(CassandraDriverConfig::setHost, host)
                 .with(CassandraDriverConfig::setKeySpace, keySpace)
                 .with(CassandraDriverConfig::setMasterUrl, masterUrl)
                 .with(CassandraDriverConfig::setPollTime, pollTime)
+                .with(CassandraDriverConfig::setStreamConfig, kinesisStreamConfig)
                 .build();
     }
 }

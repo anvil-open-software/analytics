@@ -4,6 +4,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.dematic.labs.analytics.common.spark.DriverConsts;
+import com.dematic.labs.analytics.common.spark.KinesisStreamConfig;
+import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions.CreateStreamingContext;
 import com.dematic.labs.analytics.ingestion.spark.tables.event.CycleTime;
 import com.dematic.labs.toolkit.GenericBuilder;
@@ -103,7 +105,7 @@ public final class CycleTimeProcessor {
 
         // state timeout is 3 * polltime, this means if no jobs are received within 6 batches, remove state
         private static Duration stateTimeout(final CycleTimeDriverConfig driverConfig) {
-            final Duration pollTime = driverConfig.getPollTime();
+            final Duration pollTime = driverConfig.getPollTimeInSeconds();
             final long timeout = 6 * pollTime.milliseconds();
             return Durations.milliseconds(timeout);
         }
@@ -191,16 +193,20 @@ public final class CycleTimeProcessor {
                                                    final String dynamoPrefix, final String masterUrl,
                                                    final String pollTime, final String bucketIncrementer,
                                                    final String bucketSize) {
+        final StreamConfig kinesisStreamConfig = GenericBuilder.of(KinesisStreamConfig::new)
+                .with(KinesisStreamConfig::setStreamEndpoint, kinesisEndpoint)
+                .with(KinesisStreamConfig::setStreamName, kinesisStreamName)
+                .build();
+
         return GenericBuilder.of(CycleTimeDriverConfig::new)
                 .with(CycleTimeDriverConfig::setAppName, appName)
-                .with(CycleTimeDriverConfig::setKinesisEndpoint, kinesisEndpoint)
-                .with(CycleTimeDriverConfig::setKinesisStreamName, kinesisStreamName)
                 .with(CycleTimeDriverConfig::setDynamoDBEndpoint, dynamoDBEndpoint)
                 .with(CycleTimeDriverConfig::setDynamoPrefix, dynamoPrefix)
                 .with(CycleTimeDriverConfig::setMasterUrl, masterUrl)
                 .with(CycleTimeDriverConfig::setPollTime, pollTime)
                 .with(CycleTimeDriverConfig::setBucketIncrementer, bucketIncrementer)
                 .with(CycleTimeDriverConfig::setBucketSize, bucketSize)
+                .with(CycleTimeDriverConfig::setStreamConfig, kinesisStreamConfig)
                 .build();
     }
 }
