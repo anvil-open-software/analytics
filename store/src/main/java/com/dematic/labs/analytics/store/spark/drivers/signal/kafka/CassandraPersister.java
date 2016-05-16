@@ -20,6 +20,7 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 public final class CassandraPersister {
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraPersister.class);
+    public static final String APP_NAME = "CASSANDRA_PERSISTER";
 
     // signal stream processing function
     private static final class PersistFunction implements VoidFunction<JavaDStream<byte[]>> {
@@ -68,13 +69,13 @@ public final class CassandraPersister {
         }
 
         // create the driver configuration and checkpoint dir
-        final CassandraDriverConfig driverConfig = configure(kafkaServerBootstrap, kafkaTopics, host, keySpace,
-                masterUrl, pollTime);
+        final CassandraDriverConfig driverConfig = configure(String.format("%s_%s", keySpace, APP_NAME),
+                kafkaServerBootstrap, kafkaTopics, host, keySpace, masterUrl, pollTime);
 
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
         // master url will be set using the spark submit driver command
         final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
-                new StreamFunctions.CreateKinesisCassandraStreamingContext(driverConfig,
+                new StreamFunctions.CreateKafkaCassandraStreamingContext(driverConfig,
                         new PersistFunction(driverConfig)));
         // creates the table in cassandra to store raw signals
         Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
@@ -88,16 +89,16 @@ public final class CassandraPersister {
         streamingContext.awaitTermination();
     }
 
-    private static CassandraDriverConfig configure(final String kafkaServerBootstrap, final String kafkaTopics,
-                                                   final String host, final String keySpace, final String masterUrl,
-                                                   final String pollTime) {
-
+    private static CassandraDriverConfig configure(final String appName, final String kafkaServerBootstrap,
+                                                   final String kafkaTopics, final String host, final String keySpace,
+                                                   final String masterUrl, final String pollTime) {
         final StreamConfig kafkaStreamConfig = GenericBuilder.of(KafkaStreamConfig::new)
                 .with(KafkaStreamConfig::setStreamEndpoint, kafkaServerBootstrap)
                 .with(KafkaStreamConfig::setStreamName, kafkaTopics)
                 .build();
 
         return GenericBuilder.of(CassandraDriverConfig::new)
+                .with(CassandraDriverConfig::setAppName, appName)
                 .with(CassandraDriverConfig::setHost, host)
                 .with(CassandraDriverConfig::setKeySpace, keySpace)
                 .with(CassandraDriverConfig::setMasterUrl, masterUrl)

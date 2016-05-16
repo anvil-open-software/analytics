@@ -20,7 +20,7 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 public final class CassandraPersister {
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraPersister.class);
-    public static final String APP_NAME = "PERSISTER_GRAINGER_LT";
+    public static final String APP_NAME = "CASSANDRA_PERSISTER_LT";
 
     // event stream compute metrics function
     private static final class PersistFunction implements VoidFunction<JavaDStream<byte[]>> {
