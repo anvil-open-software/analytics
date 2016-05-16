@@ -2,7 +2,7 @@ package com.dematic.labs.analytics.common.spark;
 
 import com.google.common.base.Strings;
 
-public final class CassandraDriverConfig extends DriverConfig {
+public class CassandraDriverConfig extends DefaultDriverConfig {
     static final String AUTH_USERNAME_PROP = "spark.cassandra.auth.username";
     static final String AUTH_PASSWORD_PROP = "spark.cassandra.auth.password";
     static final String CONNECTION_HOST_PROP = "spark.cassandra.connection.host";
@@ -31,7 +31,7 @@ public final class CassandraDriverConfig extends DriverConfig {
         this.keySpace = keySpace;
     }
 
-    String getHost() {
+    public String getHost() {
         return host;
     }
 
@@ -39,11 +39,11 @@ public final class CassandraDriverConfig extends DriverConfig {
         this.host = host;
     }
 
-    String getUsername() {
+    public String getUsername() {
         return username;
     }
 
-    String getPassword() {
+    public String getPassword() {
         return password;
     }
 
