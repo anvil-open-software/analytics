@@ -3,12 +3,11 @@ dlab
 
 Dematic Labs on demand solution for analytics.
 
-
 ## Deployment Implications During Code Review
 When code reviewing analytics module, if any of the following changed.
 
 #### Driver name and package
-Drivers get deployed based on the meta data definition.
+Drivers get deployed based on the meta data definition passed into ansible via jenkins.
 Currently keys have to be unique.
 
 #### Jar size
