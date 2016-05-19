@@ -2,10 +2,10 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.signal.kafka;
 
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.dematic.labs.analytics.common.cassandra.Connections;
-import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.ComputeCumulativeMetricsDriverConfig;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import org.apache.spark.api.java.function.VoidFunction;
@@ -19,9 +19,9 @@ public final class ComputeCumulativeMetrics {
     public static final String APP_NAME = "CUMULATIVE_SIGNAL_METRICS";
 
     private static final class ComputeCumulativeSignalMetrics implements VoidFunction<JavaDStream<byte[]>> {
-        private final CassandraDriverConfig driverConfig;
+        private final ComputeCumulativeMetricsDriverConfig driverConfig;
 
-        ComputeCumulativeSignalMetrics(final CassandraDriverConfig driverConfig) {
+        ComputeCumulativeSignalMetrics(final ComputeCumulativeMetricsDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 
@@ -62,7 +62,7 @@ public final class ComputeCumulativeMetrics {
         }
 
         // create the driver configuration and checkpoint dir
-        final CassandraDriverConfig driverConfig = configure(String.format("%s_%s", keySpace, APP_NAME),
+        final ComputeCumulativeMetricsDriverConfig driverConfig = configure(String.format("%s_%s", keySpace, APP_NAME),
                 kafkaServerBootstrap, kafkaTopics, host, keySpace, masterUrl, aggregationSizeInMinutes, pollTime);
 
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
@@ -70,7 +70,8 @@ public final class ComputeCumulativeMetrics {
         final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
                 new StreamFunctions.CreateKafkaCassandraStreamingContext(driverConfig,
                         new ComputeCumulativeSignalMetrics(driverConfig)));
-        // creates the table in cassandra to store raw signals
+
+        // todo: what driver should we store raw signals, creates the table in cassandra to store raw signals
         Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
                 CassandraConnector.apply(streamingContext.sc().getConf()));
 
@@ -82,22 +83,25 @@ public final class ComputeCumulativeMetrics {
         streamingContext.awaitTermination();
     }
 
-    private static CassandraDriverConfig configure(final String appName, final String kafkaServerBootstrap,
-                                                   final String kafkaTopics, final String host, final String keySpace,
-                                                   final String masterUrl, final String aggregationSizeInMinutes,
-                                                   final String pollTime) {
+    private static ComputeCumulativeMetricsDriverConfig configure(final String appName,
+                                                                  final String kafkaServerBootstrap,
+                                                                  final String kafkaTopics, final String host,
+                                                                  final String keySpace, final String masterUrl,
+                                                                  final String aggregationSizeInMinutes,
+                                                                  final String pollTime) {
         final StreamConfig kafkaStreamConfig = GenericBuilder.of(KafkaStreamConfig::new)
                 .with(KafkaStreamConfig::setStreamEndpoint, kafkaServerBootstrap)
                 .with(KafkaStreamConfig::setStreamName, kafkaTopics)
                 .build();
 
-        return GenericBuilder.of(CassandraDriverConfig::new)
-                .with(CassandraDriverConfig::setAppName, appName)
-                .with(CassandraDriverConfig::setHost, host)
-                .with(CassandraDriverConfig::setKeySpace, keySpace)
-                .with(CassandraDriverConfig::setMasterUrl, masterUrl)
-                .with(CassandraDriverConfig::setPollTime, pollTime)
-                .with(CassandraDriverConfig::setStreamConfig, kafkaStreamConfig)
+        return GenericBuilder.of(ComputeCumulativeMetricsDriverConfig::new)
+                .with(ComputeCumulativeMetricsDriverConfig::setAppName, appName)
+                .with(ComputeCumulativeMetricsDriverConfig::setHost, host)
+                .with(ComputeCumulativeMetricsDriverConfig::setKeySpace, keySpace)
+                .with(ComputeCumulativeMetricsDriverConfig::setMasterUrl, masterUrl)
+                .with(ComputeCumulativeMetricsDriverConfig::setAggregationSizeInMinutes, aggregationSizeInMinutes)
+                .with(ComputeCumulativeMetricsDriverConfig::setPollTime, pollTime)
+                .with(ComputeCumulativeMetricsDriverConfig::setStreamConfig, kafkaStreamConfig)
                 .build();
     }
 }
