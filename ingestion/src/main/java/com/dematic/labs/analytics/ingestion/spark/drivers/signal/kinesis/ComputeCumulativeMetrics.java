@@ -34,7 +34,7 @@ public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
     public static final String COMPUTE_METRICS_APP_NAME = "CUMULATIVE_METRICS_GRAINGER_LT";
 
-    // event stream compute metrics function
+    // signal stream compute metrics function
     private static final class ComputeMovingMetricsFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final CassandraDriverConfig driverConfig;
 
