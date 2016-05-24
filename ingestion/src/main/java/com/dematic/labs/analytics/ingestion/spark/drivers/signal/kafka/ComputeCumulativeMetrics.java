@@ -6,13 +6,20 @@ import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.ComputeCumulativeMetricsDriverConfig;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregationByMinute;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
+import com.dematic.labs.toolkit.communication.SignalUtils;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
@@ -27,7 +34,26 @@ public final class ComputeCumulativeMetrics {
 
         @Override
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
+            // transform the byte[] (byte arrays are json) to signals
+            final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
+            // save raw signals to cassandra
+            signals.foreachRDD(rdd -> {
+                javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME,
+                        mapToRow(Signal.class)).saveToCassandra();
 
+            });
+
+            // todo: fix aggregate by aggregation bucket and save to cassandra
+            final JavaDStream<SignalAggregationByMinute> signalAggregationByMinute = signals.
+                    map((Function<Signal, SignalAggregationByMinute>) signal ->
+                            new SignalAggregationByMinute(signal.getOpcTagId(),
+                                    DateTime.parse("2016-05-24T03:51:00.000Z").toDate(), 1L, signal.getValue()));
+
+
+            signalAggregationByMinute.foreachRDD(rdd -> {
+                javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), SignalAggregationByMinute.TABLE_NAME,
+                        mapToRow(SignalAggregationByMinute.class)).saveToCassandra();
+            });
         }
     }
 
@@ -71,8 +97,10 @@ public final class ComputeCumulativeMetrics {
                 new StreamFunctions.CreateKafkaCassandraStreamingContext(driverConfig,
                         new ComputeCumulativeSignalMetrics(driverConfig)));
 
-        // todo: what driver should we store raw signals, creates the table in cassandra to store raw signals
+        // create the cassandra tables
         Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
+                CassandraConnector.apply(streamingContext.sc().getConf()));
+        Connections.createTable(SignalAggregationByMinute.createTableCql(driverConfig.getKeySpace()),
                 CassandraConnector.apply(streamingContext.sc().getConf()));
 
         // Start the streaming context and await termination

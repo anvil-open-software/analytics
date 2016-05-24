@@ -6,40 +6,50 @@ import java.util.Objects;
 
 /**
  * CREATE TABLE signal_aggregate_by_minute (
- * opcTagId text,
+ * id text,
  * aggregate timestamp,
  * count counter,
  * sum counter,
- * PRIMARY KEY ((opcTagId), aggregate)
+ * PRIMARY KEY ((id), aggregate)
  * ) WITH CLUSTERING ORDER BY (aggregate DESC);
  * <p>
- * update signal_aggregate_by_minute set count = count + 1, sum = sum + 5 where opcTagId='123' and aggregate='2016-05-23T03:52:00.000Z';
- * select * from signal_aggregate_by_minute where opcTagId='123' and aggregate < '2016-05-24T00:00:00.000Z';
+ * update signal_aggregate_by_minute set count = count + 1, sum = sum + 5 where id='123' and aggregate='2016-05-23T03:52:00.000Z';
+ * select * from signal_aggregate_by_minute where id='123' and aggregate < '2016-05-24T00:00:00.000Z';
  */
 
 public final class SignalAggregationByMinute implements Serializable {
     public static final String TABLE_NAME = "signal_aggregate_by_minute";
 
     public static String createTableCql(final String keyspace) {
-        return String.format("CREATE TABLE %s.%s (\n" +
-                " opcTagId text,\n" +
-                " aggregate timestamp,\n" +
-                " count counter,\n" +
-                " sum counter,\n" +
-                " PRIMARY KEY ((opcTagId), aggregate)\n" +
-                " ) WITH CLUSTERING ORDER BY (aggregate DESC);", keyspace, TABLE_NAME);
+        return String.format("CREATE TABLE %s.%s (" +
+                " opc_tag_id bigint," +
+                " aggregate timestamp," +
+                " count counter," +
+                " sum counter," +
+                " PRIMARY KEY ((opc_tag_id), aggregate))" +
+                " WITH CLUSTERING ORDER BY (aggregate DESC);", keyspace, TABLE_NAME);
     }
 
-    private String opcTagId;
+    private Long opcTagId;
     private Date aggregate;
-    private long count;
-    private long sum;
+    private Long count;
+    private Long sum;
 
-    public String getOpcTagId() {
+    public SignalAggregationByMinute() {
+    }
+
+    public SignalAggregationByMinute(final Long opcTagId, final Date aggregate, final Long count, final Long sum) {
+        this.opcTagId = opcTagId;
+        this.aggregate = aggregate;
+        this.count = count;
+        this.sum = sum;
+    }
+
+    public Long getOpcTagId() {
         return opcTagId;
     }
 
-    public void setOpcTagId(final String opcTagId) {
+    public void setOpcTagId(final Long opcTagId) {
         this.opcTagId = opcTagId;
     }
 
@@ -51,11 +61,11 @@ public final class SignalAggregationByMinute implements Serializable {
         this.aggregate = aggregate;
     }
 
-    public long getCount() {
+    public Long getCount() {
         return count;
     }
 
-    public void setCount(final long count) {
+    public void setCount(final Long count) {
         this.count = count;
     }
 
@@ -63,7 +73,7 @@ public final class SignalAggregationByMinute implements Serializable {
         return sum;
     }
 
-    public void setSum(final long sum) {
+    public void setSum(final Long sum) {
         this.sum = sum;
     }
 
@@ -72,8 +82,8 @@ public final class SignalAggregationByMinute implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SignalAggregationByMinute that = (SignalAggregationByMinute) o;
-        return count == that.count &&
-                sum == that.sum &&
+        return Objects.equals(count, that.count) &&
+                Objects.equals(sum, that.sum) &&
                 Objects.equals(opcTagId, that.opcTagId) &&
                 Objects.equals(aggregate, that.aggregate);
     }
