@@ -22,7 +22,7 @@ public final class SignalAggregationByTime implements Serializable {
     public static final String TABLE_NAME = "signal_aggregate_by_time";
 
     public static String createTableCql(final String keyspace) {
-        return String.format("CREATE TABLE %s.%s (" +
+        return String.format("CREATE TABLE if not exists %s.%s (" +
                 " opc_tag_id bigint," +
                 " aggregate timestamp," +
                 " count counter," +
