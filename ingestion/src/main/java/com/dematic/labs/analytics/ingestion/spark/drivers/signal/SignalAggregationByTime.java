@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.Objects;
 
 /**
- * CREATE TABLE signal_aggregate_by_minute (
+ * CREATE TABLE signal_aggregate_by_time (
  * id text,
  * aggregate timestamp,
  * count counter,
@@ -13,12 +13,12 @@ import java.util.Objects;
  * PRIMARY KEY ((id), aggregate)
  * ) WITH CLUSTERING ORDER BY (aggregate DESC);
  * <p>
- * update signal_aggregate_by_minute set count = count + 1, sum = sum + 5 where id='123' and aggregate='2016-05-23T03:52:00.000Z';
- * select * from signal_aggregate_by_minute where id='123' and aggregate < '2016-05-24T00:00:00.000Z';
+ * update signal_aggregate_by_time set count = count + 1, sum = sum + 5 where id='123' and aggregate='2016-05-23T03:52:00.000Z';
+ * select * from signal_aggregate_by_time where id='123' and aggregate < '2016-05-24T00:00:00.000Z';
  */
 
-public final class SignalAggregationByMinute implements Serializable {
-    public static final String TABLE_NAME = "signal_aggregate_by_minute";
+public final class SignalAggregationByTime implements Serializable {
+    public static final String TABLE_NAME = "signal_aggregate_by_time";
 
     public static String createTableCql(final String keyspace) {
         return String.format("CREATE TABLE %s.%s (" +
@@ -35,10 +35,10 @@ public final class SignalAggregationByMinute implements Serializable {
     private Long count;
     private Long sum;
 
-    public SignalAggregationByMinute() {
+    public SignalAggregationByTime() {
     }
 
-    public SignalAggregationByMinute(final Long opcTagId, final Date aggregate, final Long count, final Long sum) {
+    public SignalAggregationByTime(final Long opcTagId, final Date aggregate, final Long count, final Long sum) {
         this.opcTagId = opcTagId;
         this.aggregate = aggregate;
         this.count = count;
@@ -81,7 +81,7 @@ public final class SignalAggregationByMinute implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        SignalAggregationByMinute that = (SignalAggregationByMinute) o;
+        SignalAggregationByTime that = (SignalAggregationByTime) o;
         return Objects.equals(count, that.count) &&
                 Objects.equals(sum, that.sum) &&
                 Objects.equals(opcTagId, that.opcTagId) &&
@@ -95,7 +95,7 @@ public final class SignalAggregationByMinute implements Serializable {
 
     @Override
     public String toString() {
-        return "SignalAggregationByMinute{" +
+        return "SignalAggregationByTime{" +
                 "opcTagId='" + opcTagId + '\'' +
                 ", aggregate=" + aggregate +
                 ", count=" + count +
