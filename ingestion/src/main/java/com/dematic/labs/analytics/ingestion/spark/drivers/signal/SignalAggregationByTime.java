@@ -14,7 +14,8 @@ import java.util.Objects;
  * ) WITH CLUSTERING ORDER BY (aggregate DESC);
  * <p>
  * update signal_aggregate_by_time set count = count + 1, sum = sum + 5 where id='123' and aggregate='2016-05-23T03:52:00.000Z';
- * select * from signal_aggregate_by_time where id='123' and aggregate < '2016-05-24T00:00:00.000Z';
+ * select * from signal_aggregate_by_time where opc_tag_id='123' and aggregate < '2016-05-24T00:00:00.000Z';
+ * select * from signal_aggregate_by_time where opc_tag_id = 140 and aggregate >= '2016-05-25T19:30Z';
  */
 
 public final class SignalAggregationByTime implements Serializable {
