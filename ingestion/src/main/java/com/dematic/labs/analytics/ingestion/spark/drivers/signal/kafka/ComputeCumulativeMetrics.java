@@ -43,11 +43,12 @@ public final class ComputeCumulativeMetrics {
 
             });
             // create aggregations and sav to cassandra
-            final JavaDStream<SignalAggregationByTime> signalAggregationByMinute = signals.
+            final JavaDStream<SignalAggregationByTime> signalAggregationByTime = signals.
                     map((Function<Signal, SignalAggregationByTime>) signal ->
                             new SignalAggregationByTime(signal.getOpcTagId(),
                                     driverConfig.getAggregateBy().time(signal.getTimestamp()), 1L, signal.getValue()));
-            signalAggregationByMinute.foreachRDD(rdd -> {
+
+            signalAggregationByTime.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), SignalAggregationByTime.TABLE_NAME,
                         mapToRow(SignalAggregationByTime.class)).saveToCassandra();
             });
