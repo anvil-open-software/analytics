@@ -18,6 +18,7 @@ import java.util.Objects;
  * select * from signal_aggregate_by_time where opc_tag_id = 140 and aggregate >= '2016-05-25T19:30Z';
  */
 
+// look into aggregating the table by day
 public final class SignalAggregationByTime implements Serializable {
     public static final String TABLE_NAME = "signal_aggregate_by_time";
 
