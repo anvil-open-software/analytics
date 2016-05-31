@@ -18,7 +18,7 @@ public enum Aggregation {
     }
 
     public Date time(final Date time) {
-        // todo: fix conversions
+        // todo: investigate conversions more
         return toJavaUtilDateFromInstance(truncate(time, chronoUnit));
     }
 
