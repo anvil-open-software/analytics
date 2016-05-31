@@ -34,7 +34,7 @@ public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
     public static final String COMPUTE_METRICS_APP_NAME = "CUMULATIVE_METRICS_GRAINGER_LT";
 
-    // event stream compute metrics function
+    // signal stream compute metrics function
     private static final class ComputeMovingMetricsFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final CassandraDriverConfig driverConfig;
 
@@ -48,14 +48,14 @@ public final class ComputeCumulativeMetrics {
             final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
             // 2) compute metrics from signals
             // -- group by opcTagId
-            final JavaPairDStream<String, List<Signal>> signalsToOpcTagId =
+            final JavaPairDStream<Long, List<Signal>> signalsToOpcTagId =
                     signals.mapToPair(signal -> Tuple2.apply(signal.getOpcTagId(), Collections.singletonList(signal)));
             // -- reduce all signals to opcTagId
-            final JavaPairDStream<String, List<Signal>> reduceByKey =
+            final JavaPairDStream<Long, List<Signal>> reduceByKey =
                     signalsToOpcTagId.reduceByKey((signal1, signal2) -> Stream.of(signal1, signal2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
             // -- compute metric aggregations and save
-            final JavaMapWithStateDStream<String, List<Signal>, SignalAggregation, SignalAggregation>
+            final JavaMapWithStateDStream<Long, List<Signal>, SignalAggregation, SignalAggregation>
                     mapWithStateDStream = reduceByKey.mapWithState(StateSpec.function(
                     new ComputeMovingSignalAggregation(driverConfig)).
                     // default timeout in seconds

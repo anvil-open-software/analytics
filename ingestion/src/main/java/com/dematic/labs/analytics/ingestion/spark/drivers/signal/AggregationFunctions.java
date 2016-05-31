@@ -14,7 +14,7 @@ public final class AggregationFunctions implements Serializable {
     private AggregationFunctions() {
     }
 
-    public static final class ComputeMovingSignalAggregation implements Function4<Time, String, Optional<List<Signal>>,
+    public static final class ComputeMovingSignalAggregation implements Function4<Time, Long, Optional<List<Signal>>,
             State<SignalAggregation>, Optional<SignalAggregation>> {
         @SuppressWarnings("unused") // todo: will be used when retrieving data from cassandra
         private final CassandraDriverConfig driverConfig;
@@ -24,7 +24,7 @@ public final class AggregationFunctions implements Serializable {
         }
 
         @Override
-        public Optional<SignalAggregation> call(final Time time, final String opcTagId,
+        public Optional<SignalAggregation> call(final Time time, final Long opcTagId,
                                                 final Optional<List<Signal>> signals,
                                                 final State<SignalAggregation> state) throws Exception {
             final SignalAggregation signalAggregation;

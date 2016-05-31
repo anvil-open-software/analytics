@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.Objects;
 
 public class SignalAggregation implements Serializable {
-    private final String opcTagId;
+    private final Long opcTagId;
     private Long count;
     private Long sum;
     private Long min;
     private Long max;
 
-    public SignalAggregation(final String opcTagId) {
+    public SignalAggregation(final Long opcTagId) {
         this.opcTagId = opcTagId;
         count = 0L;
         sum = 0L;
@@ -48,7 +48,7 @@ public class SignalAggregation implements Serializable {
         sum = sum + value;
     }
 
-    public String getOpcTagId() {
+    public Long getOpcTagId() {
         return opcTagId;
     }
 
