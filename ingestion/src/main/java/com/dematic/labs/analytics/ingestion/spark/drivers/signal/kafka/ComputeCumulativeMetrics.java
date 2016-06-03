@@ -18,6 +18,8 @@ import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
+
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
@@ -40,14 +42,13 @@ public final class ComputeCumulativeMetrics {
             signals.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME,
                         mapToRow(Signal.class)).saveToCassandra();
-
             });
             // create aggregations and sav to cassandra
             final JavaDStream<SignalAggregationByTime> signalAggregationByTime = signals.
                     map((Function<Signal, SignalAggregationByTime>) signal ->
                             new SignalAggregationByTime(signal.getOpcTagId(),
-                                    driverConfig.getAggregateBy().time(signal.getTimestamp()), 1L, signal.getValue()));
-
+                                    driverConfig.getAggregateBy().time(signal.getTimestamp()), 1L, signal.getValue(),
+                                    Collections.singletonList(signal.getValue())));
             signalAggregationByTime.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), SignalAggregationByTime.TABLE_NAME,
                         mapToRow(SignalAggregationByTime.class)).saveToCassandra();

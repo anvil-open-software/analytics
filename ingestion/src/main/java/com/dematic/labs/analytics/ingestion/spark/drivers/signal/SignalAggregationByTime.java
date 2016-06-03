@@ -2,17 +2,10 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.signal;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 /**
- * CREATE TABLE signal_aggregate_by_time (
- * id text,
- * aggregate timestamp,
- * count counter,
- * sum counter,
- * PRIMARY KEY ((id), aggregate)
- * ) WITH CLUSTERING ORDER BY (aggregate DESC);
- * <p>
  * update signal_aggregate_by_time set count = count + 1, sum = sum + 5 where id='123' and aggregate='2016-05-23T03:52:00.000Z';
  * select * from signal_aggregate_by_time where opc_tag_id='123' and aggregate < '2016-05-24T00:00:00.000Z';
  * select * from signal_aggregate_by_time where opc_tag_id = 140 and aggregate >= '2016-05-25T19:30Z';
@@ -28,6 +21,7 @@ public final class SignalAggregationByTime implements Serializable {
                 " aggregate timestamp," +
                 " count counter," +
                 " sum counter," +
+                " values list<bigint>," +
                 " PRIMARY KEY ((opc_tag_id), aggregate))" +
                 " WITH CLUSTERING ORDER BY (aggregate DESC);", keyspace, TABLE_NAME);
     }
@@ -36,15 +30,18 @@ public final class SignalAggregationByTime implements Serializable {
     private Date aggregate;
     private Long count;
     private Long sum;
+    private List<Long> values;
 
     public SignalAggregationByTime() {
     }
 
-    public SignalAggregationByTime(final Long opcTagId, final Date aggregate, final Long count, final Long sum) {
+    public SignalAggregationByTime(final Long opcTagId, final Date aggregate, final Long count, final Long sum,
+                                   final List<Long> values) {
         this.opcTagId = opcTagId;
         this.aggregate = aggregate;
         this.count = count;
         this.sum = sum;
+        this.values = values;
     }
 
     public Long getOpcTagId() {
@@ -79,29 +76,39 @@ public final class SignalAggregationByTime implements Serializable {
         this.sum = sum;
     }
 
+    public List<Long> getValues() {
+        return values;
+    }
+
+    public void setValues(final List<Long> values) {
+        this.values = values;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SignalAggregationByTime that = (SignalAggregationByTime) o;
-        return Objects.equals(count, that.count) &&
+        return Objects.equals(opcTagId, that.opcTagId) &&
+                Objects.equals(aggregate, that.aggregate) &&
+                Objects.equals(count, that.count) &&
                 Objects.equals(sum, that.sum) &&
-                Objects.equals(opcTagId, that.opcTagId) &&
-                Objects.equals(aggregate, that.aggregate);
+                Objects.equals(values, that.values);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(opcTagId, aggregate, count, sum);
+        return Objects.hash(opcTagId, aggregate, count, sum, values);
     }
 
     @Override
     public String toString() {
         return "SignalAggregationByTime{" +
-                "opcTagId='" + opcTagId + '\'' +
+                "opcTagId=" + opcTagId +
                 ", aggregate=" + aggregate +
                 ", count=" + count +
                 ", sum=" + sum +
+                ", values=" + values +
                 '}';
     }
 }
