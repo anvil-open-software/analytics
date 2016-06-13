@@ -5,11 +5,33 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.signal;
 import com.dematic.labs.toolkit.communication.Signal;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * select * from signal_aggregate where opc_tag_id='123' and aggregate < '2016-05-24T00:00:00.000Z';
+ * select * from signal_aggregate where opc_tag_id = 140 and aggregate >= '2016-05-25T19:30Z';
+ */
+@SuppressWarnings("unused")
 public class SignalAggregation implements Serializable {
-    private final Long opcTagId;
+
+    public static final String TABLE_NAME = "signal_aggregate_by_time";
+
+    public static String createTableCql(final String keyspace) {
+        return String.format("CREATE TABLE if not exists %s.%s (" +
+                " opc_tag_id bigint," +
+                " aggregate timestamp," +
+                " count bigint," +
+                " sum bigint," +
+                " min bigint," +
+                " max bigint," +
+                " PRIMARY KEY ((opc_tag_id), aggregate))" +
+                " WITH CLUSTERING ORDER BY (aggregate DESC);", keyspace, TABLE_NAME);
+    }
+
+    private Long opcTagId;
+    private Date aggregate;
     private Long count;
     private Long sum;
     private Long min;
@@ -52,20 +74,48 @@ public class SignalAggregation implements Serializable {
         return opcTagId;
     }
 
+    public void setOpcTagId(final Long opcTagId) {
+        this.opcTagId = opcTagId;
+    }
+
+    public Date getAggregate() {
+        return aggregate;
+    }
+
+    public void setAggregate(final Date aggregate) {
+        this.aggregate = aggregate;
+    }
+
     public Long getCount() {
         return count;
+    }
+
+    public void setCount(final Long count) {
+        this.count = count;
     }
 
     public Long getSum() {
         return sum;
     }
 
+    public void setSum(final Long sum) {
+        this.sum = sum;
+    }
+
     public Long getMin() {
         return min;
     }
 
+    public void setMin(final Long min) {
+        this.min = min;
+    }
+
     public Long getMax() {
         return max;
+    }
+
+    public void setMax(final Long max) {
+        this.max = max;
     }
 
     public Double getAvg() {
@@ -78,6 +128,7 @@ public class SignalAggregation implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         SignalAggregation that = (SignalAggregation) o;
         return Objects.equals(opcTagId, that.opcTagId) &&
+                Objects.equals(aggregate, that.aggregate) &&
                 Objects.equals(count, that.count) &&
                 Objects.equals(sum, that.sum) &&
                 Objects.equals(min, that.min) &&
@@ -86,18 +137,18 @@ public class SignalAggregation implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(opcTagId, count, sum, min, max);
+        return Objects.hash(opcTagId, aggregate, count, sum, min, max);
     }
 
     @Override
     public String toString() {
         return "SignalAggregation{" +
-                "opcTagId='" + opcTagId + '\'' +
+                "opcTagId=" + opcTagId +
+                ", aggregate=" + aggregate +
                 ", count=" + count +
                 ", sum=" + sum +
                 ", min=" + min +
                 ", max=" + max +
-                ", avg=" + getAvg() +
                 '}';
     }
 }

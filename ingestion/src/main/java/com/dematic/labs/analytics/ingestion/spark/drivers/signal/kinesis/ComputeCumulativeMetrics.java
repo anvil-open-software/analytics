@@ -4,7 +4,7 @@ import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.KinesisStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
-import com.dematic.labs.analytics.ingestion.spark.drivers.signal.AggregationFunctions.ComputeMovingSignalAggregation;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.AggregationFunctions;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregation;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
@@ -57,7 +57,7 @@ public final class ComputeCumulativeMetrics {
             // -- compute metric aggregations and save
             final JavaMapWithStateDStream<Long, List<Signal>, SignalAggregation, SignalAggregation>
                     mapWithStateDStream = reduceByKey.mapWithState(StateSpec.function(
-                    new ComputeMovingSignalAggregation(driverConfig)).
+                    new AggregationFunctions.ComputeMovingSignalAggregation(driverConfig)).
                     // default timeout in seconds
                             timeout(Durations.seconds(60L)));
             // 3) save metrics by bucket to cassandra
