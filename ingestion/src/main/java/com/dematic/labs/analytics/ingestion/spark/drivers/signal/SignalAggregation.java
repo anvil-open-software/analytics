@@ -50,7 +50,7 @@ public class SignalAggregation implements Serializable {
         sum = 0L;
     }
 
-    void computeAggregations(final List<Signal> values) {
+    public void computeAggregations(final List<Signal> values) {
         values.stream().forEach(signal -> computeAggregations(signal.getValue()));
     }
 

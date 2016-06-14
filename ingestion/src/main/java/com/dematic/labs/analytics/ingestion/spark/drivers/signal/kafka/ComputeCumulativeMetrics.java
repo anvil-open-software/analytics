@@ -53,9 +53,9 @@ public final class ComputeCumulativeMetrics {
             CassandraStreamingJavaUtil.javaFunctions(signals).writerBuilder(driverConfig.getKeySpace(),
                     Signal.TABLE_NAME, mapToRow(Signal.class)).saveToCassandra();
 
-            // 2) compute metrics from signals
+            // 2) aggregate by key and aggregation time
 
-            // key is by opc tag id and aggregation
+            // -- key is by opc tag id and aggregation time
             final JavaPairDStream<Tuple2<Long, Date>, List<Signal>> pairDStream =
                     signals.mapToPair((PairFunction<Signal, Tuple2<Long, Date>, List<Signal>>) signal -> {
                         final Tuple2<Long, Date> key = new Tuple2<>(signal.getOpcTagId(),
@@ -63,20 +63,20 @@ public final class ComputeCumulativeMetrics {
                         return new Tuple2<Tuple2<Long, Date>, List<Signal>>(key, Collections.singletonList(signal));
                     });
 
-
+            // -- reduce by opc tag id and aggregation time
             final JavaPairDStream<Tuple2<Long, Date>, List<Signal>> reduceByKey =
                     pairDStream.reduceByKey((signal1, signal2) -> Stream.of(signal1, signal2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
 
+            // 3) calculate stats
             final JavaMapWithStateDStream<Tuple2<Long, Date>, List<Signal>, SignalAggregation, SignalAggregation>
                     mapWithStateDStream = reduceByKey.mapWithState(StateSpec.function(
                     new AggregationFunctions.ComputeMovingSignalAggregationByOpcTagIdAndAggregation(driverConfig)).
                     // default timeout in seconds
                             timeout(Durations.seconds(60L)));
 
-            // 3) save aggregations
+            // 4) save aggregations
             mapWithStateDStream.foreachRDD(rdd -> {
-                //todo: is this the best way to do save
                 CassandraJavaUtil.javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(),
                         SignalAggregation.TABLE_NAME, mapToRow(SignalAggregation.class)).
                         saveToCassandra();
