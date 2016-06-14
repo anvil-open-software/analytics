@@ -4,14 +4,17 @@ import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.KinesisStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
-import com.dematic.labs.analytics.ingestion.spark.drivers.signal.AggregationFunctions.ComputeMovingSignalAggregation;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregation;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.dematic.labs.toolkit.communication.SignalUtils;
+import com.google.common.base.Optional;
+import org.apache.spark.api.java.function.Function4;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Durations;
+import org.apache.spark.streaming.State;
 import org.apache.spark.streaming.StateSpec;
+import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaMapWithStateDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
@@ -30,9 +33,54 @@ import java.util.stream.Stream;
 import static java.util.Spliterators.spliteratorUnknownSize;
 import static java.util.stream.StreamSupport.stream;
 
+//todo: this driver is incomplete @see com.dematic.labs.analytics.ingestion.spark.drivers.signal.kafka.ComputeCumulativeMetrics
 public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
     public static final String COMPUTE_METRICS_APP_NAME = "CUMULATIVE_METRICS_GRAINGER_LT";
+
+    public static final class ComputeMovingSignalAggregationByOpcTagId implements Function4<Time, Long, Optional<List<Signal>>,
+            State<SignalAggregation>, Optional<SignalAggregation>> {
+        @SuppressWarnings("unused")
+        private final CassandraDriverConfig driverConfig;
+
+        public ComputeMovingSignalAggregationByOpcTagId(final CassandraDriverConfig driverConfig) {
+            this.driverConfig = driverConfig;
+        }
+
+        @SuppressWarnings("Duplicates")
+        @Override
+        public Optional<SignalAggregation> call(final Time time, final Long opcTagId,
+                                                final Optional<List<Signal>> signals,
+                                                final State<SignalAggregation> state) throws Exception {
+            final SignalAggregation signalAggregation;
+            // check for saved state
+            if (state.exists()) {
+                // get existing signal aggregations
+                signalAggregation = state.get();
+                // check if timing out
+                final boolean timingOut = state.isTimingOut();
+                if (timingOut) {
+                    // no state has been updated for timeout amount of time, just calculate metrics and return
+                    if (signals.isPresent()) {
+                        signalAggregation.computeAggregations(signals.get());
+                        return Optional.of(signalAggregation);
+                    } else {
+                        return Optional.absent();
+                    }
+                }
+                // calculate and update
+                signalAggregation.computeAggregations(signals.get());
+                state.update(signalAggregation);
+            } else {
+                // create initial state,
+                // todo: load from cassandra
+                signalAggregation = new SignalAggregation(opcTagId);
+                signalAggregation.computeAggregations(signals.get());
+                state.update(signalAggregation);
+            }
+            return Optional.of(signalAggregation);
+        }
+    }
 
     // signal stream compute metrics function
     private static final class ComputeMovingMetricsFunction implements VoidFunction<JavaDStream<byte[]>> {
@@ -57,7 +105,7 @@ public final class ComputeCumulativeMetrics {
             // -- compute metric aggregations and save
             final JavaMapWithStateDStream<Long, List<Signal>, SignalAggregation, SignalAggregation>
                     mapWithStateDStream = reduceByKey.mapWithState(StateSpec.function(
-                    new ComputeMovingSignalAggregation(driverConfig)).
+                    new ComputeMovingSignalAggregationByOpcTagId(driverConfig)).
                     // default timeout in seconds
                             timeout(Durations.seconds(60L)));
             // 3) save metrics by bucket to cassandra

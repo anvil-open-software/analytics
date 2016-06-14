@@ -6,25 +6,27 @@ import com.google.common.base.Optional;
 import org.apache.spark.api.java.function.Function4;
 import org.apache.spark.streaming.State;
 import org.apache.spark.streaming.Time;
+import scala.Tuple2;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.List;
 
 public final class AggregationFunctions implements Serializable {
     private AggregationFunctions() {
     }
 
-    public static final class ComputeMovingSignalAggregation implements Function4<Time, Long, Optional<List<Signal>>,
-            State<SignalAggregation>, Optional<SignalAggregation>> {
-        @SuppressWarnings("unused") // todo: will be used when retrieving data from cassandra
+    public static final class ComputeMovingSignalAggregationByOpcTagIdAndAggregation
+            implements Function4<Time, Tuple2<Long, Date>, Optional<List<Signal>>, State<SignalAggregation>, Optional<SignalAggregation>> {
         private final CassandraDriverConfig driverConfig;
 
-        public ComputeMovingSignalAggregation(final CassandraDriverConfig driverConfig) {
+        public ComputeMovingSignalAggregationByOpcTagIdAndAggregation(final CassandraDriverConfig driverConfig) {
             this.driverConfig = driverConfig;
         }
 
+        @SuppressWarnings("Duplicates")
         @Override
-        public Optional<SignalAggregation> call(final Time time, final Long opcTagId,
+        public Optional<SignalAggregation> call(final Time time, final Tuple2<Long, Date> key,
                                                 final Optional<List<Signal>> signals,
                                                 final State<SignalAggregation> state) throws Exception {
             final SignalAggregation signalAggregation;
@@ -48,8 +50,8 @@ public final class AggregationFunctions implements Serializable {
                 state.update(signalAggregation);
             } else {
                 // create initial state,
-                // todo: load from cassandra
-                signalAggregation = new SignalAggregation(opcTagId);
+
+                signalAggregation = new SignalAggregation(key._1(), key._2());
                 signalAggregation.computeAggregations(signals.get());
                 state.update(signalAggregation);
             }
