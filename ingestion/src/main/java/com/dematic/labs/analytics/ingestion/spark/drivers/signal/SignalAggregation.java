@@ -16,7 +16,7 @@ import java.util.Objects;
 @SuppressWarnings("unused")
 public class SignalAggregation implements Serializable {
 
-    public static final String TABLE_NAME = "signal_aggregate_by_time";
+    public static final String TABLE_NAME = "signal_aggregate";
 
     public static String createTableCql(final String keyspace) {
         return String.format("CREATE TABLE if not exists %s.%s (" +
@@ -39,6 +39,13 @@ public class SignalAggregation implements Serializable {
 
     public SignalAggregation(final Long opcTagId) {
         this.opcTagId = opcTagId;
+        count = 0L;
+        sum = 0L;
+    }
+
+    public SignalAggregation(final Long opcTagId, final Date aggregate) {
+        this.opcTagId = opcTagId;
+        this.aggregate = aggregate;
         count = 0L;
         sum = 0L;
     }

@@ -14,6 +14,7 @@ import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregati
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.dematic.labs.toolkit.communication.SignalUtils;
+import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.StateSpec;
@@ -27,6 +28,7 @@ import scala.Tuple2;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,18 +54,23 @@ public final class ComputeCumulativeMetrics {
                     Signal.TABLE_NAME, mapToRow(Signal.class)).saveToCassandra();
 
             // 2) compute metrics from signals
-            // -- group by opcTagId
-            final JavaPairDStream<Long, List<Signal>> signalsToOpcTagId =
-                    signals.mapToPair(signal -> Tuple2.apply(signal.getOpcTagId(), Collections.singletonList(signal)));
 
-            // -- reduce all signals to opcTagId
-            final JavaPairDStream<Long, List<Signal>> reduceByKey =
-                    signalsToOpcTagId.reduceByKey((signal1, signal2) -> Stream.of(signal1, signal2)
+            // key is by opc tag id and aggregation
+            final JavaPairDStream<Tuple2<Long, Date>, List<Signal>> pairDStream =
+                    signals.mapToPair((PairFunction<Signal, Tuple2<Long, Date>, List<Signal>>) signal -> {
+                        final Tuple2<Long, Date> key = new Tuple2<>(signal.getOpcTagId(),
+                                driverConfig.getAggregateBy().time(signal.getTimestamp()));
+                        return new Tuple2<Tuple2<Long, Date>, List<Signal>>(key, Collections.singletonList(signal));
+                    });
+
+
+            final JavaPairDStream<Tuple2<Long, Date>, List<Signal>> reduceByKey =
+                    pairDStream.reduceByKey((signal1, signal2) -> Stream.of(signal1, signal2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
-            // -- compute metric aggregations and save
-            final JavaMapWithStateDStream<Long, List<Signal>, SignalAggregation, SignalAggregation>
-                    mapWithStateDStream = reduceByKey.mapWithState(StateSpec.
-                    function(new AggregationFunctions.ComputeMovingSignalAggregation(driverConfig)).
+
+            final JavaMapWithStateDStream<Tuple2<Long, Date>, List<Signal>, SignalAggregation, SignalAggregation>
+                    mapWithStateDStream = reduceByKey.mapWithState(StateSpec.function(
+                    new AggregationFunctions.ComputeMovingSignalAggregationByOpcTagIdAndAggregation(driverConfig)).
                     // default timeout in seconds
                             timeout(Durations.seconds(60L)));
 
@@ -106,6 +113,9 @@ public final class ComputeCumulativeMetrics {
             aggregateBy = Aggregation.valueOf(args[4]);
             pollTime = args[5];
         }
+
+        System.out.println(Signal.createTableCql(keySpace));
+        System.out.println(SignalAggregation.createTableCql(keySpace));
 
         // create the driver configuration and checkpoint dir
         final ComputeCumulativeMetricsDriverConfig driverConfig = configure(String.format("%s_%s", keySpace, APP_NAME),

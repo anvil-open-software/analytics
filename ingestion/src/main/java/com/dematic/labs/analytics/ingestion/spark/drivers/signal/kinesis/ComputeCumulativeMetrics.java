@@ -57,7 +57,7 @@ public final class ComputeCumulativeMetrics {
             // -- compute metric aggregations and save
             final JavaMapWithStateDStream<Long, List<Signal>, SignalAggregation, SignalAggregation>
                     mapWithStateDStream = reduceByKey.mapWithState(StateSpec.function(
-                    new AggregationFunctions.ComputeMovingSignalAggregation(driverConfig)).
+                    new AggregationFunctions.ComputeMovingSignalAggregationByOpcTagId(driverConfig)).
                     // default timeout in seconds
                             timeout(Durations.seconds(60L)));
             // 3) save metrics by bucket to cassandra
