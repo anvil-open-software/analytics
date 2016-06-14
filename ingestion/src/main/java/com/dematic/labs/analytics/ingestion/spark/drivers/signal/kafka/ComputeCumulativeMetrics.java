@@ -2,7 +2,6 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.signal.kafka;
 
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
-import com.datastax.spark.connector.japi.CassandraStreamingJavaUtil;
 import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
@@ -33,6 +32,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 public final class ComputeCumulativeMetrics {
@@ -50,8 +50,10 @@ public final class ComputeCumulativeMetrics {
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
             // 1) transform the byte[] (byte arrays are json) to signals and save raw signals
             final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
-            CassandraStreamingJavaUtil.javaFunctions(signals).writerBuilder(driverConfig.getKeySpace(),
-                    Signal.TABLE_NAME, mapToRow(Signal.class)).saveToCassandra();
+            signals.foreachRDD(rdd -> {
+                javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
+                        saveToCassandra();
+            });
 
             // 2) aggregate by key and aggregation time
 
@@ -114,9 +116,6 @@ public final class ComputeCumulativeMetrics {
             pollTime = args[5];
         }
 
-        System.out.println(Signal.createTableCql(keySpace));
-        System.out.println(SignalAggregation.createTableCql(keySpace));
-
         // create the driver configuration and checkpoint dir
         final ComputeCumulativeMetricsDriverConfig driverConfig = configure(String.format("%s_%s", keySpace, APP_NAME),
                 kafkaServerBootstrap, kafkaTopics, host, keySpace, masterUrl, aggregateBy, pollTime);
@@ -156,10 +155,16 @@ public final class ComputeCumulativeMetrics {
                 .with(ComputeCumulativeMetricsDriverConfig::setAppName, appName)
                 .with(ComputeCumulativeMetricsDriverConfig::setHost, host)
                 .with(ComputeCumulativeMetricsDriverConfig::setKeySpace, keySpace)
+                .with(ComputeCumulativeMetricsDriverConfig::setKeepAlive, keepAlive(pollTime))
                 .with(ComputeCumulativeMetricsDriverConfig::setMasterUrl, masterUrl)
                 .with(ComputeCumulativeMetricsDriverConfig::setAggregateBy, aggregationBy)
                 .with(ComputeCumulativeMetricsDriverConfig::setPollTime, pollTime)
                 .with(ComputeCumulativeMetricsDriverConfig::setStreamConfig, kafkaStreamConfig)
                 .build();
+    }
+
+    private static String keepAlive(final String pollTime) {
+        // keep alive is pollTime + 5
+        return String.valueOf(Integer.valueOf(pollTime) + 5 * 1000);
     }
 }

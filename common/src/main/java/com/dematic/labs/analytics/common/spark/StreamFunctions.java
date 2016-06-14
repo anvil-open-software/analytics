@@ -115,39 +115,6 @@ public final class StreamFunctions implements Serializable {
         }
     }
 
-    public static final class CreateKafkaStreamingContext implements Function0<JavaStreamingContext> {
-        private final DefaultDriverConfig driverConfig;
-        private final VoidFunction<JavaDStream<byte[]>> streamProcessor;
-
-        public CreateKafkaStreamingContext(final DefaultDriverConfig driverConfig,
-                                           final VoidFunction<JavaDStream<byte[]>> streamProcessor) {
-            this.driverConfig = driverConfig;
-            this.streamProcessor = streamProcessor;
-        }
-
-        @Override
-        public JavaStreamingContext call() throws Exception {
-            // create spark configure
-            final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName());
-            // if master url set, apply
-            if (!Strings.isNullOrEmpty(driverConfig.getMasterUrl())) {
-                sparkConfiguration.setMaster(driverConfig.getMasterUrl());
-            }
-            // create the streaming context
-            final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
-                    driverConfig.getPollTimeInSeconds());
-            // create the dstream
-            final JavaDStream<byte[]> dStream =
-                    new CreateKafkaDStream(driverConfig.getStreamConfig(), streamingContext).call();
-            // work on the streams
-            streamProcessor.call(dStream);
-            // set the checkpoint dir
-            streamingContext.checkpoint(driverConfig.getCheckPointDir());
-            // return the streaming context
-            return streamingContext;
-        }
-    }
-
     public static final class CreateKinesisCassandraStreamingContext implements Function0<JavaStreamingContext> {
         private final CassandraDriverConfig driverConfig;
         private final VoidFunction<JavaDStream<byte[]>> streamProcessor;
@@ -209,6 +176,8 @@ public final class StreamFunctions implements Serializable {
             sparkConfiguration.set(CassandraDriverConfig.AUTH_PASSWORD_PROP, driverConfig.getPassword());
             // set the connection host
             sparkConfiguration.set(CassandraDriverConfig.CONNECTION_HOST_PROP, driverConfig.getHost());
+            // set the connection keep alive
+            sparkConfiguration.set(CassandraDriverConfig.KEEP_ALIVE_PROP, driverConfig.getKeepAlive());
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTimeInSeconds());
