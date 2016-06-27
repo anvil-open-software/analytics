@@ -137,6 +137,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- cassandra unit test -->
+        <dependency>
+            <groupId>org.cassandraunit</groupId>
+            <artifactId>cassandra-unit</artifactId>
+        </dependency>
         <!-- declare tests dependencies -->
         <dependency>
             <groupId>junit</groupId>
