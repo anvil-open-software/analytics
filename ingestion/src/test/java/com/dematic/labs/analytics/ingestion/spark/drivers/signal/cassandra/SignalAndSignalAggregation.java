@@ -5,6 +5,7 @@ import com.datastax.driver.core.Session;
 import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.cassandra.EmbeddedCassandraRule;
 import com.dematic.labs.toolkit.communication.Signal;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
@@ -36,12 +37,14 @@ public final class SignalAndSignalAggregation {
             // 5) add signals
             insertSignals(session, keyspace, 50);
             // 6) query signals
+            final ResultSet execute = session.execute("SELECT * FROM " + keyspace + "." + Signal.TABLE_NAME + ";");
+            Assert.assertEquals(50, execute.all().size());
         }
     }
 
     private void insertSignals(final Session session, final String keyspace, final int numOfSignals) {
         final int[] ints = {1};
-        IntStream.of(numOfSignals).forEach(signal -> {
+        IntStream.range(0, numOfSignals).forEach(signal -> {
             final ResultSet z = session.execute("INSERT INTO " + keyspace + "." + Signal.TABLE_NAME +
                     " (unique_id, id, value, day, timestamp, quality, opc_tag_reading_id, opc_tag_id, proxied_type_name, extended_properties) " +
                     "VALUES (" +
