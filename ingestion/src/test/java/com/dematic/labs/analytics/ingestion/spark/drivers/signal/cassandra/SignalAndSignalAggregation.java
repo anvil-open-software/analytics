@@ -7,7 +7,7 @@ import com.dematic.labs.toolkit.SystemPropertyRule;
 import com.dematic.labs.toolkit.cassandra.EmbeddedCassandraRule;
 import com.dematic.labs.toolkit.communication.Signal;
 import org.junit.Assert;
-import org.junit.Rule;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
@@ -17,9 +17,9 @@ import java.time.ZoneId;
 import java.util.stream.IntStream;
 
 public final class SignalAndSignalAggregation {
-    private EmbeddedCassandraRule cassandraUnit = new EmbeddedCassandraRule();
-    @Rule
-    public final TestRule systemPropertyRule = RuleChain.outerRule(new SystemPropertyRule()).around(cassandraUnit);
+    private static EmbeddedCassandraRule cassandraUnit = new EmbeddedCassandraRule();
+    @ClassRule
+    public static final TestRule systemPropertyRule = RuleChain.outerRule(new SystemPropertyRule()).around(cassandraUnit);
 
     @Test
     public void querySignals() {

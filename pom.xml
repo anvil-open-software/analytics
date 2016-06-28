@@ -137,12 +137,22 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- declare tests dependencies -->
         <!-- cassandra unit test -->
         <dependency>
             <groupId>org.cassandraunit</groupId>
             <artifactId>cassandra-unit</artifactId>
         </dependency>
-        <!-- declare tests dependencies -->
+        <!-- kafka unit test -->
+        <dependency>
+            <groupId>info.batey.kafka</groupId>
+            <artifactId>kafka-unit</artifactId>
+        </dependency>
+        <!-- used in testing kafka -->
+        <dependency>
+            <groupId>net.sf.jopt-simple</groupId>
+            <artifactId>jopt-simple</artifactId>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
