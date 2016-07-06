@@ -3,6 +3,7 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.signal.kafka;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.dematic.labs.analytics.common.cassandra.Connections;
+import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
@@ -10,9 +11,11 @@ import com.dematic.labs.analytics.ingestion.spark.drivers.signal.Aggregation;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.AggregationFunctions;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.ComputeCumulativeMetricsDriverConfig;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregation;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalValidation;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.dematic.labs.toolkit.communication.SignalUtils;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Durations;
@@ -25,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
+import java.time.temporal.ChronoField;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -34,10 +38,13 @@ import java.util.stream.Stream;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
+import static com.dematic.labs.toolkit.communication.SignalUtils.toLocalDateFromJavaUtilDate;
 
 public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
     public static final String APP_NAME = "CUMULATIVE_SIGNAL_METRICS";
+    // just add a flag to be able to turn off and on validation of counts
+    private static final boolean VALIDATE_COUNTS = System.getProperty(DriverConsts.SPARK_DRIVER_VALIDATE_COUNTS) != null;
 
     private static final class ComputeCumulativeSignalMetrics implements VoidFunction<JavaDStream<byte[]>> {
         private final ComputeCumulativeMetricsDriverConfig driverConfig;
@@ -55,7 +62,21 @@ public final class ComputeCumulativeMetrics {
                         saveToCassandra();
             });
 
-            // 2) aggregate by key and aggregation time
+            // 2) if validation needed, update counts
+            if (VALIDATE_COUNTS) {
+                // map to signal validation and save to cassandra
+                final JavaDStream<SignalValidation> signalValidation =
+                        signals.map((Function<Signal, SignalValidation>)
+                                signal -> new SignalValidation(
+                                        toLocalDateFromJavaUtilDate(signal.getTimestamp()).get(ChronoField.YEAR), 1L));
+
+                signalValidation.foreachRDD(rdd -> {
+                    javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), SignalValidation.TABLE_NAME,
+                            mapToRow(SignalValidation.class)).saveToCassandra();
+                });
+            }
+
+            // 3) aggregate by key and aggregation time
 
             // -- key is by opc tag id and aggregation time
             final JavaPairDStream<Tuple2<Long, Date>, List<Signal>> pairDStream =
@@ -70,14 +91,14 @@ public final class ComputeCumulativeMetrics {
                     pairDStream.reduceByKey((signal1, signal2) -> Stream.of(signal1, signal2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
 
-            // 3) calculate stats
+            // 4) calculate stats
             final JavaMapWithStateDStream<Tuple2<Long, Date>, List<Signal>, SignalAggregation, SignalAggregation>
                     mapWithStateDStream = reduceByKey.mapWithState(StateSpec.function(
                     new AggregationFunctions.ComputeMovingSignalAggregationByOpcTagIdAndAggregation(driverConfig)).
                     // default timeout in seconds
                             timeout(Durations.seconds(60L)));
 
-            // 4) save aggregations
+            // 5) save aggregations
             mapWithStateDStream.foreachRDD(rdd -> {
                 CassandraJavaUtil.javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(),
                         SignalAggregation.TABLE_NAME, mapToRow(SignalAggregation.class)).
@@ -131,6 +152,11 @@ public final class ComputeCumulativeMetrics {
                 CassandraConnector.apply(streamingContext.sc().getConf()));
         Connections.createTable(SignalAggregation.createTableCql(driverConfig.getKeySpace()),
                 CassandraConnector.apply(streamingContext.sc().getConf()));
+        if (VALIDATE_COUNTS) {
+            // create the count table
+            Connections.createTable(SignalValidation.createTableCql(driverConfig.getKeySpace()),
+                    CassandraConnector.apply(streamingContext.sc().getConf()));
+        }
 
         // Start the streaming context and await termination
         LOGGER.info("SM: starting Compute Cumulative Signal Metrics Driver with master URL >{}<",
