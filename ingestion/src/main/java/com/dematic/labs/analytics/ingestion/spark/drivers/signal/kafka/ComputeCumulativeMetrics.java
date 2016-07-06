@@ -43,6 +43,8 @@ import static com.dematic.labs.toolkit.communication.SignalUtils.toInstantFromJa
 public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
     public static final String APP_NAME = "CUMULATIVE_SIGNAL_METRICS";
+    // just add a flag to be able to turn off and on validation of counts
+    private static final boolean VALIDATE_COUNTS = System.getProperty(DriverConsts.SPARK_DRIVER_VALIDATE_COUNTS) != null;
 
     private static final class ComputeCumulativeSignalMetrics implements VoidFunction<JavaDStream<byte[]>> {
         private final ComputeCumulativeMetricsDriverConfig driverConfig;
@@ -61,10 +63,7 @@ public final class ComputeCumulativeMetrics {
             });
 
             // 2) if validation needed, update counts
-            // just add a flag to be able to turn off reads and writes
-            boolean validateCounts =
-                    System.getProperty(DriverConsts.SPARK_DRIVER_VALIDATE_COUNTS) != null;
-            if (validateCounts) {
+            if (VALIDATE_COUNTS) {
                 // map to signal validation and save to cassandra
                 final JavaDStream<SignalValidation> signalValidation =
                         signals.map((Function<Signal, SignalValidation>)
@@ -153,6 +152,11 @@ public final class ComputeCumulativeMetrics {
                 CassandraConnector.apply(streamingContext.sc().getConf()));
         Connections.createTable(SignalAggregation.createTableCql(driverConfig.getKeySpace()),
                 CassandraConnector.apply(streamingContext.sc().getConf()));
+        if (VALIDATE_COUNTS) {
+            // create the count table
+            Connections.createTable(SignalValidation.createTableCql(driverConfig.getKeySpace()),
+                    CassandraConnector.apply(streamingContext.sc().getConf()));
+        }
 
         // Start the streaming context and await termination
         LOGGER.info("SM: starting Compute Cumulative Signal Metrics Driver with master URL >{}<",
