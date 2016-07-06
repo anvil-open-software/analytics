@@ -9,4 +9,5 @@ public interface DriverConsts {
 
     // for turning off explicit bucket writes, does not control lease table checkpointing.
     String SPARK_DRIVER_SKIP_DYNAMODB_WRITE = "dematiclabs.driver.dynamodb.skipwrite";
+    String SPARK_DRIVER_VALIDATE_COUNTS = "dematiclabs.driver.validate.counts";
 }
