@@ -9,8 +9,7 @@ public final class SignalValidation {
         return String.format("CREATE TABLE if not exists %s.%s (" +
                 " year int," +
                 " count counter," +
-                " PRIMARY KEY (year)" +
-                " WITH CLUSTERING ORDER BY (year DESC);", keyspace, TABLE_NAME);
+                " PRIMARY KEY (year));", keyspace, TABLE_NAME);
     }
 
     private int year;

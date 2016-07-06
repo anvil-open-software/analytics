@@ -71,7 +71,7 @@ public final class ComputeCumulativeMetrics {
                                         toInstantFromJavaUtilDate(signal.getTimestamp()).get(ChronoField.YEAR), 1L));
 
                 signalValidation.foreachRDD(rdd -> {
-                    javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME,
+                    javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), SignalValidation.TABLE_NAME,
                             mapToRow(SignalValidation.class)).saveToCassandra();
                 });
             }
