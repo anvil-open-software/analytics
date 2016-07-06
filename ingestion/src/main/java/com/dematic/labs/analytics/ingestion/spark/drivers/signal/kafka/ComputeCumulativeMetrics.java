@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
-import static com.dematic.labs.toolkit.communication.SignalUtils.toInstantFromJavaUtilDate;
+import static com.dematic.labs.toolkit.communication.SignalUtils.toLocalDateFromJavaUtilDate;
 
 public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
@@ -68,7 +68,7 @@ public final class ComputeCumulativeMetrics {
                 final JavaDStream<SignalValidation> signalValidation =
                         signals.map((Function<Signal, SignalValidation>)
                                 signal -> new SignalValidation(
-                                        toInstantFromJavaUtilDate(signal.getTimestamp()).get(ChronoField.YEAR), 1L));
+                                        toLocalDateFromJavaUtilDate(signal.getTimestamp()).get(ChronoField.YEAR), 1L));
 
                 signalValidation.foreachRDD(rdd -> {
                     javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), SignalValidation.TABLE_NAME,
