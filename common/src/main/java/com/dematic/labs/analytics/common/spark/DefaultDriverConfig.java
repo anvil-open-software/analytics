@@ -60,23 +60,6 @@ public class DefaultDriverConfig implements Serializable {
         return checkPointDir;
     }
 
-    /**
-     *
-     * @return duration taken from environment variable spark.kinesis.checkpoint.window
-     */
-    public static Duration getKinesisCheckpointWindow() {
-        long default_window = 30; //default 30 seconds.
-        Duration window;
-        String windowStr = System.getProperty(DriverConsts.SPARK_KINESIS_CHECKPOINT_WINDOW_IN_SECONDS);
-        if (!Strings.isNullOrEmpty(windowStr) ) {
-            window = Durations.seconds(Integer.valueOf(windowStr));
-        } else {
-            window= Durations.seconds(default_window);
-        }
-        LOGGER.info("using >{}< Kinesis checkpoiting window", window);
-        return window;
-    }
-
     public void setCheckPointDir(final String checkPointDir) {
         this.checkPointDir = checkPointDir;
     }

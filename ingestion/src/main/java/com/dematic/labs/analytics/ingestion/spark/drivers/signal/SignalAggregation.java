@@ -126,7 +126,7 @@ public class SignalAggregation implements Serializable {
     }
 
     public Double getAvg() {
-        return getCount() > 0 ? (double) getSum() / getCount() : 0.0d;
+        return count > 0 ? (double) sum / count : 0.0d;
     }
 
     @Override

@@ -46,6 +46,9 @@ public final class ComputeCumulativeMetrics {
     // just add a flag to be able to turn off and on validation of counts
     private static final boolean VALIDATE_COUNTS = System.getProperty(DriverConsts.SPARK_DRIVER_VALIDATE_COUNTS) != null;
 
+    private ComputeCumulativeMetrics() {
+    }
+
     private static final class ComputeCumulativeSignalMetrics implements VoidFunction<JavaDStream<byte[]>> {
         private final ComputeCumulativeMetricsDriverConfig driverConfig;
 
@@ -107,7 +110,7 @@ public final class ComputeCumulativeMetrics {
         }
     }
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws InterruptedException {
         // master url is only set for testing or running locally
         if (args.length < 3) {
             throw new IllegalArgumentException("Driver requires Kafka Server Bootstrap, Kafka topics" +
@@ -149,13 +152,13 @@ public final class ComputeCumulativeMetrics {
 
         // create the cassandra tables
         Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
-                CassandraConnector.apply(streamingContext.sc().getConf()));
+                CassandraConnector.apply(streamingContext.sparkContext().getConf()));
         Connections.createTable(SignalAggregation.createTableCql(driverConfig.getKeySpace()),
-                CassandraConnector.apply(streamingContext.sc().getConf()));
+                CassandraConnector.apply(streamingContext.sparkContext().getConf()));
         if (VALIDATE_COUNTS) {
             // create the count table
             Connections.createTable(SignalValidation.createTableCql(driverConfig.getKeySpace()),
-                    CassandraConnector.apply(streamingContext.sc().getConf()));
+                    CassandraConnector.apply(streamingContext.sparkContext().getConf()));
         }
 
         // Start the streaming context and await termination

@@ -11,7 +11,7 @@ public enum Aggregation {
     HOUR(ChronoUnit.HOURS),
     MINUTE(ChronoUnit.MINUTES);
 
-    private ChronoUnit chronoUnit;
+    private final ChronoUnit chronoUnit;
 
     Aggregation(final ChronoUnit chronoUnit) {
         this.chronoUnit = chronoUnit;
