@@ -32,7 +32,7 @@
             <dependency>
                 <groupId>com.dematic.labs</groupId>
                 <artifactId>common-dep</artifactId>
-                <version>1.0.2-SNAPSHOT</version>
+                <version>1.0.1</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -53,12 +53,12 @@
         <dependency>
             <groupId>com.dematic.labs</groupId>
             <artifactId>toolkit</artifactId>
-            <version>1.0.3-SNAPSHOT</version>
+            <version>1.0.2</version>
         </dependency>
         <dependency>
             <groupId>com.dematic.labs</groupId>
             <artifactId>toolkit</artifactId>
-            <version>1.0.3-SNAPSHOT</version>
+            <version>1.0.2</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
