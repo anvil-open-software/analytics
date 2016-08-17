@@ -2,7 +2,7 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.signal;
 
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.toolkit.communication.Signal;
-import com.google.common.base.Optional;
+import org.apache.spark.api.java.Optional;
 import org.apache.spark.api.java.function.Function4;
 import org.apache.spark.streaming.State;
 import org.apache.spark.streaming.Time;

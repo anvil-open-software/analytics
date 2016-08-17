@@ -22,6 +22,9 @@ public final class CassandraPersister {
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraPersister.class);
     public static final String APP_NAME = "CASSANDRA_PERSISTER";
 
+    private CassandraPersister() {
+    }
+
     // signal stream processing function
     private static final class PersistFunction implements VoidFunction<JavaDStream<byte[]>> {
         private final CassandraDriverConfig driverConfig;
@@ -41,7 +44,7 @@ public final class CassandraPersister {
         }
     }
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws InterruptedException {
         // master url is only set for testing or running locally
         if (args.length < 3) {
             throw new IllegalArgumentException("Driver requires Kafka Server Bootstrap, Kafka topics" +
@@ -79,7 +82,7 @@ public final class CassandraPersister {
                         new PersistFunction(driverConfig)));
         // creates the table in cassandra to store raw signals
         Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
-                CassandraConnector.apply(streamingContext.sc().getConf()));
+                CassandraConnector.apply(streamingContext.sparkContext().getConf()));
 
         // Start the streaming context and await termination
         LOGGER.info("KCP: starting Kafka Cassandra Persister Driver with master URL >{}<",

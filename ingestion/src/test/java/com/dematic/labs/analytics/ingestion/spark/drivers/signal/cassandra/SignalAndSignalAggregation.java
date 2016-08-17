@@ -17,7 +17,7 @@ import java.time.ZoneId;
 import java.util.stream.IntStream;
 
 public final class SignalAndSignalAggregation {
-    private static EmbeddedCassandraRule cassandraUnit = new EmbeddedCassandraRule();
+    private static final EmbeddedCassandraRule cassandraUnit = new EmbeddedCassandraRule();
     @ClassRule
     public static final TestRule systemPropertyRule = RuleChain.outerRule(new SystemPropertyRule()).around(cassandraUnit);
 
@@ -36,25 +36,25 @@ public final class SignalAndSignalAggregation {
             // 5) add signals
             insertSignals(session, keyspace, 50);
             // 6) query signals
-            final ResultSet execute = session.execute("SELECT * FROM " + keyspace + "." + Signal.TABLE_NAME + ";");
+            final ResultSet execute = session.execute("SELECT * FROM " + keyspace + '.' + Signal.TABLE_NAME + ';');
             Assert.assertEquals(50, execute.all().size());
         }
     }
 
-    private void insertSignals(final Session session, final String keyspace, final int numOfSignals) {
+    private static void insertSignals(final Session session, final String keyspace, final int numOfSignals) {
         final int[] ints = {1};
         IntStream.range(0, numOfSignals).forEach(signal -> {
-            session.execute("INSERT INTO " + keyspace + "." + Signal.TABLE_NAME +
+            session.execute("INSERT INTO " + keyspace + '.' + Signal.TABLE_NAME +
                     " (unique_id, id, value, day, timestamp, quality, opc_tag_reading_id, opc_tag_id, proxied_type_name, extended_properties) " +
                     "VALUES (" +
                     "'null'," +
-                    ints[0] + "," +
-                    ints[0] + "," +
+                    ints[0] + ',' +
+                    ints[0] + ',' +
                     "'2016-06-14T00:00:00Z'," +
-                    "'" + Instant.now().atZone(ZoneId.of("Z")).toString() + "'," +
-                    ints[0] + "," +
-                    ints[0] + "," +
-                    ints[0] + "," +
+                    '\'' + Instant.now().atZone(ZoneId.of("Z")).toString() + "'," +
+                    ints[0] + ',' +
+                    ints[0] + ',' +
+                    ints[0] + ',' +
                     "'Odatech.Business.Integration.OPCTagReading'," +
                     "['test']);"
             );
@@ -77,23 +77,23 @@ public final class SignalAndSignalAggregation {
             // 5) add signal aggregations
             insertSignalAggregation(session, keyspace, 50);
             // 6) query signal aggregation table
-            final ResultSet execute = session.execute("SELECT * FROM " + keyspace + "." +
-                    SignalAggregation.TABLE_NAME + ";");
+            final ResultSet execute = session.execute("SELECT * FROM " + keyspace + '.' +
+                    SignalAggregation.TABLE_NAME + ';');
             Assert.assertEquals(50, execute.all().size());
         }
     }
 
-    private void insertSignalAggregation(final Session session, final String keyspace, final int numOfSignals) {
+    private static void insertSignalAggregation(final Session session, final String keyspace, final int numOfSignals) {
         final int[] ints = {1};
         IntStream.range(0, numOfSignals).forEach(signal -> {
-            session.execute("INSERT INTO " + keyspace + "." + SignalAggregation.TABLE_NAME +
+            session.execute("INSERT INTO " + keyspace + '.' + SignalAggregation.TABLE_NAME +
                     " (opc_tag_id, aggregate, count, sum, min, max) " +
                     "VALUES (" +
-                    ints[0] + "," +
+                    ints[0] + ',' +
                     "'2016-06-17T17:16:00Z'," +
-                    ints[0] + "," +
-                    ints[0] + "," +
-                    ints[0] + "," +
+                    ints[0] + ',' +
+                    ints[0] + ',' +
+                    ints[0] + ',' +
                     ints[0] + ");"
             );
             ints[0] = ints[0] + 1;

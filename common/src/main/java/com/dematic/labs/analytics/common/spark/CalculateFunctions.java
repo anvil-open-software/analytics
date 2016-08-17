@@ -13,9 +13,9 @@ public final class CalculateFunctions implements Serializable {
     }
 
     // Lambda Functions
-    public static Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
+    public static final Function2<Long, Long, Long> SUM_REDUCER = (a, b) -> a + b;
 
-    public static Function2<List<Long>, Optional<Long>, Optional<Long>> COMPUTE_RUNNING_SUM
+    public static final Function2<List<Long>, Optional<Long>, Optional<Long>> COMPUTE_RUNNING_SUM
             = (nums, existing) -> {
         long sum = existing.orElse(0L);
         for (long i : nums) {
@@ -24,10 +24,10 @@ public final class CalculateFunctions implements Serializable {
         return Optional.of(sum);
     };
 
-    public static Function2<Tuple2<Double, Long>, Tuple2<Double, Long>, Tuple2<Double, Long>> SUM_AND_COUNT_REDUCER
+    public static final Function2<Tuple2<Double, Long>, Tuple2<Double, Long>, Tuple2<Double, Long>> SUM_AND_COUNT_REDUCER
             = (x, y) -> new Tuple2<>(x._1() + y._1(), x._2() + y._2());
 
-    public static Function2<List<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>>
+    public static final Function2<List<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>, Optional<Tuple2<Double, Long>>>
             COMPUTE_RUNNING_AVG = (sums, existing) -> {
         Tuple2<Double, Long> avgAndCount = existing.orElse(new Tuple2<>(0.0, 0L));
 
