@@ -9,7 +9,7 @@ public final class Connections {
     }
 
     public static void createTable(final String cql, final CassandraConnector connector) {
-        try (Session session = connector.openSession()) {
+        try (final Session session = connector.openSession()) {
             session.execute(cql);
         }
     }
