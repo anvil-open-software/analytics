@@ -64,7 +64,7 @@ public final class ComputeCumulativeMetrics {
                 // map to signal validation and save to cassandra
                 final JavaDStream<SignalValidation> signalValidation =
                         signals.map((Function<Signal, SignalValidation>)
-                                signal -> new SignalValidation(driverConfig.getAppName(), null, null, 1L));
+                                signal -> new SignalValidation(driverConfig.getAppName(), 0L, 0L, 1L));
 
                 signalValidation.foreachRDD(rdd -> {
                     javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), SignalValidation.TABLE_NAME,
