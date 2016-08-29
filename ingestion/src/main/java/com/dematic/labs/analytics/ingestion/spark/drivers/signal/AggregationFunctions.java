@@ -18,6 +18,7 @@ public final class AggregationFunctions implements Serializable {
 
     public static final class ComputeMovingSignalAggregationByOpcTagIdAndAggregation
             implements Function4<Time, Tuple2<Long, Date>, Optional<List<Signal>>, State<SignalAggregation>, Optional<SignalAggregation>> {
+        @SuppressWarnings("unused") // todo: configure when needed
         private final CassandraDriverConfig driverConfig;
 
         public ComputeMovingSignalAggregationByOpcTagIdAndAggregation(final CassandraDriverConfig driverConfig) {
@@ -50,7 +51,6 @@ public final class AggregationFunctions implements Serializable {
                 state.update(signalAggregation);
             } else {
                 // create initial state,
-
                 signalAggregation = new SignalAggregation(key._1(), key._2());
                 signalAggregation.computeAggregations(signals.get());
                 state.update(signalAggregation);

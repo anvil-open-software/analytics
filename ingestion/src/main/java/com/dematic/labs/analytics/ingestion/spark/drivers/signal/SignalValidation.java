@@ -7,54 +7,81 @@ public final class SignalValidation {
 
     public static String createTableCql(final String keyspace) {
         return String.format("CREATE TABLE if not exists %s.%s (" +
-                " year int," +
-                " count counter," +
-                " PRIMARY KEY (year));", keyspace, TABLE_NAME);
+                " id text," +
+                " producer_count counter," +
+                " producer_error_count counter," +
+                " spark_count counter," +
+                " PRIMARY KEY (id));", keyspace, TABLE_NAME);
     }
 
-    private int year;
-    private Long count;
+    private String id;
+    private Long producerCount;
+    private Long producerErrorCount;
+    private Long sparkCount;
 
-    public SignalValidation(final int year, final Long count) {
-        this.year = year;
-        this.count = count;
+    public SignalValidation(final String id, final Long producerCount, final Long producerErrorCount,
+                            final Long sparkCount) {
+        this.id = id;
+        this.producerCount = producerCount;
+        this.producerErrorCount = producerErrorCount;
+        this.sparkCount = sparkCount;
     }
 
-    public int getYear() {
-        return year;
+    public String getId() {
+        return id;
     }
 
-    public void setYear(final int year) {
-        this.year = year;
+    public void setId(final String id) {
+        this.id = id;
     }
 
-    public Long getCount() {
-        return count;
+    public Long getProducerCount() {
+        return producerCount;
     }
 
-    public void setCount(final Long count) {
-        this.count = count;
+    public void setProducerCount(final Long producerCount) {
+        this.producerCount = producerCount;
+    }
+
+    public Long getProducerErrorCount() {
+        return producerErrorCount;
+    }
+
+    public void setProducerErrorCount(final Long producerErrorCount) {
+        this.producerErrorCount = producerErrorCount;
+    }
+
+    public Long getSparkCount() {
+        return sparkCount;
+    }
+
+    public void setSparkCount(final Long sparkCount) {
+        this.sparkCount = sparkCount;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SignalValidation that = (SignalValidation) o;
-        return year == that.year &&
-                Objects.equals(count, that.count);
+        return Objects.equals(id, that.id) &&
+                Objects.equals(producerCount, that.producerCount) &&
+                Objects.equals(producerErrorCount, that.producerErrorCount) &&
+                Objects.equals(sparkCount, that.sparkCount);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(year, count);
+        return Objects.hash(id, producerCount, producerErrorCount, sparkCount);
     }
 
     @Override
     public String toString() {
         return "SignalValidation{" +
-                "year=" + year +
-                ", count=" + count +
+                "id='" + id + '\'' +
+                ", producerCount=" + producerCount +
+                ", producerErrorCount=" + producerErrorCount +
+                ", sparkCount=" + sparkCount +
                 '}';
     }
 }

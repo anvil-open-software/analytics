@@ -7,11 +7,7 @@ import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
-import com.dematic.labs.analytics.ingestion.spark.drivers.signal.Aggregation;
-import com.dematic.labs.analytics.ingestion.spark.drivers.signal.AggregationFunctions;
-import com.dematic.labs.analytics.ingestion.spark.drivers.signal.ComputeCumulativeMetricsDriverConfig;
-import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregation;
-import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalValidation;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.*;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.dematic.labs.toolkit.communication.SignalUtils;
@@ -28,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
-import java.time.temporal.ChronoField;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -38,7 +33,6 @@ import java.util.stream.Stream;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
-import static com.dematic.labs.toolkit.communication.SignalUtils.toLocalDateFromJavaUtilDate;
 
 public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
@@ -70,8 +64,7 @@ public final class ComputeCumulativeMetrics {
                 // map to signal validation and save to cassandra
                 final JavaDStream<SignalValidation> signalValidation =
                         signals.map((Function<Signal, SignalValidation>)
-                                signal -> new SignalValidation(
-                                        toLocalDateFromJavaUtilDate(signal.getTimestamp()).get(ChronoField.YEAR), 1L));
+                                signal -> new SignalValidation(driverConfig.getAppName(), 0L, 0L, 1L));
 
                 signalValidation.foreachRDD(rdd -> {
                     javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), SignalValidation.TABLE_NAME,
@@ -155,6 +148,7 @@ public final class ComputeCumulativeMetrics {
                 CassandraConnector.apply(streamingContext.sparkContext().getConf()));
         Connections.createTable(SignalAggregation.createTableCql(driverConfig.getKeySpace()),
                 CassandraConnector.apply(streamingContext.sparkContext().getConf()));
+
         if (VALIDATE_COUNTS) {
             // create the count table
             Connections.createTable(SignalValidation.createTableCql(driverConfig.getKeySpace()),
