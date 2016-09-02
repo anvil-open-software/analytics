@@ -37,6 +37,7 @@ import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
     public static final String APP_NAME = "CUMULATIVE_SIGNAL_METRICS";
+
     // just add a flag to be able to turn off and on validation of counts
     private static final boolean VALIDATE_COUNTS = System.getProperty(DriverConsts.SPARK_DRIVER_VALIDATE_COUNTS) != null;
 
