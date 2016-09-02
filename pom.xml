@@ -104,7 +104,7 @@
         <!-- kafka support -->
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming-kafka-0-8_2.11</artifactId>
+            <artifactId>spark-streaming-kafka-0-10_2.11</artifactId>
             <version>2.0.0</version>
             <exclusions>
                 <exclusion>

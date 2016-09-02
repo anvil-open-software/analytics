@@ -1,17 +1,17 @@
 package com.dematic.labs.analytics.common.spark;
 
 import com.google.common.base.Strings;
-import kafka.serializer.DefaultDecoder;
-import kafka.serializer.StringDecoder;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaPairInputDStream;
+import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.kafka.KafkaUtils;
-import scala.Tuple2;
+import org.apache.spark.streaming.kafka010.ConsumerStrategies;
+import org.apache.spark.streaming.kafka010.KafkaUtils;
+import org.apache.spark.streaming.kafka010.LocationStrategies;
 
 import java.io.Serializable;
 
@@ -31,11 +31,12 @@ public final class StreamFunctions implements Serializable {
 
         @Override
         public JavaDStream<byte[]> call() throws Exception {
-            final JavaPairInputDStream<String, byte[]> directStream =
-                    KafkaUtils.createDirectStream(streamingContext, String.class, byte[].class, StringDecoder.class,
-                            DefaultDecoder.class, streamConfig.getAdditionalConfiguration(), streamConfig.getTopics());
+            final JavaInputDStream<ConsumerRecord<String, byte[]>> directStream =
+                    KafkaUtils.createDirectStream(streamingContext, LocationStrategies.PreferConsistent(),
+                            ConsumerStrategies.<String, byte[]>Subscribe(streamConfig.getTopics(),
+                                    streamConfig.getAdditionalConfiguration()));
             // get the dstream
-            return directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
+            return directStream.map((Function<ConsumerRecord<String, byte[]>, byte[]>) ConsumerRecord::value);
         }
     }
 

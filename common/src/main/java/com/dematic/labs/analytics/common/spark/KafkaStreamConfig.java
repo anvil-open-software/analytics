@@ -13,7 +13,7 @@ public final class KafkaStreamConfig implements StreamConfig {
 
     private String streamEndpoint; // kafka bootstrap.servers
     private String streamName; // kafka topics
-    private Map<String, String> additionalConfiguration;
+    private Map<String, Object> additionalConfiguration;
 
     public KafkaStreamConfig() {
         additionalConfiguration = new HashMap<>();
@@ -42,12 +42,12 @@ public final class KafkaStreamConfig implements StreamConfig {
     }
 
     @Override
-    public Map<String, String> getAdditionalConfiguration() {
+    public Map<String, Object> getAdditionalConfiguration() {
         return additionalConfiguration;
     }
 
     @Override
-    public void setAdditionalConfiguration(final Map<String, String> additionalConfiguration) {
+    public void setAdditionalConfiguration(final Map<String, Object> additionalConfiguration) {
         this.additionalConfiguration = additionalConfiguration;
     }
 
