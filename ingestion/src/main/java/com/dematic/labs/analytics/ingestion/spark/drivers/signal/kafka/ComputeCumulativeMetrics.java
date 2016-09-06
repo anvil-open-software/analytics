@@ -184,36 +184,17 @@ public final class ComputeCumulativeMetrics {
         streamingContext.awaitTermination();
     }
 
-    /**
-     *
-     * @param prefix
-     * @return map with any system properties starting with prefix
-     * todo could not find utility. but should be put in some generic utils class
-     */
-    public static Map<String,String> getSystemPrefixedProperties(String prefix){
-        Map<String,String> prefixedMap= new HashMap<>();
-        for(String propName: System.getProperties().stringPropertyNames()){
-            if(propName.startsWith(prefix)){
-                String key = propName.substring(prefix.length());
-                prefixedMap.put(key, System.getProperty(propName));
-            }
-        }
-        return prefixedMap;
-    }
+
     private static ComputeCumulativeMetricsDriverConfig configure(final String appName,
                                                                   final String kafkaServerBootstrap,
                                                                   final String kafkaTopics, final String host,
                                                                   final String keySpace, final String masterUrl,
                                                                   final Aggregation aggregationBy,
                                                                   final String pollTime) {
-        // any jvm property starting with kafka.additionalconfig.
-        Map<String,String> additionalConfig= getSystemPrefixedProperties("kafka.additionalconfig.");
-        LOGGER.info("Add additional properties for kafka: >{}<", additionalConfig);
 
         final StreamConfig kafkaStreamConfig = GenericBuilder.of(KafkaStreamConfig::new)
                 .with(KafkaStreamConfig::setStreamEndpoint, kafkaServerBootstrap)
                 .with(KafkaStreamConfig::setStreamName, kafkaTopics)
-                .with(KafkaStreamConfig::setAdditionalConfiguration, additionalConfig)
                 .build();
 
         return GenericBuilder.of(ComputeCumulativeMetricsDriverConfig::new)

@@ -1,6 +1,8 @@
 package com.dematic.labs.analytics.common.spark;
 
 import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -9,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 public final class KafkaStreamConfig implements StreamConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamConfig.class);
     public static final String BOOTSTRAP_SERVERS_KEY = "bootstrap.servers";
 
     private String streamEndpoint; // kafka bootstrap.servers
@@ -17,7 +20,28 @@ public final class KafkaStreamConfig implements StreamConfig {
 
     public KafkaStreamConfig() {
         additionalConfiguration = new HashMap<>();
+        // any jvm property starting with kafka.additionalconfig.
+        addPrefixedSystemProperties(additionalConfiguration, "kafka.additionalconfig.");
     }
+
+
+    /**
+     *
+     * @param prefix
+     * @return map with any system properties starting with prefix
+     * todo could not find utility. but should be put in some generic utils class in toolkit
+     */
+    public static void addPrefixedSystemProperties(Map<String,String> properties, String prefix){
+        for(String propName: System.getProperties().stringPropertyNames()){
+            if(propName.startsWith(prefix)){
+                String key = propName.substring(prefix.length());
+                String value=  System.getProperty(propName);
+                properties.put(key,value);
+                LOGGER.info("Adding property for " + key +"="+ value);
+            }
+        }
+    }
+
 
     @Override
     public String getStreamEndpoint() {
