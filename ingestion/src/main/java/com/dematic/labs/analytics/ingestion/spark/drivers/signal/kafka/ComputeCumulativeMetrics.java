@@ -11,6 +11,7 @@ import com.dematic.labs.analytics.ingestion.spark.drivers.signal.*;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.dematic.labs.toolkit.communication.SignalUtils;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
@@ -20,6 +21,8 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaMapWithStateDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.kafka.HasOffsetRanges;
+import org.apache.spark.streaming.kafka.OffsetRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -27,7 +30,10 @@ import scala.Tuple2;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,10 +60,26 @@ public final class ComputeCumulativeMetrics {
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
             // 1) transform the byte[] (byte arrays are json) to signals and save raw signals
             final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
+            // Hold a reference to the
+            // current offset ranges, so it can be used downstream
+            final AtomicReference<OffsetRange[]> offsetRanges = new AtomicReference<>();
+
+
             signals.foreachRDD(rdd -> {
+                // save the offsets
+                final OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
+                offsetRanges.set(offsets);
+
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
                         saveToCassandra();
             });
+
+            signals.foreachRDD((VoidFunction<JavaRDD<Signal>>) signalJavaRDD -> {
+                for (final OffsetRange o : offsetRanges.get()) {
+                    LOGGER.info(o.topic() + ' ' + o.partition() + ' ' + o.fromOffset() + ' ' + o.untilOffset());
+                }
+            });
+
 
             // 2) if validation needed, update counts
             if (VALIDATE_COUNTS) {
@@ -163,15 +185,35 @@ public final class ComputeCumulativeMetrics {
         streamingContext.awaitTermination();
     }
 
+    /**
+     *
+     * @param prefix
+     * @return map with any system properties starting with prefix
+     * todo could not find utility. but should be put in some generic utils class
+     */
+    public static Map<String,String> getSystemPrefixedProperties(String prefix){
+        Map<String,String> prefixedMap= new HashMap<>();
+        for(String propName: System.getProperties().stringPropertyNames()){
+            if(propName.startsWith(prefix)){
+                String key = propName.substring(prefix.length());
+                prefixedMap.put(key, System.getProperty(propName));
+            }
+        }
+        return prefixedMap;
+    }
     private static ComputeCumulativeMetricsDriverConfig configure(final String appName,
                                                                   final String kafkaServerBootstrap,
                                                                   final String kafkaTopics, final String host,
                                                                   final String keySpace, final String masterUrl,
                                                                   final Aggregation aggregationBy,
                                                                   final String pollTime) {
+        // any jvm property starting with kafka.additionalconfig.
+        Map<String,String> additionalConfig= getSystemPrefixedProperties("kafka.additionalconfig.");
+
         final StreamConfig kafkaStreamConfig = GenericBuilder.of(KafkaStreamConfig::new)
                 .with(KafkaStreamConfig::setStreamEndpoint, kafkaServerBootstrap)
                 .with(KafkaStreamConfig::setStreamName, kafkaTopics)
+                .with(KafkaStreamConfig::setAdditionalConfiguration, additionalConfig)
                 .build();
 
         return GenericBuilder.of(ComputeCumulativeMetricsDriverConfig::new)
