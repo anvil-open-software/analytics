@@ -65,12 +65,14 @@ public final class ComputeCumulativeMetrics {
             final AtomicReference<OffsetRange[]> offsetRanges = new AtomicReference<>();
 
             signals.foreachRDD(rdd -> {
+                // save the offsets, MUST be the method called on the directKafkaStream
+                final OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
+                offsetRanges.set(offsets);
+
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
                         saveToCassandra();
 
-                // save the offsets
-                final OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-                offsetRanges.set(offsets);
+
             });
 
             signals.foreachRDD((VoidFunction<JavaRDD<Signal>>) signalJavaRDD -> {
