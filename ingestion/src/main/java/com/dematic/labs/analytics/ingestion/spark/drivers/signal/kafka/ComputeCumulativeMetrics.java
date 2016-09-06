@@ -64,14 +64,13 @@ public final class ComputeCumulativeMetrics {
             // current offset ranges, so it can be used downstream
             final AtomicReference<OffsetRange[]> offsetRanges = new AtomicReference<>();
 
-
             signals.foreachRDD(rdd -> {
+                javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
+                        saveToCassandra();
+
                 // save the offsets
                 final OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
                 offsetRanges.set(offsets);
-
-                javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
-                        saveToCassandra();
             });
 
             signals.foreachRDD((VoidFunction<JavaRDD<Signal>>) signalJavaRDD -> {
@@ -209,6 +208,7 @@ public final class ComputeCumulativeMetrics {
                                                                   final String pollTime) {
         // any jvm property starting with kafka.additionalconfig.
         Map<String,String> additionalConfig= getSystemPrefixedProperties("kafka.additionalconfig.");
+        LOGGER.info("Add additional properties for kafka: >{}<", additionalConfig);
 
         final StreamConfig kafkaStreamConfig = GenericBuilder.of(KafkaStreamConfig::new)
                 .with(KafkaStreamConfig::setStreamEndpoint, kafkaServerBootstrap)
