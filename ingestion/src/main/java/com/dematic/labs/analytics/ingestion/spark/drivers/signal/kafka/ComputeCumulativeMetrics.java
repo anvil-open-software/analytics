@@ -11,6 +11,7 @@ import com.dematic.labs.analytics.ingestion.spark.drivers.signal.*;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.dematic.labs.toolkit.communication.SignalUtils;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
@@ -58,26 +59,32 @@ public final class ComputeCumulativeMetrics {
 
         @Override
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
-            // 1) transform the byte[] (byte arrays are json) to signals and save raw signals
-            final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
-            // Hold a reference to the
-            // current offset ranges, so it can be used downstream
             final AtomicReference<OffsetRange[]> offsetRanges = new AtomicReference<>();
 
-            signals.foreachRDD(rdd -> {
-                // save the offsets, MUST be the method called on the directKafkaStream
-                final OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-                offsetRanges.set(offsets);
+            // 1. save the offsets, MUST be the first method called on the directKafkaStream
+            final JavaDStream<Signal> signals = javaDStream.transform(
+                    new Function<JavaRDD<byte[]>, JavaRDD<byte[]>>() {
+                        @Override
+                        public JavaRDD<byte[]> call(JavaRDD<byte[]> rdd) throws Exception {
+                            OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
+                            offsetRanges.set(offsets);
+                            return rdd;
+                        }
+                    }
+            // 2) transform the byte[] (byte arrays are json) to signals and save raw signals
+            ).map(SignalUtils::jsonByteArrayToSignal);
 
+
+            signals.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
                         saveToCassandra();
-
 
             });
 
             signals.foreachRDD((VoidFunction<JavaRDD<Signal>>) signalJavaRDD -> {
                 for (final OffsetRange o : offsetRanges.get()) {
-                    LOGGER.info(o.topic() + ' ' + o.partition() + ' ' + o.fromOffset() + ' ' + o.untilOffset());
+                    // todo ramp down to info
+                    LOGGER.warn("OFFSET:" +  o.topic() + ' ' + o.partition() + ' ' + o.fromOffset() + ' ' + o.untilOffset());
                 }
             });
 
