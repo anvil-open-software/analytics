@@ -45,33 +45,17 @@ public final class StreamFunctions implements Serializable {
                     KafkaUtils.createDirectStream(streamingContext, String.class, byte[].class, StringDecoder.class,
                             DefaultDecoder.class, streamConfig.getAdditionalConfiguration(), streamConfig.getTopics());
 
-            final AtomicReference<OffsetRange[]> offsetRanges = new AtomicReference<>();
 
-            // get the offsets first
-            directStream.transformToPair(
-                    new Function<JavaPairRDD<String, byte[]>, JavaPairRDD<String, byte[]>>() {
-                        @Override
-                        public JavaPairRDD<String, byte[]> call(JavaPairRDD<String, byte[]> rdd) throws Exception {
-                            OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-                            offsetRanges.set(offsets);
-                            // see if this part is even being called
-                            for (final OffsetRange o : offsetRanges.get()) {
-                                LOGGER.warn("OFFSET: "+ o.topic() + ' ' + o.partition() + ' ' + o.fromOffset() + ' ' + o.untilOffset());
-                            }
-                            return rdd;
-                        }
-                    });
-
-            JavaDStream<byte[]> jsonByteRdd =directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
-
-            // log the offsets
             if (System.getProperty("com.dlabs.kafka.offset.debug.log") != null) {
-                jsonByteRdd.foreachRDD((VoidFunction<JavaRDD<byte[]>>) signalJavaRDD -> {
-                    for (final OffsetRange o : offsetRanges.get()) {
-                        LOGGER.warn("OFFSET: " + o.topic() + ' ' + o.partition() + ' ' + o.fromOffset() + ' ' + o.untilOffset());
+                directStream.foreachRDD(rdd -> {
+                    final OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
+                    for (final OffsetRange offset : offsets) {
+                        LOGGER.info("OFFSET: " + offset.topic() + ' ' + offset.partition() + ' ' + offset.fromOffset() + ' ' + offset.untilOffset());
                     }
                 });
             }
+
+            JavaDStream<byte[]> jsonByteRdd =directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
 
             return jsonByteRdd;
         }
