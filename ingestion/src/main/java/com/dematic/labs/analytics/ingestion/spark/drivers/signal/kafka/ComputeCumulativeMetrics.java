@@ -11,8 +11,6 @@ import com.dematic.labs.analytics.ingestion.spark.drivers.signal.*;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.dematic.labs.toolkit.communication.SignalUtils;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
@@ -22,8 +20,6 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaMapWithStateDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.kafka.HasOffsetRanges;
-import org.apache.spark.streaming.kafka.OffsetRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -31,10 +27,7 @@ import scala.Tuple2;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -59,33 +52,14 @@ public final class ComputeCumulativeMetrics {
 
         @Override
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
-            final AtomicReference<OffsetRange[]> offsetRanges = new AtomicReference<>();
 
-            // 1. save the offsets, MUST be the first method called on the directKafkaStream
-            final JavaDStream<Signal> signals = javaDStream.transform(
-                    new Function<JavaRDD<byte[]>, JavaRDD<byte[]>>() {
-                        @Override
-                        public JavaRDD<byte[]> call(JavaRDD<byte[]> rdd) throws Exception {
-                            OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-                            offsetRanges.set(offsets);
-                            return rdd;
-                        }
-                    }
-            // 2) transform the byte[] (byte arrays are json) to signals and save raw signals
-            ).map(SignalUtils::jsonByteArrayToSignal);
-
+            // 1. transform the byte[] (byte arrays are json) to signals and save raw signals
+            final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
 
             signals.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
                         saveToCassandra();
 
-            });
-
-            signals.foreachRDD((VoidFunction<JavaRDD<Signal>>) signalJavaRDD -> {
-                for (final OffsetRange o : offsetRanges.get()) {
-                    // todo ramp down to info
-                    LOGGER.warn("OFFSET:" +  o.topic() + ' ' + o.partition() + ' ' + o.fromOffset() + ' ' + o.untilOffset());
-                }
             });
 
 
