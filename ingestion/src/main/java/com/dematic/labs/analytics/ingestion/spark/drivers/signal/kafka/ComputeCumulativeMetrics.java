@@ -52,12 +52,16 @@ public final class ComputeCumulativeMetrics {
 
         @Override
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
-            // 1) transform the byte[] (byte arrays are json) to signals and save raw signals
+
+            // 1. transform the byte[] (byte arrays are json) to signals and save raw signals
             final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
+
             signals.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
                         saveToCassandra();
+
             });
+
 
             // 2) if validation needed, update counts
             if (VALIDATE_COUNTS) {
@@ -163,12 +167,14 @@ public final class ComputeCumulativeMetrics {
         streamingContext.awaitTermination();
     }
 
+
     private static ComputeCumulativeMetricsDriverConfig configure(final String appName,
                                                                   final String kafkaServerBootstrap,
                                                                   final String kafkaTopics, final String host,
                                                                   final String keySpace, final String masterUrl,
                                                                   final Aggregation aggregationBy,
                                                                   final String pollTime) {
+
         final StreamConfig kafkaStreamConfig = GenericBuilder.of(KafkaStreamConfig::new)
                 .with(KafkaStreamConfig::setStreamEndpoint, kafkaServerBootstrap)
                 .with(KafkaStreamConfig::setStreamName, kafkaTopics)
