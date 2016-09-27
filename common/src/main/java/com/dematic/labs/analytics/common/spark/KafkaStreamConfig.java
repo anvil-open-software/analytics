@@ -37,7 +37,7 @@ public final class KafkaStreamConfig implements StreamConfig {
                 String key = propName.substring(prefix.length());
                 String value=  System.getProperty(propName);
                 properties.put(key,value);
-                LOGGER.info("Adding property for " + key +"="+ value);
+                LOGGER.info("Adding property for " + key + '=' + value);
             }
         }
     }

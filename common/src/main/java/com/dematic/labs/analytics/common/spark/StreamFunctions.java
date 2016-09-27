@@ -4,8 +4,6 @@ import com.google.common.base.Strings;
 import kafka.serializer.DefaultDecoder;
 import kafka.serializer.StringDecoder;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.VoidFunction;
@@ -19,9 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicReference;
 
 public final class StreamFunctions implements Serializable {
 
@@ -55,9 +51,7 @@ public final class StreamFunctions implements Serializable {
                 });
             }
 
-            JavaDStream<byte[]> jsonByteRdd =directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
-
-            return jsonByteRdd;
+            return directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
         }
     }
 
