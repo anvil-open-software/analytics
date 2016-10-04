@@ -3,10 +3,7 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.signal.kafka;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.dematic.labs.analytics.common.cassandra.Connections;
-import com.dematic.labs.analytics.common.spark.DriverConsts;
-import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
-import com.dematic.labs.analytics.common.spark.StreamConfig;
-import com.dematic.labs.analytics.common.spark.StreamFunctions;
+import com.dematic.labs.analytics.common.spark.*;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.*;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
@@ -52,8 +49,14 @@ public final class ComputeCumulativeMetrics {
 
         @Override
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
+            // 1) save offsets from the beginning.....
+            if (OffsetManager.manageOffsets()) {
+                // just saving offset, if we have a failure we will reprocess the entire batch and deal with
+                // duplicates upon startup
+                javaDStream.foreachRDD(OffsetManager::saveOffsetRanges);
+            }
 
-            // 1. transform the byte[] (byte arrays are json) to signals and save raw signals
+            // 2) transform the byte[] (byte arrays are json) to signals and save raw signals
             final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
 
             signals.foreachRDD(rdd -> {
@@ -62,8 +65,7 @@ public final class ComputeCumulativeMetrics {
 
             });
 
-
-            // 2) if validation needed, update counts
+            // 3) if validation needed, update counts
             if (VALIDATE_COUNTS) {
                 // map to signal validation and save to cassandra
                 final JavaDStream<SignalValidation> signalValidation =
@@ -76,7 +78,7 @@ public final class ComputeCumulativeMetrics {
                 });
             }
 
-            // 3) aggregate by key and aggregation time
+            // 4) aggregate by key and aggregation time
 
             // -- key is by opc tag id and aggregation time
             final JavaPairDStream<Tuple2<Long, Date>, List<Signal>> pairDStream =
@@ -91,14 +93,14 @@ public final class ComputeCumulativeMetrics {
                     pairDStream.reduceByKey((signal1, signal2) -> Stream.of(signal1, signal2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
 
-            // 4) calculate stats
+            // 5) calculate stats
             final JavaMapWithStateDStream<Tuple2<Long, Date>, List<Signal>, SignalAggregation, SignalAggregation>
                     mapWithStateDStream = reduceByKey.mapWithState(StateSpec.function(
                     new AggregationFunctions.ComputeMovingSignalAggregationByOpcTagIdAndAggregation(driverConfig)).
                     // default timeout in seconds
                             timeout(Durations.seconds(60L)));
 
-            // 5) save aggregations
+            // 6) save aggregations and offsets if needed
             mapWithStateDStream.foreachRDD(rdd -> {
                 CassandraJavaUtil.javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(),
                         SignalAggregation.TABLE_NAME, mapToRow(SignalAggregation.class)).
