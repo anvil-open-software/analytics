@@ -1,6 +1,8 @@
 package com.dematic.labs.analytics.common.spark;
 
 import com.google.common.base.Strings;
+import kafka.common.TopicAndPartition;
+import kafka.message.MessageAndMetadata;
 import kafka.serializer.DefaultDecoder;
 import kafka.serializer.StringDecoder;
 import org.apache.spark.SparkConf;
@@ -8,6 +10,7 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.HasOffsetRanges;
@@ -18,10 +21,14 @@ import org.slf4j.LoggerFactory;
 import scala.Tuple2;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public final class StreamFunctions implements Serializable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamFunctions.class);
+
     private StreamFunctions() {
     }
 
@@ -37,21 +44,70 @@ public final class StreamFunctions implements Serializable {
 
         @Override
         public JavaDStream<byte[]> call() throws Exception {
-            final JavaPairInputDStream<String, byte[]> directStream =
-                    KafkaUtils.createDirectStream(streamingContext, String.class, byte[].class, StringDecoder.class,
-                            DefaultDecoder.class, streamConfig.getAdditionalConfiguration(), streamConfig.getTopics());
+            // just return a direct stream from checkpoint and
+            if (!OffsetManager.manageOffsets()) {
+                final JavaPairInputDStream<String, byte[]> directStream =
+                        KafkaUtils.createDirectStream(streamingContext,
+                                String.class,
+                                byte[].class,
+                                StringDecoder.class,
+                                DefaultDecoder.class,
+                                streamConfig.getAdditionalConfiguration(), streamConfig.getTopics());
 
+                if (OffsetManager.logOffsets()) {
+                    directStream.foreachRDD(rdd -> {
+                        logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
+                    });
+                }
 
-            if (System.getProperty("com.dlabs.kafka.offset.debug.log") != null) {
-                directStream.foreachRDD(rdd -> {
-                    final OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-                    for (final OffsetRange offset : offsets) {
-                        LOGGER.info("OFFSET: " + offset.topic() + ' ' + offset.partition() + ' ' + offset.fromOffset() + ' ' + offset.untilOffset());
-                    }
-                });
+                return directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
+
+            } else {
+                // manually manage and load the offsets
+                final JavaInputDStream<byte[]> directStream = KafkaUtils.createDirectStream(
+                        streamingContext,
+                        String.class,
+                        byte[].class,
+                        StringDecoder.class,
+                        DefaultDecoder.class,
+                        byte[].class,
+                        streamConfig.getAdditionalConfiguration(),
+                        // load the offsets
+                        readTopicOffsets(streamConfig.getTopics()),
+                        (Function<MessageAndMetadata<String, byte[]>, byte[]>) MessageAndMetadata::message);
+
+                if (OffsetManager.logOffsets()) {
+                    directStream.foreachRDD(rdd -> {
+                        logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
+                    });
+                }
+
+                return directStream;
             }
+        }
 
-            return directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
+        private static Map<TopicAndPartition, Long> readTopicOffsets(final Set<String> topics) {
+            final Map<TopicAndPartition, Long> topicMap = new HashMap<>();
+            // map each topic to its partitions
+            topics.stream().forEach(topic -> {
+                // 1) see if it exist in cassandra
+                final OffsetRange[] offsetRanges = OffsetManager.loadOffsetRanges(topic);
+                if (offsetRanges == null || offsetRanges.length == 0) {
+                    topicMap.put(new TopicAndPartition(topic, 0), 0L);
+                } else {
+                    for (final OffsetRange offsetRange : offsetRanges) {
+                        topicMap.put(offsetRange.topicAndPartition(), offsetRange.fromOffset());
+                    }
+                }
+            });
+            return topicMap;
+        }
+
+        private static void logOffsets(final OffsetRange[] offsets) {
+            for (final OffsetRange offset : offsets) {
+                LOGGER.info("OFFSET: " + offset.topic() + ' ' + offset.partition() + ' ' +
+                        offset.fromOffset() + ' ' + offset.untilOffset());
+            }
         }
     }
 
