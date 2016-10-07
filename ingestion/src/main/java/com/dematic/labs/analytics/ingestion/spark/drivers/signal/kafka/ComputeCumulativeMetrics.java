@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
+import static com.dematic.labs.analytics.common.spark.OffsetManager.manageOffsets;
 
 public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
@@ -60,7 +61,7 @@ public final class ComputeCumulativeMetrics {
         @Override
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
             // 1) save offsets from the beginning.....
-            if (OffsetManager.manageOffsets()) {
+            if (manageOffsets()) {
                 // just saving offset, if we have a failure we will reprocess the entire batch and deal with
                 // duplicates upon startup
                 javaDStream.foreachRDD(rdd -> {
@@ -171,6 +172,12 @@ public final class ComputeCumulativeMetrics {
                     CassandraConnector.apply(streamingContext.sparkContext().getConf()));
         }
 
+        if (manageOffsets()) {
+            // create the offset table
+            Connections.createTable(OffsetManager.createTableCql(driverConfig.getKeySpace()),
+                    CassandraConnector.apply(streamingContext.sparkContext().getConf()));
+        }
+
         // Start the streaming context and await termination
         LOGGER.info("SM: starting Compute Cumulative Signal Metrics Driver with master URL >{}<",
                 streamingContext.sparkContext().master());
@@ -178,7 +185,6 @@ public final class ComputeCumulativeMetrics {
         LOGGER.info("SM: spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();
     }
-
 
     private static ComputeCumulativeMetricsDriverConfig configure(final String appName,
                                                                   final String kafkaServerBootstrap,
