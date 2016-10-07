@@ -67,7 +67,8 @@ public final class ComputeCumulativeMetrics {
                 // duplicates upon startup
                 javaDStream.foreachRDD(rdd -> {
                     final OffsetRange[] offsetRanges = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-                    saveOffsetRanges(offsetRanges, CassandraConnector.apply(javaDStream.context().conf()));
+                    saveOffsetRanges(driverConfig.getKeySpace(), offsetRanges,
+                            CassandraConnector.apply(javaDStream.context().conf()));
                 });
             }
 

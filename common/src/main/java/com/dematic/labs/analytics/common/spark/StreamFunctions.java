@@ -34,10 +34,13 @@ public final class StreamFunctions implements Serializable {
 
     // create kafka dstream function
     private static final class CreateKafkaDStream implements Function0<JavaDStream<byte[]>> {
+        private final String keyspace;
         private final StreamConfig streamConfig;
         private final JavaStreamingContext streamingContext;
 
-        CreateKafkaDStream(final StreamConfig streamConfig, final JavaStreamingContext streamingContext) {
+        CreateKafkaDStream(final String keyspace, final StreamConfig streamConfig,
+                           final JavaStreamingContext streamingContext) {
+            this.keyspace = keyspace;
             this.streamConfig = streamConfig;
             this.streamingContext = streamingContext;
         }
@@ -72,7 +75,7 @@ public final class StreamFunctions implements Serializable {
                         byte[].class,
                         streamConfig.getAdditionalConfiguration(),
                         // load the offsets
-                        readTopicOffsets(streamConfig.getTopics(),
+                        readTopicOffsets(keyspace, streamConfig.getTopics(),
                                 CassandraConnector.apply(streamingContext.sparkContext().getConf())),
                         (Function<MessageAndMetadata<String, byte[]>, byte[]>) MessageAndMetadata::message);
 
@@ -86,14 +89,14 @@ public final class StreamFunctions implements Serializable {
             }
         }
 
-        private static Map<TopicAndPartition, Long> readTopicOffsets(final Set<String> topics,
+        private static Map<TopicAndPartition, Long> readTopicOffsets(final String keyspace,final Set<String> topics,
                                                                      final CassandraConnector connector) {
             final Map<TopicAndPartition, Long> topicMap = new HashMap<>();
             // map each topic to its partitions
             topics.stream().forEach(topic -> {
                 // 1) see if it exist in cassandra
-                final OffsetRange[] offsetRanges = OffsetManager.loadOffsetRanges(topic, connector);
-                if (offsetRanges == null || offsetRanges.length == 0) {
+                final OffsetRange[] offsetRanges = OffsetManager.loadOffsetRanges(keyspace, topic, connector);
+                if (offsetRanges.length == 0) {
                     topicMap.put(new TopicAndPartition(topic, 0), 0L);
                 } else {
                     for (final OffsetRange offsetRange : offsetRanges) {
@@ -142,7 +145,8 @@ public final class StreamFunctions implements Serializable {
                     driverConfig.getPollTimeInSeconds());
 
             final JavaDStream<byte[]> dStream =
-                    new CreateKafkaDStream(driverConfig.getStreamConfig(), streamingContext).call();
+                    new CreateKafkaDStream(driverConfig.getKeySpace(), driverConfig.getStreamConfig(), streamingContext)
+                            .call();
             // work on the streams
             streamProcessor.call(dStream);
             // set the checkpoint dir
