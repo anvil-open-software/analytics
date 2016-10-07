@@ -1,10 +1,21 @@
 package com.dematic.labs.analytics.common.spark;
 
+import com.datastax.driver.core.ConsistencyLevel;
+import com.datastax.driver.core.RegularStatement;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.querybuilder.Insert;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.spark.connector.cql.CassandraConnector;
+import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.google.common.base.Strings;
 import org.apache.spark.streaming.kafka.OffsetRange;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.datastax.driver.core.querybuilder.QueryBuilder.batch;
 
 public final class OffsetManager implements Serializable {
     public static final String TABLE_NAME = "offsets";
@@ -33,14 +44,29 @@ public final class OffsetManager implements Serializable {
         return OFFSET_RANGES.get();
     }
 
-    public static OffsetRange[] loadOffsetRanges(final String topic) {
+    public static OffsetRange[] loadOffsetRanges(final String topic, final CassandraConnector connector) {
         // get from datastore
+        //final ResultSet execute = Connections.execute("", connector);
         return null;
-
     }
 
-    public static void saveOffsetRanges(final OffsetRange[] offsetRanges) {
+    public static void saveOffsetRanges(final OffsetRange[] offsetRanges, final CassandraConnector connector) {
         // save to datastore
+        final List<RegularStatement> stmtList = new ArrayList<>();
+
+        for (final OffsetRange offsetRange : offsetRanges) {
+            final Insert stmt = QueryBuilder.insertInto("xxx")
+                    .value("topic", offsetRange.topic())
+                    .value("partition", offsetRange.partition())
+                    .value("name", offsetRange.fromOffset())
+                    .value("tags", offsetRange.untilOffset());
+            stmtList.add(stmt);
+        }
+        // execute
+        final ResultSet execute =
+                Connections.execute(
+                        batch(stmtList.toArray(new RegularStatement[stmtList.size()]))
+                                .setConsistencyLevel(ConsistencyLevel.ALL), connector);
     }
 
     public static boolean manageOffsets() {

@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 import static com.dematic.labs.analytics.common.spark.OffsetManager.manageOffsets;
+import static com.dematic.labs.analytics.common.spark.OffsetManager.saveOffsetRanges;
 
 public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
@@ -66,7 +67,7 @@ public final class ComputeCumulativeMetrics {
                 // duplicates upon startup
                 javaDStream.foreachRDD(rdd -> {
                     final OffsetRange[] offsetRanges = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-                    OffsetManager.saveOffsetRanges(offsetRanges);
+                    saveOffsetRanges(offsetRanges, CassandraConnector.apply(javaDStream.context().conf()));
                 });
             }
 

@@ -1,5 +1,6 @@
 package com.dematic.labs.analytics.common.spark;
 
+import com.datastax.spark.connector.cql.CassandraConnector;
 import com.google.common.base.Strings;
 import kafka.common.TopicAndPartition;
 import kafka.message.MessageAndMetadata;
@@ -26,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 
 public final class StreamFunctions implements Serializable {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamFunctions.class);
 
     private StreamFunctions() {
@@ -61,7 +61,6 @@ public final class StreamFunctions implements Serializable {
                 }
 
                 return directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
-
             } else {
                 // manually manage and load the offsets
                 final JavaInputDStream<byte[]> directStream = KafkaUtils.createDirectStream(
@@ -73,7 +72,8 @@ public final class StreamFunctions implements Serializable {
                         byte[].class,
                         streamConfig.getAdditionalConfiguration(),
                         // load the offsets
-                        readTopicOffsets(streamConfig.getTopics()),
+                        readTopicOffsets(streamConfig.getTopics(),
+                                CassandraConnector.apply(streamingContext.sparkContext().getConf())),
                         (Function<MessageAndMetadata<String, byte[]>, byte[]>) MessageAndMetadata::message);
 
                 if (OffsetManager.logOffsets()) {
@@ -86,12 +86,13 @@ public final class StreamFunctions implements Serializable {
             }
         }
 
-        private static Map<TopicAndPartition, Long> readTopicOffsets(final Set<String> topics) {
+        private static Map<TopicAndPartition, Long> readTopicOffsets(final Set<String> topics,
+                                                                     final CassandraConnector connector) {
             final Map<TopicAndPartition, Long> topicMap = new HashMap<>();
             // map each topic to its partitions
             topics.stream().forEach(topic -> {
                 // 1) see if it exist in cassandra
-                final OffsetRange[] offsetRanges = OffsetManager.loadOffsetRanges(topic);
+                final OffsetRange[] offsetRanges = OffsetManager.loadOffsetRanges(topic, connector);
                 if (offsetRanges == null || offsetRanges.length == 0) {
                     topicMap.put(new TopicAndPartition(topic, 0), 0L);
                 } else {
