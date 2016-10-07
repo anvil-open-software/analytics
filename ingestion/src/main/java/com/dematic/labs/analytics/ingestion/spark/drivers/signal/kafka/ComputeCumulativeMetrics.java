@@ -3,8 +3,16 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.signal.kafka;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.dematic.labs.analytics.common.cassandra.Connections;
-import com.dematic.labs.analytics.common.spark.*;
-import com.dematic.labs.analytics.ingestion.spark.drivers.signal.*;
+import com.dematic.labs.analytics.common.spark.DriverConsts;
+import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
+import com.dematic.labs.analytics.common.spark.OffsetManager;
+import com.dematic.labs.analytics.common.spark.StreamConfig;
+import com.dematic.labs.analytics.common.spark.StreamFunctions;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.Aggregation;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.AggregationFunctions;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.ComputeCumulativeMetricsDriverConfig;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregation;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalValidation;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.dematic.labs.toolkit.communication.SignalUtils;
@@ -17,6 +25,8 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaMapWithStateDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.kafka.HasOffsetRanges;
+import org.apache.spark.streaming.kafka.OffsetRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -53,16 +63,17 @@ public final class ComputeCumulativeMetrics {
             if (OffsetManager.manageOffsets()) {
                 // just saving offset, if we have a failure we will reprocess the entire batch and deal with
                 // duplicates upon startup
-                javaDStream.foreachRDD(OffsetManager::saveOffsetRanges);
+                javaDStream.foreachRDD(rdd -> {
+                    final OffsetRange[] offsetRanges = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
+                    OffsetManager.saveOffsetRanges(offsetRanges);
+                });
             }
 
             // 2) transform the byte[] (byte arrays are json) to signals and save raw signals
             final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
-
             signals.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
                         saveToCassandra();
-
             });
 
             // 3) if validation needed, update counts
@@ -71,7 +82,6 @@ public final class ComputeCumulativeMetrics {
                 final JavaDStream<SignalValidation> signalValidation =
                         signals.map((Function<Signal, SignalValidation>)
                                 signal -> new SignalValidation(driverConfig.getAppName(), 0L, 0L, 1L));
-
                 signalValidation.foreachRDD(rdd -> {
                     javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), SignalValidation.TABLE_NAME,
                             mapToRow(SignalValidation.class)).saveToCassandra();
