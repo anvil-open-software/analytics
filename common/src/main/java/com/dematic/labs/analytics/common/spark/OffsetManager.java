@@ -13,8 +13,8 @@ public final class OffsetManager implements Serializable {
         return String.format("CREATE TABLE if not exists %s.%s (" +
                 " topic text," +
                 " partition bigint," +
-                " fromOffset bigint," +
-                " toOffset bigint," +
+                " from_offset bigint," +
+                " to_offset bigint," +
                 " PRIMARY KEY (topic), partition))" +
                 " WITH CLUSTERING ORDER BY (partition DESC);", keyspace, TABLE_NAME);
     }
