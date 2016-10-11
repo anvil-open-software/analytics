@@ -26,7 +26,7 @@ public final class OffsetManager implements Serializable {
     public static String createTableCql(final String keyspace) {
         return String.format("CREATE TABLE if not exists %s.%s (" +
                 " topic text," +
-                " partition bigint," +
+                " partition int," +
                 " from_offset bigint," +
                 " to_offset bigint," +
                 " PRIMARY KEY ((topic), partition))" +
@@ -93,6 +93,7 @@ public final class OffsetManager implements Serializable {
                 Connections.execute(
                         batch(stmtList.toArray(new RegularStatement[stmtList.size()]))
                                 .setConsistencyLevel(ConsistencyLevel.ALL), connector);
+        System.out.println(rs);
     }
 
     public static boolean manageOffsets() {
