@@ -30,7 +30,7 @@ public final class OffsetManager implements Serializable {
                 " from_offset bigint," +
                 " to_offset bigint," +
                 " PRIMARY KEY ((topic), partition))" +
-                " WITH CLUSTERING ORDER BY (partition DESC);", keyspace, TABLE_NAME);
+                " WITH CLUSTERING ORDER BY (partition ASC);", keyspace, TABLE_NAME);
     }
 
     // Hold a reference to the current offset ranges, so it can be used downstream
