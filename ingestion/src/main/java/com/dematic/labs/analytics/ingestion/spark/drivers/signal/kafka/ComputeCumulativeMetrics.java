@@ -5,7 +5,6 @@ import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
-import com.dematic.labs.analytics.common.spark.OffsetManager;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.Aggregation;
@@ -171,12 +170,6 @@ public final class ComputeCumulativeMetrics {
         if (VALIDATE_COUNTS) {
             // create the count table
             Connections.createTable(SignalValidation.createTableCql(driverConfig.getKeySpace()),
-                    CassandraConnector.apply(streamingContext.sparkContext().getConf()));
-        }
-
-        if (manageOffsets()) {
-            // create the offset table
-            Connections.createTable(OffsetManager.createTableCql(driverConfig.getKeySpace()),
                     CassandraConnector.apply(streamingContext.sparkContext().getConf()));
         }
 

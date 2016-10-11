@@ -29,7 +29,7 @@ public final class OffsetManager implements Serializable {
                 " partition bigint," +
                 " from_offset bigint," +
                 " to_offset bigint," +
-                " PRIMARY KEY (topic), partition))" +
+                " PRIMARY KEY ((topic), partition))" +
                 " WITH CLUSTERING ORDER BY (partition DESC);", keyspace, TABLE_NAME);
     }
 
@@ -49,11 +49,14 @@ public final class OffsetManager implements Serializable {
 
     public static OffsetRange[] loadOffsetRanges(final String keyspace, final String topic,
                                                  final CassandraConnector connector) {
+        // create table if not exist
+        Connections.createTable(createTableCql(keyspace), connector);
+
         // get from datastore
         final Statement stmt = QueryBuilder
                 .select()
                 .all()
-                .from(TABLE_NAME)
+                .from(keyspace, TABLE_NAME)
                 .where(eq("topic", topic))
                 .orderBy(desc("partition")).setConsistencyLevel(ConsistencyLevel.ALL);
         final ResultSet rs = Connections.execute(stmt, connector);
@@ -71,11 +74,14 @@ public final class OffsetManager implements Serializable {
 
     public static void saveOffsetRanges(final String keyspace, final OffsetRange[] offsetRanges,
                                         final CassandraConnector connector) {
+        // create table if not exist
+        Connections.createTable(createTableCql(keyspace), connector);
+
         // save to datastore
         final List<RegularStatement> stmtList = new ArrayList<>();
 
         for (final OffsetRange offsetRange : offsetRanges) {
-            final Insert stmt = QueryBuilder.insertInto(TABLE_NAME)
+            final Insert stmt = QueryBuilder.insertInto(keyspace, TABLE_NAME)
                     .value("topic", offsetRange.topic())
                     .value("partition", offsetRange.partition())
                     .value("from_offset", offsetRange.fromOffset())
