@@ -97,7 +97,10 @@ public final class StreamFunctions implements Serializable {
                 // 1) see if it exist in cassandra
                 final OffsetRange[] offsetRanges = OffsetManager.loadOffsetRanges(keyspace, topic, connector);
                 if (offsetRanges.length == 0) {
-                    topicMap.put(new TopicAndPartition(topic, 0), 0L);
+                    // todo: need to figure out the # of partitions
+                    for(int i = 0; i < 10;i++) {
+                        topicMap.put(new TopicAndPartition(topic, i), 0L);
+                    }
                 } else {
                     for (final OffsetRange offsetRange : offsetRanges) {
                         topicMap.put(offsetRange.topicAndPartition(), offsetRange.fromOffset());
