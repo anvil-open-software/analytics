@@ -14,10 +14,14 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.HasOffsetRanges;
+import org.apache.spark.streaming.kafka.KafkaCluster;
 import org.apache.spark.streaming.kafka.OffsetRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Predef;
 import scala.Tuple2;
+import scala.collection.mutable.ArrayBuffer;
+import scala.util.Either;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -25,6 +29,9 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.apache.spark.streaming.kafka.KafkaUtils.createDirectStream;
+import static scala.collection.JavaConversions.asJavaIterable;
+import static scala.collection.JavaConverters.asScalaSetConverter;
+import static scala.collection.JavaConverters.mapAsScalaMapConverter;
 
 public final class StreamFunctions implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamFunctions.class);
@@ -58,8 +65,20 @@ public final class StreamFunctions implements Serializable {
                 final Map<TopicAndPartition, Long> topicAndPartitions =
                         readTopicOffsets(keyspace, streamConfig.getTopics(),
                                 CassandraConnector.apply(streamingContext.sparkContext().getConf()));
-                // if topic and offsets dont exist, need to manually created based on configured kafka topics and partitons
-
+                // if topic and offsets doesn't exist, need to manually created based on configured kafka topics and
+                // partitions
+                if (topicAndPartitions.isEmpty()) {
+                    final KafkaCluster kafkaCluster =
+                            new KafkaCluster(mapAsScalaMapConverter(streamConfig.getAdditionalConfiguration()).
+                                    asScala().toMap(Predef.$conforms()));
+                    final Either<ArrayBuffer<Throwable>, scala.collection.immutable.Set<TopicAndPartition>> partitions =
+                            kafkaCluster.getPartitions(asScalaSetConverter(streamConfig.getTopics()).asScala().toSet());
+                    final scala.collection.immutable.Set<TopicAndPartition> topicAndPartitionSet =
+                            partitions.right().get();
+                    for (final TopicAndPartition tAndP : asJavaIterable(topicAndPartitionSet.thisCollection())) {
+                        topicAndPartitions.put(new TopicAndPartition(tAndP.topic(),tAndP.partition()), 0L);
+                    }
+                }
                 directStream = create(streamingContext, streamConfig, topicAndPartitions);
             }
             return directStream;
