@@ -89,11 +89,8 @@ public final class OffsetManager implements Serializable {
             stmtList.add(stmt);
         }
         // execute
-        final ResultSet rs =
-                Connections.execute(
-                        batch(stmtList.toArray(new RegularStatement[stmtList.size()]))
-                                .setConsistencyLevel(ConsistencyLevel.ALL), connector);
-        System.out.println(rs);
+        Connections.execute(batch(stmtList.toArray(new RegularStatement[stmtList.size()]))
+                        .setConsistencyLevel(ConsistencyLevel.ALL), connector);
     }
 
     public static boolean manageOffsets() {
