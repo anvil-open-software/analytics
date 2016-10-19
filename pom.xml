@@ -24,7 +24,7 @@
 
     <scm>
         <developerConnection>scm:git:git@gitlab.ops.cld:Dematiclabs/analytics.git</developerConnection>
-      <tag>HEAD</tag>
+        <tag>HEAD</tag>
   </scm>
 
     <dependencyManagement>
