@@ -1,7 +1,7 @@
 dlab
 ====
 
-Dematic Labs on demand solution for analytics.
+Dematic Labs on demand solution for analytics using Spark.
 
 ## Deployment Implications During Code Review
 When code reviewing analytics module, if any of the following changed.
