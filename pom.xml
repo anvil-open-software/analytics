@@ -23,8 +23,8 @@
     </properties>
 
     <scm>
-        <developerConnection>scm:git:https://github.com/Dematiclabs/analytics/</developerConnection>
-      <tag>HEAD</tag>
+        <developerConnection>scm:git:git@gitlab.ops.cld:Dematiclabs/analytics.git</developerConnection>
+        <tag>HEAD</tag>
   </scm>
 
     <dependencyManagement>
