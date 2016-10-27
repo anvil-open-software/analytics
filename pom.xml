@@ -23,8 +23,8 @@
     </properties>
 
     <scm>
-        <developerConnection>scm:git:https://github.com/Dematiclabs/analytics/</developerConnection>
-      <tag>HEAD</tag>
+        <developerConnection>scm:git:git@gitlab.ops.cld:Dematiclabs/analytics.git</developerConnection>
+        <tag>HEAD</tag>
   </scm>
 
     <dependencyManagement>
@@ -32,7 +32,7 @@
             <dependency>
                 <groupId>com.dematic.labs</groupId>
                 <artifactId>common-dep</artifactId>
-                <version>1.0.2-SNAPSHOT</version>
+                <version>1.0.2</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -51,12 +51,12 @@
         <dependency>
             <groupId>com.dematic.labs</groupId>
             <artifactId>toolkit</artifactId>
-            <version>1.0.3-SNAPSHOT</version>
+            <version>1.0.3</version>
         </dependency>
         <dependency>
             <groupId>com.dematic.labs</groupId>
             <artifactId>toolkit</artifactId>
-            <version>1.0.3-SNAPSHOT</version>
+            <version>1.0.3</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -225,22 +225,6 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.18.1</version>
-                <configuration>
-                    <systemPropertyVariables>
-                        <!--suppress MavenModelInspection -->
-                        <aws.accessKeyId>${aws.accessKeyId}</aws.accessKeyId>
-                        <!--suppress MavenModelInspection -->
-                        <aws.secretKey>${aws.secretKey}</aws.secretKey>
-                        <!--suppress MavenModelInspection -->
-                        <dynamoDBEndpoint>${dynamoDBEndpoint}</dynamoDBEndpoint>
-                        <!--suppress MavenModelInspection -->
-                        <kinesisEndpoint>${kinesisEndpoint}</kinesisEndpoint>
-                        <!--suppress MavenModelInspection -->
-                        <regionName>${regionName}</regionName>
-                        <!--suppress MavenModelInspection -->
-                        <kinesisInputStream>${kinesisInputStream}</kinesisInputStream>
-                    </systemPropertyVariables>
-                </configuration>
                 <dependencies>
                     <dependency>
                         <groupId>org.apache.maven.surefire</groupId>
