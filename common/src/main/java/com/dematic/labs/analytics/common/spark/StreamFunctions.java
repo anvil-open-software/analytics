@@ -1,6 +1,9 @@
 package com.dematic.labs.analytics.common.spark;
 
+import com.datastax.spark.connector.cql.CassandraConnector;
 import com.google.common.base.Strings;
+import kafka.common.TopicAndPartition;
+import kafka.message.MessageAndMetadata;
 import kafka.serializer.DefaultDecoder;
 import kafka.serializer.StringDecoder;
 import org.apache.spark.SparkConf;
@@ -11,47 +14,134 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaPairInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka.HasOffsetRanges;
-import org.apache.spark.streaming.kafka.KafkaUtils;
+import org.apache.spark.streaming.kafka.KafkaCluster;
 import org.apache.spark.streaming.kafka.OffsetRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Predef;
 import scala.Tuple2;
+import scala.collection.mutable.ArrayBuffer;
+import scala.util.Either;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import static org.apache.spark.streaming.kafka.KafkaUtils.createDirectStream;
+import static scala.collection.JavaConversions.asJavaIterable;
+import static scala.collection.JavaConverters.asScalaSetConverter;
+import static scala.collection.JavaConverters.mapAsScalaMapConverter;
 
 public final class StreamFunctions implements Serializable {
-
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamFunctions.class);
+
     private StreamFunctions() {
     }
 
     // create kafka dstream function
     private static final class CreateKafkaDStream implements Function0<JavaDStream<byte[]>> {
+        private final String keyspace;
         private final StreamConfig streamConfig;
         private final JavaStreamingContext streamingContext;
 
-        CreateKafkaDStream(final StreamConfig streamConfig, final JavaStreamingContext streamingContext) {
+        CreateKafkaDStream(final String keyspace, final StreamConfig streamConfig,
+                           final JavaStreamingContext streamingContext) {
+            this.keyspace = keyspace;
             this.streamConfig = streamConfig;
             this.streamingContext = streamingContext;
         }
 
         @Override
         public JavaDStream<byte[]> call() throws Exception {
-            final JavaPairInputDStream<String, byte[]> directStream =
-                    KafkaUtils.createDirectStream(streamingContext, String.class, byte[].class, StringDecoder.class,
-                            DefaultDecoder.class, streamConfig.getAdditionalConfiguration(), streamConfig.getTopics());
+            // holds the stream
+            final JavaDStream<byte[]> directStream;
 
-
-            if (System.getProperty("com.dlabs.kafka.offset.debug.log") != null) {
-                directStream.foreachRDD(rdd -> {
-                    final OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-                    for (final OffsetRange offset : offsets) {
-                        LOGGER.info("OFFSET: " + offset.topic() + ' ' + offset.partition() + ' ' + offset.fromOffset() + ' ' + offset.untilOffset());
+            // just return a direct stream from checkpoint and
+            if (!OffsetManager.manageOffsets()) {
+                directStream = create(streamingContext, streamConfig, null);
+            } else {
+                // manually manage and load the offsets
+                final Map<TopicAndPartition, Long> topicAndPartitions =
+                        readTopicOffsets(keyspace, streamConfig.getTopics(),
+                                CassandraConnector.apply(streamingContext.sparkContext().getConf()));
+                // if topic and offsets doesn't exist, need to manually created based on configured kafka topics and
+                // partitions
+                if (topicAndPartitions.isEmpty()) {
+                    final KafkaCluster kafkaCluster =
+                            new KafkaCluster(mapAsScalaMapConverter(streamConfig.getAdditionalConfiguration()).
+                                    asScala().toMap(Predef.$conforms()));
+                    final Either<ArrayBuffer<Throwable>, scala.collection.immutable.Set<TopicAndPartition>> partitions =
+                            kafkaCluster.getPartitions(asScalaSetConverter(streamConfig.getTopics()).asScala().toSet());
+                    final scala.collection.immutable.Set<TopicAndPartition> topicAndPartitionSet =
+                            partitions.right().get();
+                    for (final TopicAndPartition tAndP : asJavaIterable(topicAndPartitionSet.thisCollection())) {
+                        topicAndPartitions.put(new TopicAndPartition(tAndP.topic(),tAndP.partition()), 0L);
                     }
-                });
+                }
+                directStream = create(streamingContext, streamConfig, topicAndPartitions);
             }
+            return directStream;
+        }
 
-            return directStream.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
+        private static JavaDStream<byte[]> create(final JavaStreamingContext streamingContext,
+                                                  final StreamConfig streamConfig,
+                                                  final Map<TopicAndPartition, Long> topicAndPartitions) {
+            final JavaDStream<byte[]> directStream;
+            if (topicAndPartitions == null || topicAndPartitions.isEmpty()) {
+                final JavaPairInputDStream<String, byte[]> directStreamPair = createDirectStream(streamingContext,
+                        String.class,
+                        byte[].class,
+                        StringDecoder.class,
+                        DefaultDecoder.class,
+                        streamConfig.getAdditionalConfiguration(), streamConfig.getTopics());
+                // log offsets if needed
+                if (OffsetManager.logOffsets()) {
+                    directStreamPair.foreachRDD(rdd -> {
+                        logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
+                    });
+                }
+                directStream = directStreamPair.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
+            } else {
+                directStream = createDirectStream(
+                        streamingContext,
+                        String.class,
+                        byte[].class,
+                        StringDecoder.class,
+                        DefaultDecoder.class,
+                        byte[].class,
+                        streamConfig.getAdditionalConfiguration(),
+                        topicAndPartitions,
+                        (Function<MessageAndMetadata<String, byte[]>, byte[]>) MessageAndMetadata::message);
+                // log offsets if needed
+                if (OffsetManager.logOffsets()) {
+                    directStream.foreachRDD(rdd -> {
+                        logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
+                    });
+                }
+            }
+            return directStream;
+        }
+
+        private static Map<TopicAndPartition, Long> readTopicOffsets(final String keyspace, final Set<String> topics,
+                                                                     final CassandraConnector connector) {
+            final Map<TopicAndPartition, Long> topicMap = new HashMap<>();
+            // map each topic to its partitions
+            topics.stream().forEach(topic -> {
+                // 1) see if it exist in cassandra, if not just return an empty map
+                final OffsetRange[] offsetRanges = OffsetManager.loadOffsetRanges(keyspace, topic, connector);
+                for (final OffsetRange offsetRange : offsetRanges) {
+                    topicMap.put(offsetRange.topicAndPartition(), offsetRange.fromOffset());
+                }
+            });
+            return topicMap;
+        }
+
+        private static void logOffsets(final OffsetRange[] offsets) {
+            for (final OffsetRange offset : offsets) {
+                LOGGER.info("OFFSET: " + offset.topic() + ' ' + offset.partition() + ' ' +
+                        offset.fromOffset() + ' ' + offset.untilOffset());
+            }
         }
     }
 
@@ -85,7 +175,8 @@ public final class StreamFunctions implements Serializable {
                     driverConfig.getPollTimeInSeconds());
 
             final JavaDStream<byte[]> dStream =
-                    new CreateKafkaDStream(driverConfig.getStreamConfig(), streamingContext).call();
+                    new CreateKafkaDStream(driverConfig.getKeySpace(), driverConfig.getStreamConfig(), streamingContext)
+                            .call();
             // work on the streams
             streamProcessor.call(dStream);
             // set the checkpoint dir

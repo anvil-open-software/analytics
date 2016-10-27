@@ -7,7 +7,11 @@ import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
-import com.dematic.labs.analytics.ingestion.spark.drivers.signal.*;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.Aggregation;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.AggregationFunctions;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.ComputeCumulativeMetricsDriverConfig;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregation;
+import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalValidation;
 import com.dematic.labs.toolkit.GenericBuilder;
 import com.dematic.labs.toolkit.communication.Signal;
 import com.dematic.labs.toolkit.communication.SignalUtils;
@@ -20,6 +24,8 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaMapWithStateDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.kafka.HasOffsetRanges;
+import org.apache.spark.streaming.kafka.OffsetRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Tuple2;
@@ -33,6 +39,8 @@ import java.util.stream.Stream;
 
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
 import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
+import static com.dematic.labs.analytics.common.spark.OffsetManager.manageOffsets;
+import static com.dematic.labs.analytics.common.spark.OffsetManager.saveOffsetRanges;
 
 public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
@@ -52,30 +60,37 @@ public final class ComputeCumulativeMetrics {
 
         @Override
         public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
+            // 1) save offsets from the beginning.....
+            if (manageOffsets()) {
+                // just saving offset, if we have a failure we will reprocess the entire batch and deal with
+                // duplicates upon startup
+                javaDStream.foreachRDD(rdd -> {
+                    final OffsetRange[] offsetRanges = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
+                    saveOffsetRanges(driverConfig.getKeySpace(), offsetRanges,
+                            CassandraConnector.apply(javaDStream.context().conf()));
+                });
+            }
 
-            // 1. transform the byte[] (byte arrays are json) to signals and save raw signals
+            // 2) transform the byte[] (byte arrays are json) to signals and save raw signals
             final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
-
             signals.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
                         saveToCassandra();
-
             });
 
-            // 2) if validation needed, update counts
+            // 3) if validation needed, update counts
             if (VALIDATE_COUNTS) {
                 // map to signal validation and save to cassandra
                 final JavaDStream<SignalValidation> signalValidation =
                         signals.map((Function<Signal, SignalValidation>)
                                 signal -> new SignalValidation(driverConfig.getAppName(), 0L, 0L, 1L));
-
                 signalValidation.foreachRDD(rdd -> {
                     javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), SignalValidation.TABLE_NAME,
                             mapToRow(SignalValidation.class)).saveToCassandra();
                 });
             }
 
-            // 3) aggregate by key and aggregation time
+            // 4) aggregate by key and aggregation time
 
             // -- key is by opc tag id and aggregation time
             final JavaPairDStream<Tuple2<Long, Date>, List<Signal>> pairDStream =
@@ -90,14 +105,14 @@ public final class ComputeCumulativeMetrics {
                     pairDStream.reduceByKey((signal1, signal2) -> Stream.of(signal1, signal2)
                             .flatMap(Collection::stream).collect(Collectors.toList()));
 
-            // 4) calculate stats
+            // 5) calculate stats
             final JavaMapWithStateDStream<Tuple2<Long, Date>, List<Signal>, SignalAggregation, SignalAggregation>
                     mapWithStateDStream = reduceByKey.mapWithState(StateSpec.function(
                     new AggregationFunctions.ComputeMovingSignalAggregationByOpcTagIdAndAggregation(driverConfig)).
                     // default timeout in seconds
                             timeout(Durations.seconds(60L)));
 
-            // 5) save aggregations
+            // 6) save aggregations and offsets if needed
             mapWithStateDStream.foreachRDD(rdd -> {
                 CassandraJavaUtil.javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(),
                         SignalAggregation.TABLE_NAME, mapToRow(SignalAggregation.class)).
@@ -165,7 +180,6 @@ public final class ComputeCumulativeMetrics {
         LOGGER.info("SM: spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();
     }
-
 
     private static ComputeCumulativeMetricsDriverConfig configure(final String appName,
                                                                   final String kafkaServerBootstrap,

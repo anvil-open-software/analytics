@@ -11,8 +11,11 @@ import java.util.Map;
 import java.util.Set;
 
 public final class KafkaStreamConfig implements StreamConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamConfig.class);
     public static final String BOOTSTRAP_SERVERS_KEY = "bootstrap.servers";
+    public static final String KAFKA_OFFSET_LOG_KEY = "com.dlabs.kafka.offset.debug.log";
+    public static final String KAFKA_OFFSET_MANAGE_KEY = "com.dlabs.kafka.offset.manage";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamConfig.class);
 
     private String streamEndpoint; // kafka bootstrap.servers
     private String streamName; // kafka topics
