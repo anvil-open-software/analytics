@@ -49,8 +49,6 @@
                                     </excludes>
                                 </filter>
                             </filters>
-
-
                             <artifactSet>
                                 <excludes>
                                     <exclude>commons-httpclient:commons-httpclient</exclude>

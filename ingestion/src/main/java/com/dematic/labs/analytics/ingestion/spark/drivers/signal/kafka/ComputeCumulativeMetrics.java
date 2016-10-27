@@ -97,7 +97,7 @@ public final class ComputeCumulativeMetrics {
                     signals.mapToPair((PairFunction<Signal, Tuple2<Long, Date>, List<Signal>>) signal -> {
                         final Tuple2<Long, Date> key = new Tuple2<>(signal.getOpcTagId(),
                                 driverConfig.getAggregateBy().time(signal.getTimestamp()));
-                        return new Tuple2<Tuple2<Long, Date>, List<Signal>>(key, Collections.singletonList(signal));
+                        return new Tuple2<>(key, Collections.singletonList(signal));
                     });
 
             // -- reduce by opc tag id and aggregation time
