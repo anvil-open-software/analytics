@@ -11,8 +11,8 @@ public interface StreamConfig extends Serializable {
     String getStreamName();
     void setStreamName(final String streamName);
 
-    Map<String, String> getAdditionalConfiguration();
-    void setAdditionalConfiguration(final Map<String, String> additionalConfiguration);
+    Map<String, Object> getAdditionalConfiguration();
+    void setAdditionalConfiguration(final Map<String, Object> additionalConfiguration);
 
     Set<String> getTopics();
 }

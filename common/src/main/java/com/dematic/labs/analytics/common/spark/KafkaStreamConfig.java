@@ -19,7 +19,7 @@ public final class KafkaStreamConfig implements StreamConfig {
 
     private String streamEndpoint; // kafka bootstrap.servers
     private String streamName; // kafka topics
-    private Map<String, String> additionalConfiguration;
+    private Map<String, Object> additionalConfiguration;
 
     public KafkaStreamConfig() {
         additionalConfiguration = new HashMap<>();
@@ -33,7 +33,7 @@ public final class KafkaStreamConfig implements StreamConfig {
      * @return map with any system properties starting with prefix
      * todo could not find utility. but should be put in some generic utils class in toolkit
      */
-    public static void addPrefixedSystemProperties(final Map<String, String> properties, final String prefix) {
+    public static void addPrefixedSystemProperties(final Map<String, Object> properties, final String prefix) {
         for (String propName : System.getProperties().stringPropertyNames()) {
             if (propName.startsWith(prefix)) {
                 String key = propName.substring(prefix.length());
@@ -68,12 +68,12 @@ public final class KafkaStreamConfig implements StreamConfig {
     }
 
     @Override
-    public Map<String, String> getAdditionalConfiguration() {
+    public Map<String, Object> getAdditionalConfiguration() {
         return additionalConfiguration;
     }
 
     @Override
-    public void setAdditionalConfiguration(final Map<String, String> additionalConfiguration) {
+    public void setAdditionalConfiguration(final Map<String, Object> additionalConfiguration) {
         this.additionalConfiguration = additionalConfiguration;
     }
 
