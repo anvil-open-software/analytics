@@ -193,6 +193,7 @@ public final class ComputeCumulativeMetrics {
         final StreamConfig kafkaStreamConfig = GenericBuilder.of(KafkaStreamConfig::new)
                 .with(KafkaStreamConfig::setStreamEndpoint, kafkaServerBootstrap)
                 .with(KafkaStreamConfig::setStreamName, kafkaTopics)
+                .with(KafkaStreamConfig::setGroupId, appName)
                 .build();
 
         return GenericBuilder.of(ComputeCumulativeMetricsDriverConfig::new)
