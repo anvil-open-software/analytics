@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public final class KafkaStreamConfig implements StreamConfig {
@@ -102,5 +103,27 @@ public final class KafkaStreamConfig implements StreamConfig {
             throw new IllegalArgumentException("No kafka topics defined");
         }
         return new HashSet<>(Arrays.asList(streamName.split(",")));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        KafkaStreamConfig that = (KafkaStreamConfig) o;
+        return Objects.equals(streamName, that.streamName) &&
+                Objects.equals(additionalConfiguration, that.additionalConfiguration);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(streamName, additionalConfiguration);
+    }
+
+    @Override
+    public String toString() {
+        return "KafkaStreamConfig{" +
+                "streamName='" + streamName + '\'' +
+                ", additionalConfiguration=" + additionalConfiguration +
+                '}';
     }
 }
