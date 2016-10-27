@@ -2,36 +2,30 @@ package com.dematic.labs.analytics.common.spark;
 
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.google.common.base.Strings;
-import kafka.common.TopicAndPartition;
-import kafka.message.MessageAndMetadata;
-import kafka.serializer.DefaultDecoder;
-import kafka.serializer.StringDecoder;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.api.java.JavaDStream;
-import org.apache.spark.streaming.api.java.JavaPairInputDStream;
+import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.kafka.HasOffsetRanges;
-import org.apache.spark.streaming.kafka.KafkaCluster;
-import org.apache.spark.streaming.kafka.OffsetRange;
+import org.apache.spark.streaming.kafka010.ConsumerStrategies;
+import org.apache.spark.streaming.kafka010.ConsumerStrategy;
+import org.apache.spark.streaming.kafka010.HasOffsetRanges;
+import org.apache.spark.streaming.kafka010.LocationStrategies;
+import org.apache.spark.streaming.kafka010.OffsetRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.Predef;
-import scala.Tuple2;
-import scala.collection.mutable.ArrayBuffer;
-import scala.util.Either;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static org.apache.spark.streaming.kafka.KafkaUtils.createDirectStream;
-import static scala.collection.JavaConversions.asJavaIterable;
-import static scala.collection.JavaConverters.asScalaSetConverter;
-import static scala.collection.JavaConverters.mapAsScalaMapConverter;
+import static org.apache.spark.streaming.kafka010.KafkaUtils.createDirectStream;
 
 public final class StreamFunctions implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(StreamFunctions.class);
@@ -54,84 +48,44 @@ public final class StreamFunctions implements Serializable {
 
         @Override
         public JavaDStream<byte[]> call() throws Exception {
-            // holds the stream
-            final JavaDStream<byte[]> directStream;
-
-            // just return a direct stream from checkpoint and
-            if (!OffsetManager.manageOffsets()) {
-                directStream = create(streamingContext, streamConfig, null);
-            } else {
-                // manually manage and load the offsets
-                final Map<TopicAndPartition, Long> topicAndPartitions =
-                        readTopicOffsets(keyspace, streamConfig.getTopics(),
-                                CassandraConnector.apply(streamingContext.sparkContext().getConf()));
-                // if topic and offsets doesn't exist, need to manually created based on configured kafka topics and
-                // partitions
-                if (topicAndPartitions.isEmpty()) {
-                    final KafkaCluster kafkaCluster =
-                            new KafkaCluster(mapAsScalaMapConverter(streamConfig.getAdditionalConfiguration()).
-                                    asScala().toMap(Predef.$conforms()));
-                    final Either<ArrayBuffer<Throwable>, scala.collection.immutable.Set<TopicAndPartition>> partitions =
-                            kafkaCluster.getPartitions(asScalaSetConverter(streamConfig.getTopics()).asScala().toSet());
-                    final scala.collection.immutable.Set<TopicAndPartition> topicAndPartitionSet =
-                            partitions.right().get();
-                    for (final TopicAndPartition tAndP : asJavaIterable(topicAndPartitionSet.thisCollection())) {
-                        topicAndPartitions.put(new TopicAndPartition(tAndP.topic(),tAndP.partition()), 0L);
-                    }
-                }
-                directStream = create(streamingContext, streamConfig, topicAndPartitions);
-            }
-            return directStream;
+            final Map<TopicPartition, Long> topicAndPartitions = OffsetManager.manageOffsets() ?
+                    // manually manage and load the offsets
+                    readTopicOffsets(keyspace, streamConfig.getTopics(),
+                            CassandraConnector.apply(streamingContext.sparkContext().getConf())) :
+                    Collections.emptyMap();
+            return create(streamingContext, streamConfig, topicAndPartitions);
         }
 
         private static JavaDStream<byte[]> create(final JavaStreamingContext streamingContext,
                                                   final StreamConfig streamConfig,
-                                                  final Map<TopicAndPartition, Long> topicAndPartitions) {
-            final JavaDStream<byte[]> directStream;
-            if (topicAndPartitions == null || topicAndPartitions.isEmpty()) {
-                final JavaPairInputDStream<String, byte[]> directStreamPair = createDirectStream(streamingContext,
-                        String.class,
-                        byte[].class,
-                        StringDecoder.class,
-                        DefaultDecoder.class,
-                        streamConfig.getAdditionalConfiguration(), streamConfig.getTopics());
-                // log offsets if needed
-                if (OffsetManager.logOffsets()) {
-                    directStreamPair.foreachRDD(rdd -> {
-                        logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
-                    });
-                }
-                directStream = directStreamPair.map((Function<Tuple2<String, byte[]>, byte[]>) Tuple2::_2);
-            } else {
-                directStream = createDirectStream(
-                        streamingContext,
-                        String.class,
-                        byte[].class,
-                        StringDecoder.class,
-                        DefaultDecoder.class,
-                        byte[].class,
-                        streamConfig.getAdditionalConfiguration(),
-                        topicAndPartitions,
-                        (Function<MessageAndMetadata<String, byte[]>, byte[]>) MessageAndMetadata::message);
-                // log offsets if needed
-                if (OffsetManager.logOffsets()) {
-                    directStream.foreachRDD(rdd -> {
-                        logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
-                    });
-                }
+                                                  final Map<TopicPartition, Long> topicAndPartitions) {
+            // create the consumer strategy for managing offsets, of no offset is given for a TopicPartition,
+            // the committed offset (if applicable) or kafka param auto.offset.reset will be used.
+            final ConsumerStrategy<String, byte[]> cs =
+                    ConsumerStrategies.<String, byte[]>Subscribe(streamConfig.getTopics(),
+                            streamConfig.getAdditionalConfiguration(), topicAndPartitions);
+            // create the stream
+            final JavaInputDStream<ConsumerRecord<String, byte[]>> directStream =
+                    createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), cs);
+            // log offsets if needed
+            if (OffsetManager.logOffsets()) {
+                directStream.foreachRDD(rdd -> {
+                    logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
+                });
             }
-            return directStream;
+            // get the dstream
+            return directStream.map((Function<ConsumerRecord<String, byte[]>, byte[]>) ConsumerRecord::value);
         }
 
-        private static Map<TopicAndPartition, Long> readTopicOffsets(final String keyspace, final Set<String> topics,
-                                                                     final CassandraConnector connector) {
-            final Map<TopicAndPartition, Long> topicMap = new HashMap<>();
+        private static Map<TopicPartition, Long> readTopicOffsets(final String keyspace, final Set<String> topics,
+                                                                  final CassandraConnector connector) {
+            final Map<TopicPartition, Long> topicMap = new HashMap<>();
             // map each topic to its partitions
             topics.stream().forEach(topic -> {
                 // 1) see if it exist in cassandra, if not just return an empty map
                 final OffsetRange[] offsetRanges = OffsetManager.loadOffsetRanges(keyspace, topic, connector);
                 for (final OffsetRange offsetRange : offsetRanges) {
-                    topicMap.put(offsetRange.topicAndPartition(), offsetRange.fromOffset());
+                    topicMap.put(offsetRange.topicPartition(), offsetRange.fromOffset());
                 }
             });
             return topicMap;

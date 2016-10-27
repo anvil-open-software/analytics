@@ -19,7 +19,7 @@ public final class KafkaStreamConfig implements StreamConfig {
 
     private String streamEndpoint; // kafka bootstrap.servers
     private String streamName; // kafka topics
-    private Map<String, String> additionalConfiguration;
+    private Map<String, Object> additionalConfiguration;
 
     public KafkaStreamConfig() {
         additionalConfiguration = new HashMap<>();
@@ -29,17 +29,16 @@ public final class KafkaStreamConfig implements StreamConfig {
 
 
     /**
-     *
      * @param prefix
      * @return map with any system properties starting with prefix
      * todo could not find utility. but should be put in some generic utils class in toolkit
      */
-    public static void addPrefixedSystemProperties(Map<String,String> properties, String prefix){
-        for(String propName: System.getProperties().stringPropertyNames()){
-            if(propName.startsWith(prefix)){
+    public static void addPrefixedSystemProperties(final Map<String, Object> properties, final String prefix) {
+        for (String propName : System.getProperties().stringPropertyNames()) {
+            if (propName.startsWith(prefix)) {
                 String key = propName.substring(prefix.length());
-                String value=  System.getProperty(propName);
-                properties.put(key,value);
+                String value = System.getProperty(propName);
+                properties.put(key, value);
                 LOGGER.info("Adding property for " + key + '=' + value);
             }
         }
@@ -69,18 +68,18 @@ public final class KafkaStreamConfig implements StreamConfig {
     }
 
     @Override
-    public Map<String, String> getAdditionalConfiguration() {
+    public Map<String, Object> getAdditionalConfiguration() {
         return additionalConfiguration;
     }
 
     @Override
-    public void setAdditionalConfiguration(final Map<String, String> additionalConfiguration) {
+    public void setAdditionalConfiguration(final Map<String, Object> additionalConfiguration) {
         this.additionalConfiguration = additionalConfiguration;
     }
 
     @Override
     public Set<String> getTopics() {
-        if(Strings.isNullOrEmpty(streamName)) {
+        if (Strings.isNullOrEmpty(streamName)) {
             throw new IllegalArgumentException("No kafka topics defined");
         }
         return new HashSet<>(Arrays.asList(streamName.split(",")));
