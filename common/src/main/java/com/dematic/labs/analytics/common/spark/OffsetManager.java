@@ -10,7 +10,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.google.common.base.Strings;
-import org.apache.spark.streaming.kafka.OffsetRange;
+import org.apache.spark.streaming.kafka010.OffsetRange;
 
 import java.io.Serializable;
 import java.util.ArrayList;
