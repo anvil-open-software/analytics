@@ -1,7 +1,7 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.signal.kafka;
 
-import com.dematic.labs.toolkit.communication.Signal;
-import com.dematic.labs.toolkit.communication.SignalUtils;
+import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
+import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils;
 import com.google.common.base.Strings;
 import info.batey.kafka.unit.KafkaUnitRule;
 import org.apache.kafka.clients.producer.KafkaProducer;

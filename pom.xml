@@ -1,40 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.dematic.labs</groupId>
+    <parent>
+        <groupId>com.dematic.labs</groupId>
+        <artifactId>toolkit</artifactId>
+        <version>1.0.4-SNAPSHOT</version>
+    </parent>
+
     <artifactId>analytics</artifactId>
     <version>1.1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
     <modules>
         <module>common</module>
         <module>store</module>
         <module>ingestion</module>
     </modules>
-    <packaging>pom</packaging>
-
-    <properties>
-        <!-- session.executionRootDirectory is set by Maven -->
-        <jacoco.out.path>${session.executionRootDirectory}/target</jacoco.out.path>
-        <jacoco.out.file>jacoco.exec</jacoco.out.file>
-        <jacoco-it.out.file>jacoco-it.exec</jacoco-it.out.file>
-        <!--${env.WORKSPACE} is set by Jenkins -->
-        <sonar.jacoco.reportPath>${env.WORKSPACE}/target/${jacoco.out.file}</sonar.jacoco.reportPath>
-        <sonar.jacoco.itReportPath>${env.WORKSPACE}/target/${jacoco-it.out.file}</sonar.jacoco.itReportPath>
-    </properties>
 
     <scm>
         <developerConnection>scm:git:git@gitlab.ops.cld:Dematiclabs/analytics.git</developerConnection>
         <tag>HEAD</tag>
-  </scm>
+    </scm>
+
+    <distributionManagement>
+        <repository>
+            <id>nexus</id>
+            <name>Releases</name>
+            <url>http://nexus:8081/nexus/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus</id>
+            <name>Snapshots</name>
+            <url>http://nexus:8081/nexus/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.dematic.labs</groupId>
-                <artifactId>common-dep</artifactId>
-                <version>1.0.3-SNAPSHOT</version>
-                <scope>import</scope>
+                <groupId>com.dematic.labs.toolkit.bom</groupId>
+                <artifactId>bigdata-dep</artifactId>
+                <version>1.0.4-SNAPSHOT</version>
                 <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.dematic.labs.toolkit.bom</groupId>
+                <artifactId>common-dep</artifactId>
+                <version>1.0.4-SNAPSHOT</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -49,15 +66,26 @@
             <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.dematic.labs</groupId>
-            <artifactId>toolkit</artifactId>
+            <groupId>com.dematic.labs.toolkit.helpers</groupId>
+            <artifactId>bigdata</artifactId>
+            <version>1.0.4-SNAPSHOT</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.dematic.labs.toolkit.helpers</groupId>
+            <artifactId>bigdata</artifactId>
             <version>1.0.4-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>com.dematic.labs</groupId>
-            <artifactId>toolkit</artifactId>
+            <groupId>com.dematic.labs.toolkit.helpers</groupId>
+            <artifactId>common</artifactId>
             <version>1.0.4-SNAPSHOT</version>
-            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>com.dematic.labs.toolkit.helpers</groupId>
+            <artifactId>test_util</artifactId>
+            <version>1.0.4-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <!-- spark sql/data frames/data sets -->
@@ -67,16 +95,16 @@
             <version>2.0.1</version>
             <exclusions>
                 <exclusion>
-                    <artifactId>jets3t</artifactId>
                     <groupId>net.java.dev.jets3t</groupId>
+                    <artifactId>jets3t</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>commons-httpclient</artifactId>
                     <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>slf4j-log4j12</artifactId>
                     <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -88,16 +116,16 @@
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
-                    <artifactId>jets3t</artifactId>
                     <groupId>net.java.dev.jets3t</groupId>
+                    <artifactId>jets3t</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>commons-httpclient</artifactId>
                     <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>slf4j-log4j12</artifactId>
                     <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -108,16 +136,16 @@
             <version>2.0.1</version>
             <exclusions>
                 <exclusion>
-                    <artifactId>jets3t</artifactId>
                     <groupId>net.java.dev.jets3t</groupId>
+                    <artifactId>jets3t</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>commons-httpclient</artifactId>
                     <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>slf4j-log4j12</artifactId>
                     <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -150,183 +178,4 @@
             <artifactId>hamcrest-junit</artifactId>
         </dependency>
     </dependencies>
-
-    <build>
-        <defaultGoal>clean install</defaultGoal>
-        <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>properties-maven-plugin</artifactId>
-                <version>1.0-alpha-2</version>
-                <executions>
-                    <execution>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>read-project-properties</goal>
-                        </goals>
-                        <configuration>
-                            <files>
-                                <file>${user.home}/.m2/junit.properties</file>
-                            </files>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.2</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                    <!-- Disable annotation processing for ourselves.-->
-                    <compilerArgument>-proc:none</compilerArgument>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>2.5.3</version>
-                <configuration>
-                    <tagNameFormat>v${project.version}</tagNameFormat>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.9.1</version>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>${project.build.directory}/generated-sources/java</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>2.2</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <!-- executes unit test -->
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.18.1</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.maven.surefire</groupId>
-                        <artifactId>surefire-junit47</artifactId>
-                        <version>2.18.1</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-        </plugins>
-    </build>
-
-    <profiles>
-        <profile>
-            <id>jacoco</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.codehaus.sonar-plugins.java</groupId>
-                    <artifactId>sonar-jacoco-listeners</artifactId>
-                    <version>1.5</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>sonar-maven-plugin</artifactId>
-                        <version>2.5</version>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>0.7.4.201502262128</version>
-                        <executions>
-                            <execution>
-                                <id>default-prepare-agent</id>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                                <configuration>
-                                    <destFile>${jacoco.out.path}/${jacoco.out.file}</destFile>
-                                    <propertyName>jacoco.agent.arg</propertyName>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>default-prepare-agent-integration</id>
-                                <goals>
-                                    <goal>prepare-agent-integration</goal>
-                                </goals>
-                                <configuration>
-                                    <destFile>${jacoco.out.path}/${jacoco-it.out.file}</destFile>
-                                    <propertyName>jacoco-it.agent.arg</propertyName>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <!--suppress MavenModelInspection -->
-                            <argLine>${jacoco.agent.arg}</argLine>
-                            <properties>
-                                <property>
-                                    <name>listener</name>
-                                    <value>org.sonar.java.jacoco.JUnitListener</value>
-                                </property>
-                            </properties>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <!--suppress MavenModelInspection -->
-                            <argLine>-Xmx1024m -XX:MaxPermSize=256m ${jacoco-it.agent.arg}</argLine>
-                            <!-- Specific to generate mapping between tests and covered code -->
-                            <properties>
-                                <property>
-                                    <name>listener</name>
-                                    <value>org.sonar.java.jacoco.JUnitListener</value>
-                                </property>
-                            </properties>
-                            <!-- Let's put failsafe reports with surefire to have access to tests failures/success reports in sonar -->
-                            <reportsDirectory>target/surefire-reports</reportsDirectory>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
-    <distributionManagement>
-        <repository>
-            <id>nexus</id>
-            <name>Releases</name>
-            <url>http://nexus:8081/nexus/content/repositories/releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>nexus</id>
-            <name>Snapshots</name>
-            <url>http://nexus:8081/nexus/content/repositories/snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
-
 </project>

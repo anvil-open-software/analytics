@@ -4,8 +4,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
-import static com.dematic.labs.toolkit.communication.SignalUtils.toInstantFromJavaUtilDate;
-import static com.dematic.labs.toolkit.communication.SignalUtils.toJavaUtilDateFromInstance;
+import static com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils.toInstantFromJavaUtilDate;
+import static com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils.toJavaUtilDateFromInstance;
 
 public enum Aggregation {
     HOUR(ChronoUnit.HOURS),
