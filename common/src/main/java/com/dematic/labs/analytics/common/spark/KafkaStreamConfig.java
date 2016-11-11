@@ -54,7 +54,7 @@ public final class KafkaStreamConfig implements StreamConfig {
 
     @Override
     public String getStreamEndpoint() {
-        return additionalConfiguration.containsValue(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) ?
+        return additionalConfiguration.containsKey(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG) ?
                 additionalConfiguration.get(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG).toString() : null;
     }
 
