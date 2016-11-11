@@ -10,6 +10,9 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.google.common.base.Strings;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.spark.streaming.kafka010.OffsetRange;
 
 import java.io.Serializable;
@@ -18,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.*;
+import static com.dematic.labs.toolkit.helpers.bigdata.kafka.Connections.getKafkaProducer;
 
 @SuppressWarnings("unused")
 public final class OffsetManager implements Serializable {
@@ -90,7 +94,7 @@ public final class OffsetManager implements Serializable {
         }
         // execute
         Connections.execute(batch(stmtList.toArray(new RegularStatement[stmtList.size()]))
-                        .setConsistencyLevel(ConsistencyLevel.ALL), connector);
+                .setConsistencyLevel(ConsistencyLevel.ALL), connector);
     }
 
     public static boolean manageOffsets() {
@@ -99,5 +103,15 @@ public final class OffsetManager implements Serializable {
 
     public static boolean logOffsets() {
         return !Strings.isNullOrEmpty(System.getProperty(KafkaStreamConfig.KAFKA_OFFSET_LOG_KEY));
+    }
+
+    public static List<TopicPartition> initialOffsets(final String serverIpAddress, final String topic) {
+        final List<TopicPartition> topicPartitions = new ArrayList<>();
+        try (final KafkaProducer<String, byte[]> kafkaProducer = getKafkaProducer(serverIpAddress)) {
+            final List<PartitionInfo> partitionInfoList = kafkaProducer.partitionsFor(topic);
+            partitionInfoList.forEach(partitionInfo ->
+                    topicPartitions.add(new TopicPartition(topic, partitionInfo.partition())));
+        }
+        return topicPartitions;
     }
 }
