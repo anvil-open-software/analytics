@@ -44,19 +44,9 @@ public final class StreamFunctions implements Serializable {
                     readTopicOffsets(keyspace, streamConfig.getStreamEndpoint(), streamConfig.getTopics(),
                             streamingContext.sparkContext().getConf()) :
                     Collections.emptyMap();
-
             final JavaInputDStream<ConsumerRecord<String, byte[]>> inputDStream =
                     create(streamingContext, streamConfig, topicAndPartitions);
-
-            if (OffsetManager.manageOffsets()) {
-                inputDStream.foreachRDD(rdd -> {
-                    // log and save
-                    final OffsetRange[] offsetRanges = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-                    if (OffsetManager.logOffsets()) {
-                        logOffsets(offsetRanges);
-                    }
-                });
-            } else if (OffsetManager.logOffsets()) {
+            if (OffsetManager.logOffsets()) {
                 inputDStream.foreachRDD(rdd -> {
                     logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
                 });
