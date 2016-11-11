@@ -9,8 +9,11 @@ import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.toolkit.helpers.common.GenericBuilder;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +29,7 @@ public final class CassandraPersister {
     }
 
     // signal stream processing function
-    private static final class PersistFunction implements VoidFunction<JavaDStream<byte[]>> {
+    private static final class PersistFunction implements VoidFunction<JavaInputDStream<ConsumerRecord<String, byte[]>>> {
         private final CassandraDriverConfig driverConfig;
 
         PersistFunction(final CassandraDriverConfig driverConfig) {
@@ -34,9 +37,11 @@ public final class CassandraPersister {
         }
 
         @Override
-        public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
+        public void call(final JavaInputDStream<ConsumerRecord<String, byte[]>> javaDStream) throws Exception {
             // transform the byte[] (byte arrays are json) to signals
-            final JavaDStream<Signal> eventStream = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
+            final JavaDStream<Signal> eventStream = javaDStream.
+                    map((Function<ConsumerRecord<String, byte[]>, byte[]>) ConsumerRecord::value).
+                    map(SignalUtils::jsonByteArrayToSignal);
             eventStream.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME,
                         mapToRow(Signal.class)).saveToCassandra();

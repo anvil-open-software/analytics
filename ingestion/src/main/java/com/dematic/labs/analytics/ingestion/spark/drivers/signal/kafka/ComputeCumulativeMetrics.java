@@ -12,19 +12,20 @@ import com.dematic.labs.analytics.ingestion.spark.drivers.signal.AggregationFunc
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.ComputeCumulativeMetricsDriverConfig;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregation;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalValidation;
-import com.dematic.labs.toolkit.helpers.common.GenericBuilder;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils;
+import com.dematic.labs.toolkit.helpers.common.GenericBuilder;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.Durations;
 import org.apache.spark.streaming.StateSpec;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaMapWithStateDStream;
 import org.apache.spark.streaming.api.java.JavaPairDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-
 import org.apache.spark.streaming.kafka010.HasOffsetRanges;
 import org.apache.spark.streaming.kafka010.OffsetRange;
 import org.slf4j.Logger;
@@ -53,7 +54,7 @@ public final class ComputeCumulativeMetrics {
     private ComputeCumulativeMetrics() {
     }
 
-    private static final class ComputeCumulativeSignalMetrics implements VoidFunction<JavaDStream<byte[]>> {
+    private static final class ComputeCumulativeSignalMetrics implements VoidFunction<JavaInputDStream<ConsumerRecord<String, byte[]>>> {
         private final ComputeCumulativeMetricsDriverConfig driverConfig;
 
         ComputeCumulativeSignalMetrics(final ComputeCumulativeMetricsDriverConfig driverConfig) {
@@ -61,20 +62,20 @@ public final class ComputeCumulativeMetrics {
         }
 
         @Override
-        public void call(final JavaDStream<byte[]> javaDStream) throws Exception {
-            // 1) save offsets from the beginning.....
+        public void call(final JavaInputDStream<ConsumerRecord<String, byte[]>> inputStream) throws Exception {
+            // 1) save offsets from the beginning
             if (manageOffsets()) {
-                // just saving offset, if we have a failure we will reprocess the entire batch and deal with
-                // duplicates upon startup
-                javaDStream.foreachRDD(rdd -> {
+                final CassandraConnector cassandraConnector = CassandraConnector.apply(inputStream.context().conf());
+                inputStream.foreachRDD(rdd -> {
                     final OffsetRange[] offsetRanges = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-                    saveOffsetRanges(driverConfig.getKeySpace(), offsetRanges,
-                            CassandraConnector.apply(javaDStream.context().conf()));
+                    saveOffsetRanges(driverConfig.getKeySpace(), offsetRanges, cassandraConnector);
                 });
             }
 
             // 2) transform the byte[] (byte arrays are json) to signals and save raw signals
-            final JavaDStream<Signal> signals = javaDStream.map(SignalUtils::jsonByteArrayToSignal);
+            final JavaDStream<Signal> signals =
+                    inputStream.map((Function<ConsumerRecord<String, byte[]>, byte[]>) ConsumerRecord::value)
+                            .map(SignalUtils::jsonByteArrayToSignal);
             signals.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
                         saveToCassandra();

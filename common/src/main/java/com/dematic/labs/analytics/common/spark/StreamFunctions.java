@@ -5,25 +5,16 @@ import com.google.common.base.Strings;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.kafka010.ConsumerStrategies;
-import org.apache.spark.streaming.kafka010.ConsumerStrategy;
-import org.apache.spark.streaming.kafka010.HasOffsetRanges;
-import org.apache.spark.streaming.kafka010.LocationStrategies;
-import org.apache.spark.streaming.kafka010.OffsetRange;
+import org.apache.spark.streaming.kafka010.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.apache.spark.streaming.kafka010.KafkaUtils.createDirectStream;
 
@@ -34,7 +25,7 @@ public final class StreamFunctions implements Serializable {
     }
 
     // create kafka dstream function
-    private static final class CreateKafkaDStream implements Function0<JavaDStream<byte[]>> {
+    private static final class CreateKafkaDStream implements Function0<JavaInputDStream<ConsumerRecord<String, byte[]>>> {
         private final String keyspace;
         private final StreamConfig streamConfig;
         private final JavaStreamingContext streamingContext;
@@ -47,45 +38,50 @@ public final class StreamFunctions implements Serializable {
         }
 
         @Override
-        public JavaDStream<byte[]> call() throws Exception {
+        public JavaInputDStream<ConsumerRecord<String, byte[]>> call() throws Exception {
             final Map<TopicPartition, Long> topicAndPartitions = OffsetManager.manageOffsets() ?
                     // manually manage and load the offsets
-                    readTopicOffsets(keyspace, streamConfig.getTopics(),
-                            CassandraConnector.apply(streamingContext.sparkContext().getConf())) :
+                    readTopicOffsets(keyspace, streamConfig.getStreamEndpoint(), streamConfig.getTopics(),
+                            streamingContext.sparkContext().getConf()) :
                     Collections.emptyMap();
-            return create(streamingContext, streamConfig, topicAndPartitions);
+            final JavaInputDStream<ConsumerRecord<String, byte[]>> inputDStream =
+                    create(streamingContext, streamConfig, topicAndPartitions);
+            if (OffsetManager.logOffsets()) {
+                inputDStream.foreachRDD(rdd -> {
+                    logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
+                });
+            }
+            return inputDStream;
         }
 
-        private static JavaDStream<byte[]> create(final JavaStreamingContext streamingContext,
-                                                  final StreamConfig streamConfig,
-                                                  final Map<TopicPartition, Long> topicAndPartitions) {
+        private static JavaInputDStream<ConsumerRecord<String, byte[]>> create(final JavaStreamingContext streamingContext,
+                                                                               final StreamConfig streamConfig,
+                                                                               final Map<TopicPartition, Long> topicAndPartitions) {
             // create the consumer strategy for managing offsets, of no offset is given for a TopicPartition,
             // the committed offset (if applicable) or kafka param auto.offset.reset will be used.
             final ConsumerStrategy<String, byte[]> cs =
                     ConsumerStrategies.<String, byte[]>Subscribe(streamConfig.getTopics(),
                             streamConfig.getAdditionalConfiguration(), topicAndPartitions);
             // create the stream
-            final JavaInputDStream<ConsumerRecord<String, byte[]>> directStream =
-                    createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), cs);
-            // log offsets if needed
-            if (OffsetManager.logOffsets()) {
-                directStream.foreachRDD(rdd -> {
-                    logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
-                });
-            }
-            // get the dstream
-            return directStream.map((Function<ConsumerRecord<String, byte[]>, byte[]>) ConsumerRecord::value);
+            return createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), cs);
         }
 
-        private static Map<TopicPartition, Long> readTopicOffsets(final String keyspace, final Set<String> topics,
-                                                                  final CassandraConnector connector) {
+        private static Map<TopicPartition, Long> readTopicOffsets(final String keyspace, final String streamEndpoint,
+                                                                  final Set<String> topics,
+                                                                  final SparkConf sparkConf) {
+            final CassandraConnector cassandraConnector = CassandraConnector.apply(sparkConf);
             final Map<TopicPartition, Long> topicMap = new HashMap<>();
             // map each topic to its partitions
             topics.stream().forEach(topic -> {
-                // 1) see if it exist in cassandra, if not just return an empty map
-                final OffsetRange[] offsetRanges = OffsetManager.loadOffsetRanges(keyspace, topic, connector);
-                for (final OffsetRange offsetRange : offsetRanges) {
-                    topicMap.put(offsetRange.topicPartition(), offsetRange.fromOffset());
+                // 1) see if it exist in cassandra, if not, find out # of topics and partitions from kafka
+                final OffsetRange[] offsetRanges = OffsetManager.loadOffsetRanges(keyspace, topic, cassandraConnector);
+                if (offsetRanges.length == 0) {
+                    final List<TopicPartition> partitionList = OffsetManager.initialOffsets(streamEndpoint, topic);
+                    partitionList.forEach(tAndP -> topicMap.put(tAndP, 0L));
+                } else {
+                    for (final OffsetRange offsetRange : offsetRanges) {
+                        topicMap.put(offsetRange.topicPartition(), offsetRange.fromOffset());
+                    }
                 }
             });
             return topicMap;
@@ -101,10 +97,10 @@ public final class StreamFunctions implements Serializable {
 
     public static final class CreateKafkaCassandraStreamingContext implements Function0<JavaStreamingContext> {
         private final CassandraDriverConfig driverConfig;
-        private final VoidFunction<JavaDStream<byte[]>> streamProcessor;
+        private final VoidFunction<JavaInputDStream<ConsumerRecord<String, byte[]>>> streamProcessor;
 
         public CreateKafkaCassandraStreamingContext(final CassandraDriverConfig driverConfig,
-                                                    final VoidFunction<JavaDStream<byte[]>> streamProcessor) {
+                                                    final VoidFunction<JavaInputDStream<ConsumerRecord<String, byte[]>>> streamProcessor) {
             this.driverConfig = driverConfig;
             this.streamProcessor = streamProcessor;
         }
@@ -127,8 +123,7 @@ public final class StreamFunctions implements Serializable {
             // create the streaming context
             final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration,
                     driverConfig.getPollTimeInSeconds());
-
-            final JavaDStream<byte[]> dStream =
+            final JavaInputDStream<ConsumerRecord<String, byte[]>> dStream =
                     new CreateKafkaDStream(driverConfig.getKeySpace(), driverConfig.getStreamConfig(), streamingContext)
                             .call();
             // work on the streams
