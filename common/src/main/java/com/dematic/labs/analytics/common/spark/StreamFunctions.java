@@ -90,8 +90,8 @@ public final class StreamFunctions implements Serializable {
 
         private static void logOffsets(final OffsetRange[] offsets) {
             for (final OffsetRange offset : offsets) {
-                LOGGER.info("OFFSET: " + offset.topic() + ' ' + offset.partition() + ' ' +
-                        offset.fromOffset() + ' ' + offset.untilOffset());
+                LOGGER.info("OFFSET: " + offset.topic() + ' ' + offset.partition() + ' ' + offset.fromOffset() + ' '
+                        + offset.untilOffset());
             }
         }
     }
