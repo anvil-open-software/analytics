@@ -39,6 +39,7 @@ public final class StreamFunctions implements Serializable {
 
         @Override
         public JavaInputDStream<ConsumerRecord<String, byte[]>> call() throws Exception {
+            LOGGER.info("OFFSETS: manually manage >{}<",  OffsetManager.manageOffsets());
             final Map<TopicPartition, Long> topicAndPartitions = OffsetManager.manageOffsets() ?
                     // manually manage and load the offsets
                     readTopicOffsets(keyspace, streamConfig.getStreamEndpoint(), streamConfig.getTopics(),
