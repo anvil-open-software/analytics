@@ -154,6 +154,9 @@ public final class ComputeCumulativeMetrics {
             pollTime = args[5];
         }
 
+        LOGGER.error(" ------------ " + manageOffsets());
+        LOGGER.info(" ------------ " + manageOffsets());
+
         System.setProperty(KafkaStreamConfig.KAFKA_OFFSET_MANAGE_KEY, "true");
 
         // create the driver configuration and checkpoint dir
