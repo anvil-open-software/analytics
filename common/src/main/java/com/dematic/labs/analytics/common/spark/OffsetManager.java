@@ -14,6 +14,8 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.spark.streaming.kafka010.OffsetRange;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -25,6 +27,8 @@ import static com.dematic.labs.toolkit.helpers.bigdata.kafka.Connections.getKafk
 
 @SuppressWarnings("unused")
 public final class OffsetManager implements Serializable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OffsetManager.class);
+
     public static final String TABLE_NAME = "offsets";
 
     public static String createTableCql(final String keyspace) {
@@ -109,8 +113,10 @@ public final class OffsetManager implements Serializable {
         final List<TopicPartition> topicPartitions = new ArrayList<>();
         try (final KafkaProducer<String, byte[]> kafkaProducer = getKafkaProducer(serverIpAddress)) {
             final List<PartitionInfo> partitionInfoList = kafkaProducer.partitionsFor(topic);
-            partitionInfoList.forEach(partitionInfo ->
-                    topicPartitions.add(new TopicPartition(topic, partitionInfo.partition())));
+            partitionInfoList.forEach(partitionInfo -> {
+                topicPartitions.add(new TopicPartition(topic, partitionInfo.partition()));
+                LOGGER.info("OFF: initial partition {}", partitionInfo);
+            });
         }
         return topicPartitions;
     }
