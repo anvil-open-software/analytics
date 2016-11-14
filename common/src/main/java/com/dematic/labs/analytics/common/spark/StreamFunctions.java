@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.function.BiConsumer;
 
 import static org.apache.spark.streaming.kafka010.KafkaUtils.createDirectStream;
 
@@ -58,6 +59,9 @@ public final class StreamFunctions implements Serializable {
         private static JavaInputDStream<ConsumerRecord<String, byte[]>> create(final JavaStreamingContext streamingContext,
                                                                                final StreamConfig streamConfig,
                                                                                final Map<TopicPartition, Long> topicAndPartitions) {
+
+            topicAndPartitions.forEach((topicPartition, aLong) -> LOGGER.info("OFF: tAndP {}", topicAndPartitions.toString()));
+
             // create the consumer strategy for managing offsets, of no offset is given for a TopicPartition,
             // the committed offset (if applicable) or kafka param auto.offset.reset will be used.
             final ConsumerStrategy<String, byte[]> cs =
