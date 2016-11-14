@@ -98,7 +98,7 @@ public final class OffsetManager implements Serializable {
     }
 
     public static boolean manageOffsets() {
-        return !Strings.isNullOrEmpty(System.getProperty(KafkaStreamConfig.KAFKA_OFFSET_MANAGE_KEY));
+        return true;//!Strings.isNullOrEmpty(System.getProperty(KafkaStreamConfig.KAFKA_OFFSET_MANAGE_KEY));
     }
 
     public static boolean logOffsets() {
