@@ -42,14 +42,14 @@ public final class CassandraPersister {
 
         @Override
         public void call(final JavaInputDStream<ConsumerRecord<String, byte[]>> javaDStream) throws Exception {
-            // transform the byte[] (byte arrays are json) to signals
+           /* // transform the byte[] (byte arrays are json) to signals
             final JavaDStream<Signal> eventStream = javaDStream.
                     map((Function<ConsumerRecord<String, byte[]>, byte[]>) ConsumerRecord::value).
                     map(SignalUtils::jsonByteArrayToSignal);
             eventStream.foreachRDD(rdd -> {
                 javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME,
                         mapToRow(Signal.class)).saveToCassandra();
-            });
+            });*/
         }
     }
 
@@ -114,6 +114,7 @@ public final class CassandraPersister {
                 KafkaUtils.createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), cs);
 
         directStream.foreachRDD(rdd -> {
+            LOGGER.info("OFFSET: " + rdd.rdd().name() + " " + rdd.toString());
             logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
         });
 
