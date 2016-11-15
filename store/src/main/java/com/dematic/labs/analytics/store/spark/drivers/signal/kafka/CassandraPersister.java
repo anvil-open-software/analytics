@@ -4,26 +4,18 @@ import com.datastax.spark.connector.cql.CassandraConnector;
 import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
-import com.dematic.labs.analytics.common.spark.OffsetManager;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
-import com.dematic.labs.toolkit.helpers.common.GenericBuilder;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
-import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils;
+import com.dematic.labs.toolkit.helpers.common.GenericBuilder;
 import com.google.common.base.Strings;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.VoidFunction;
-import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.kafka010.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.javaFunctions;
-import static com.datastax.spark.connector.japi.CassandraJavaUtil.mapToRow;
 
 public final class CassandraPersister {
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraPersister.class);
@@ -80,6 +72,7 @@ public final class CassandraPersister {
             pollTime = args[4];
         }
 
+
         // create the driver configuration and checkpoint dir
         final CassandraDriverConfig driverConfig = configure(String.format("%s_%s", keySpace, APP_NAME),
                 kafkaServerBootstrap, kafkaTopics, host, keySpace, masterUrl, pollTime);
@@ -100,8 +93,11 @@ public final class CassandraPersister {
         // set the connection keep alive
         sparkConfiguration.set(CassandraDriverConfig.KEEP_ALIVE_PROP, driverConfig.getKeepAlive());
 
+
         // create the streaming context
         final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration, driverConfig.getPollTimeInSeconds());
+
+        streamingContext.ssc().sc().setLogLevel("ALL");
 
 
         // create the consumer strategy for managing offsets, of no offset is given for a TopicPartition,
