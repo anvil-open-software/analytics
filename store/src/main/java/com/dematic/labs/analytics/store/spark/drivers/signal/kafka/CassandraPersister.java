@@ -4,6 +4,7 @@ import com.datastax.spark.connector.cql.CassandraConnector;
 import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
+import com.dematic.labs.analytics.common.spark.OffsetManager;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.toolkit.helpers.common.GenericBuilder;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
@@ -17,10 +18,7 @@ import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.kafka010.ConsumerStrategies;
-import org.apache.spark.streaming.kafka010.ConsumerStrategy;
-import org.apache.spark.streaming.kafka010.KafkaUtils;
-import org.apache.spark.streaming.kafka010.LocationStrategies;
+import org.apache.spark.streaming.kafka010.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,7 +84,7 @@ public final class CassandraPersister {
         final CassandraDriverConfig driverConfig = configure(String.format("%s_%s", keySpace, APP_NAME),
                 kafkaServerBootstrap, kafkaTopics, host, keySpace, masterUrl, pollTime);
 
-        driverConfig.setCheckPointDirectoryFromSystemProperties(true);
+       // driverConfig.setCheckPointDirectoryFromSystemProperties(true);
 
 
         final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName());
@@ -115,6 +113,10 @@ public final class CassandraPersister {
         final JavaInputDStream<ConsumerRecord<String, byte[]>> directStream =
                 KafkaUtils.createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), cs);
 
+        directStream.foreachRDD(rdd -> {
+            logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
+        });
+
         new PersistFunction(driverConfig).call(directStream);
 
 
@@ -128,6 +130,13 @@ public final class CassandraPersister {
         streamingContext.start();
         LOGGER.info("KCP: spark state: {}", streamingContext.getState().name());
         streamingContext.awaitTermination();
+    }
+
+    private static void logOffsets(final OffsetRange[] offsets) {
+        for (final OffsetRange offset : offsets) {
+            LOGGER.info("OFFSET: " + offset.topic() + ' ' + offset.partition() + ' ' + offset.fromOffset() + ' '
+                    + offset.untilOffset());
+        }
     }
 
     private static CassandraDriverConfig configure(final String appName, final String kafkaServerBootstrap,
