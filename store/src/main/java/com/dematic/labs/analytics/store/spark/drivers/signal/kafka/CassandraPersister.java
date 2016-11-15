@@ -5,16 +5,22 @@ import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
-import com.dematic.labs.analytics.common.spark.StreamFunctions;
 import com.dematic.labs.toolkit.helpers.common.GenericBuilder;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils;
+import com.google.common.base.Strings;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.kafka010.ConsumerStrategies;
+import org.apache.spark.streaming.kafka010.ConsumerStrategy;
+import org.apache.spark.streaming.kafka010.KafkaUtils;
+import org.apache.spark.streaming.kafka010.LocationStrategies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +55,7 @@ public final class CassandraPersister {
         }
     }
 
-    public static void main(final String[] args) throws InterruptedException {
+    public static void main(final String[] args) throws Exception {
         // master url is only set for testing or running locally
         if (args.length < 3) {
             throw new IllegalArgumentException("Driver requires Kafka Server Bootstrap, Kafka topics" +
@@ -81,10 +87,37 @@ public final class CassandraPersister {
                 kafkaServerBootstrap, kafkaTopics, host, keySpace, masterUrl, pollTime);
 
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
-        // master url will be set using the spark submit driver command
-        final JavaStreamingContext streamingContext = JavaStreamingContext.getOrCreate(driverConfig.getCheckPointDir(),
-                new StreamFunctions.CreateKafkaCassandraStreamingContext(driverConfig,
-                        new PersistFunction(driverConfig)));
+
+
+        final SparkConf sparkConfiguration = new SparkConf().setAppName(driverConfig.getAppName());
+        // if master url set, apply
+        if (!Strings.isNullOrEmpty(driverConfig.getMasterUrl())) {
+            sparkConfiguration.setMaster(driverConfig.getMasterUrl());
+        }
+        // set the authorization
+        sparkConfiguration.set(CassandraDriverConfig.AUTH_USERNAME_PROP, driverConfig.getUsername());
+        sparkConfiguration.set(CassandraDriverConfig.AUTH_PASSWORD_PROP, driverConfig.getPassword());
+        // set the connection host
+        sparkConfiguration.set(CassandraDriverConfig.CONNECTION_HOST_PROP, driverConfig.getHost());
+        // set the connection keep alive
+        sparkConfiguration.set(CassandraDriverConfig.KEEP_ALIVE_PROP, driverConfig.getKeepAlive());
+
+        // create the streaming context
+        final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration, driverConfig.getPollTimeInSeconds());
+
+
+        // create the consumer strategy for managing offsets, of no offset is given for a TopicPartition,
+        // the committed offset (if applicable) or kafka param auto.offset.reset will be used.
+        final ConsumerStrategy<String, byte[]> cs =
+                ConsumerStrategies.<String, byte[]>Subscribe(driverConfig.getStreamConfig().getTopics(),
+                        driverConfig.getStreamConfig().getAdditionalConfiguration());
+        // create the stream
+        final JavaInputDStream<ConsumerRecord<String, byte[]>> directStream =
+                KafkaUtils.createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), cs);
+
+        new PersistFunction(driverConfig).call(directStream);
+
+
         // creates the table in cassandra to store raw signals
         Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
                 CassandraConnector.apply(streamingContext.sparkContext().getConf()));
