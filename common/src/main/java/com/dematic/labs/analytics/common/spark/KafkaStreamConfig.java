@@ -32,7 +32,7 @@ public final class KafkaStreamConfig implements StreamConfig {
         additionalConfiguration.put("auto.offset.reset", "earliest");
         //todo: for now its set to off, need to investigate more,
         //todo: see http://spark.apache.org/docs/latest/streaming-kafka-0-10-integration.html
-        additionalConfiguration.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+    //    additionalConfiguration.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         // any jvm property starting with kafka.additionalconfig.
         addPrefixedSystemProperties(additionalConfiguration, "kafka.additionalconfig.");
     }
