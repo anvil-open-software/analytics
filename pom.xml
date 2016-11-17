@@ -17,6 +17,7 @@
         <module>common</module>
         <module>store</module>
         <module>ingestion</module>
+        <module>diagnostics</module>
     </modules>
 
     <scm>
