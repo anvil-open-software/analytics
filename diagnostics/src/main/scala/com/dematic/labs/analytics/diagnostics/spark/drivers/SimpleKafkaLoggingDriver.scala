@@ -7,7 +7,11 @@ import org.apache.spark.streaming.kafka010._
 import org.apache.spark.streaming.kafka010.LocationStrategies
 import org.apache.spark.streaming.kafka010.ConsumerStrategies
 
-object SimpleTestDriver {
+/**
+  *
+  * This driver is only for pulling data from the stream and logging to output
+  */
+object SimpleKafkaLoggingDriver {
   def main(args: Array[String]) {
     if (args.length < 4) {
       System.err.println("Usage: SimpleTestDriver <broker bootstrap servers> <topic> <groupId> <offsetReset>")
@@ -27,7 +31,7 @@ object SimpleTestDriver {
       "enable.auto.commit" -> (false: java.lang.Boolean)
     )
 
-    val sparkConf = new SparkConf().setAppName("SimpleTestDriver")
+    val sparkConf = new SparkConf().setAppName("SimpleTestDriver"+"_" +topic)
     val ssc = new StreamingContext(sparkConf, Seconds(5))
 
 
@@ -37,10 +41,9 @@ object SimpleTestDriver {
       ConsumerStrategies.Subscribe[String, String](topics, kafkaParams))
 
     dstream.foreachRDD { rdd =>
-      // Get the offset ranges in the RDD
+      // Get the offset ranges in the RDD and log
       val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
       for (o <- offsetRanges) {
-        // todo swap with real logging
         println(s"${o.topic} ${o.partition} offsets: ${o.fromOffset} to ${o.untilOffset}")
       }
     }

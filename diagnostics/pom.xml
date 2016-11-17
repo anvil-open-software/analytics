@@ -9,8 +9,8 @@
 
     <groupId>com.dematic.labs.analytics</groupId>
     <artifactId>diagnostics</artifactId>
-    <name>big data diagnostics </name>
-    <description>spark diagnostics</description>
+    <name>big data deployment diagnostics </name>
+    <description>spark drivers for diagnostics</description>
     <properties>
         <scala.major.minor.version>2.11</scala.major.minor.version>
     </properties>
@@ -39,7 +39,49 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <!-- create the sparks driver ubar jars -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>driver</shadedClassifierName>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>junit:junit</exclude>
+                                        <exclude>jmock:*</exclude>
+                                        <exclude>*:xml-apis</exclude>
+                                        <!-- todo: not being excluded -->
+                                        <exclude>com.dematic.labs:common:test-jar:tests</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>commons-httpclient:commons-httpclient</exclude>
+                                    <exclude>junit:junit</exclude>
+                                    <exclude>jmock:*</exclude>
+                                    <exclude>*:xml-apis</exclude>
+                                    <exclude>*:tests</exclude>
+                                    <exclude>*:test-jar:tests</exclude>
+                                </excludes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
            <!-- <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>

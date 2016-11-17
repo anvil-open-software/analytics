@@ -1,0 +1,1 @@
+The diagnostics submodule are purely test drivers to debug the system.
