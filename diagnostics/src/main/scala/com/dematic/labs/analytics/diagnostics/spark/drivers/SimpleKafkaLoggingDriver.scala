@@ -7,13 +7,15 @@ import org.apache.spark.streaming.kafka010._
 import org.apache.spark.streaming.kafka010.LocationStrategies
 import org.apache.spark.streaming.kafka010.ConsumerStrategies
 
+
 /**
   *
-  * This driver is only for pulling data from the stream and logging to output
+  * This driver is only for pulling data from the stream and logging partition to output.
+  *
   */
 object SimpleKafkaLoggingDriver {
   def main(args: Array[String]) {
-    if (args.length < 4) {
+    if (args.length != 4) {
       System.err.println("Usage: SimpleTestDriver <broker bootstrap servers> <topic> <groupId> <offsetReset>")
       System.exit(1)
     }
@@ -32,24 +34,24 @@ object SimpleKafkaLoggingDriver {
     )
 
     val sparkConf = new SparkConf().setAppName("SimpleTestDriver"+"_" +topic)
-    val ssc = new StreamingContext(sparkConf, Seconds(5))
+    val streamingContext = new StreamingContext(sparkConf, Seconds(5))
 
 
     val dstream = KafkaUtils.createDirectStream[String, String](
-      ssc,
+      streamingContext,
       preferredHosts,
       ConsumerStrategies.Subscribe[String, String](topics, kafkaParams))
 
     dstream.foreachRDD { rdd =>
-      // Get the offset ranges in the RDD and log
+      // Get the offset ranges in the RDD and log. Probably should choose a standard logger...
       val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
       for (o <- offsetRanges) {
-        println(s"${o.topic} ${o.partition} offsets: ${o.fromOffset} to ${o.untilOffset}")
+        println(s"  ${o.topic} partition ${o.partition} offset range: ${o.fromOffset} to ${o.untilOffset}")
       }
     }
 
-    ssc.start
-    ssc.awaitTermination()
+    streamingContext.start
+    streamingContext.awaitTermination()
 
   }
 
