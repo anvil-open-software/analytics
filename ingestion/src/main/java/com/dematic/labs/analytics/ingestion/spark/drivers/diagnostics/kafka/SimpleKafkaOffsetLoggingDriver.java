@@ -24,8 +24,8 @@ import java.util.Map;
 */
 
 
-public final class SimpleKafkaLoggingDriver {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleKafkaLoggingDriver.class);
+public final class SimpleKafkaOffsetLoggingDriver {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleKafkaOffsetLoggingDriver.class);
     public static final String APP_NAME = "TEST_ASSIGNED_OFFSET";
 
 
