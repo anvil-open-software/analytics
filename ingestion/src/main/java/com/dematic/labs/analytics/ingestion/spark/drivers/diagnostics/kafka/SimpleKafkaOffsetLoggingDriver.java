@@ -1,5 +1,6 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.diagnostics.kafka;
 
+import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.spark.SparkConf;
@@ -42,6 +43,8 @@ public final class SimpleKafkaOffsetLoggingDriver {
         kafkaParams.put("group.id", args[2]);
         kafkaParams.put("auto.offset.reset",args[3]);
         kafkaParams.put("enable.auto.commit", false);
+        // add anything else from the jvm system properties
+        KafkaStreamConfig.addPrefixedSystemProperties(kafkaParams, "kafka.additionalconfig.");
         // try increasing just in case...
         kafkaParams.put("session.timeout.ms", "30000");
 
