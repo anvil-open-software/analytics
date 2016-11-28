@@ -10,16 +10,15 @@ import org.apache.spark.api.java.function.Function0;
 import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.kafka010.ConsumerStrategies;
-import org.apache.spark.streaming.kafka010.ConsumerStrategy;
-import org.apache.spark.streaming.kafka010.HasOffsetRanges;
-import org.apache.spark.streaming.kafka010.LocationStrategies;
-import org.apache.spark.streaming.kafka010.OffsetRange;
+import org.apache.spark.streaming.kafka010.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.dematic.labs.analytics.common.spark.OffsetManager.initialOffsets;
 import static com.dematic.labs.analytics.common.spark.OffsetManager.manageOffsets;
@@ -50,14 +49,17 @@ public final class StreamFunctions implements Serializable {
 
             final Map<TopicPartition, Long> topicPartitionsOffsets = manageOffsets() ?
                     // manually manage and load the offsets
-                    readTopicPartitonOffsets(keyspace, streamConfig.getStreamEndpoint(), streamConfig.getTopics(),
+                    readTopicPartitionOffsets(keyspace, streamConfig.getStreamEndpoint(), streamConfig.getTopics(),
                             streamingContext.sparkContext().getConf()) :
                     assignTopicPartitionOffsets(streamConfig.getStreamEndpoint(), streamConfig.getTopics());
-            final JavaInputDStream<ConsumerRecord<String, byte[]>> inputDStream = create(streamingContext, streamConfig,
-                    topicPartitionsOffsets);
+
+            final JavaInputDStream<ConsumerRecord<String, byte[]>> inputDStream =
+                    create(streamingContext, streamConfig, topicPartitionsOffsets);
+
             if (OffsetManager.logOffsets()) {
                 inputDStream.foreachRDD(rdd -> logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges()));
             }
+
             return inputDStream;
         }
 
@@ -72,10 +74,10 @@ public final class StreamFunctions implements Serializable {
             return createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), assignCS);
         }
 
-        private static Map<TopicPartition, Long> readTopicPartitonOffsets(final String keyspace,
-                                                                          final String streamEndpoint,
-                                                                          final Set<String> topics,
-                                                                          final SparkConf sparkConf) {
+        private static Map<TopicPartition, Long> readTopicPartitionOffsets(final String keyspace,
+                                                                           final String streamEndpoint,
+                                                                           final Set<String> topics,
+                                                                           final SparkConf sparkConf) {
             final CassandraConnector cassandraConnector = CassandraConnector.apply(sparkConf);
             final Map<TopicPartition, Long> topicMap = new HashMap<>();
             // map each topic to its partitions
