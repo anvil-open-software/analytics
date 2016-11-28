@@ -54,7 +54,7 @@ public final class SimpleKafkaOffsetLoggingDriver {
         // create the streaming context
         final JavaStreamingContext streamingContext = new JavaStreamingContext(sparkConfiguration, Durations.seconds(Integer.valueOf(5)));
         // force log
-        streamingContext.ssc().sc().setLogLevel("DEBUG");
+        streamingContext.ssc().sc().setLogLevel("ALL");
 
         final JavaInputDStream<ConsumerRecord<String, String>> directStream =
                 KafkaUtils.createDirectStream(
