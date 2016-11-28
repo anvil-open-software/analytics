@@ -2,6 +2,7 @@ package com.dematic.labs.analytics.common.spark;
 
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.google.common.base.Strings;
+import jersey.repackaged.com.google.common.collect.Lists;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.spark.SparkConf;
@@ -18,10 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.dematic.labs.analytics.common.spark.OffsetManager.initialOffsets;
 import static com.dematic.labs.analytics.common.spark.OffsetManager.manageOffsets;
@@ -66,11 +64,10 @@ public final class StreamFunctions implements Serializable {
         private static JavaInputDStream<ConsumerRecord<String, byte[]>> create(final JavaStreamingContext streamingContext,
                                                                                final StreamConfig streamConfig,
                                                                                final Map<TopicPartition, Long> tpOffset) {
-            tpOffset.forEach((topicPartition, aLong) -> LOGGER.info("OFF: tAndP {}", tpOffset.toString()));
             // manually assign a CS
             final ConsumerStrategy<String, byte[]> assignCS =
-                    ConsumerStrategies.Assign(tpOffset.keySet(), streamConfig.getAdditionalConfiguration(),
-                            tpOffset);
+                    ConsumerStrategies.Assign(Lists.newArrayList(tpOffset.keySet()),
+                            streamConfig.getAdditionalConfiguration(), tpOffset);
             // create the stream
             return createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), assignCS);
         }
