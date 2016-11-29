@@ -28,11 +28,9 @@ public final class KafkaStreamConfig implements StreamConfig {
                 org.apache.kafka.common.serialization.StringDeserializer.class);
         additionalConfiguration.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
                 org.apache.kafka.common.serialization.ByteArrayDeserializer.class);
-        //todo: remove...
-        additionalConfiguration.put("auto.offset.reset", "earliest");
         //todo: for now its set to off, need to investigate more,
         //todo: see http://spark.apache.org/docs/latest/streaming-kafka-0-10-integration.html
-    //    additionalConfiguration.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        additionalConfiguration.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         // any jvm property starting with kafka.additionalconfig.
         addPrefixedSystemProperties(additionalConfiguration, "kafka.additionalconfig.");
     }
@@ -43,7 +41,7 @@ public final class KafkaStreamConfig implements StreamConfig {
      * @return map with any system properties starting with prefix
      * todo could not find utility. but should be put in some generic utils class in toolkit
      */
-    public static void addPrefixedSystemProperties(final Map<String, Object> properties, final String prefix) {
+    private static void addPrefixedSystemProperties(final Map<String, Object> properties, final String prefix) {
         for (String propName : System.getProperties().stringPropertyNames()) {
             if (propName.startsWith(prefix)) {
                 String key = propName.substring(prefix.length());

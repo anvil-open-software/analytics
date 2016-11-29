@@ -1,7 +1,6 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.signal.kafka;
 
 import com.datastax.spark.connector.cql.CassandraConnector;
-import com.datastax.spark.connector.japi.CassandraJavaUtil;
 import com.dematic.labs.analytics.common.cassandra.Connections;
 import com.dematic.labs.analytics.common.spark.DriverConsts;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
@@ -46,7 +45,7 @@ import static com.dematic.labs.analytics.common.spark.OffsetManager.saveOffsetRa
 
 public final class ComputeCumulativeMetrics {
     private static final Logger LOGGER = LoggerFactory.getLogger(ComputeCumulativeMetrics.class);
-    public static final String APP_NAME = "CUMULATIVE_SIGNAL_METRICS";
+    private static final String APP_NAME = "CUMULATIVE_SIGNAL_METRICS";
 
     // just add a flag to be able to turn off and on validation of counts
     private static final boolean VALIDATE_COUNTS = System.getProperty(DriverConsts.SPARK_DRIVER_VALIDATE_COUNTS) != null;
@@ -76,10 +75,8 @@ public final class ComputeCumulativeMetrics {
             final JavaDStream<Signal> signals =
                     inputStream.map((Function<ConsumerRecord<String, byte[]>, byte[]>) ConsumerRecord::value)
                             .map(SignalUtils::jsonByteArrayToSignal);
-            signals.foreachRDD(rdd -> {
-                javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME, mapToRow(Signal.class)).
-                        saveToCassandra();
-            });
+            signals.foreachRDD(rdd -> javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), Signal.TABLE_NAME,
+                    mapToRow(Signal.class)).saveToCassandra());
 
             // 3) if validation needed, update counts
             if (VALIDATE_COUNTS) {
@@ -87,10 +84,8 @@ public final class ComputeCumulativeMetrics {
                 final JavaDStream<SignalValidation> signalValidation =
                         signals.map((Function<Signal, SignalValidation>)
                                 signal -> new SignalValidation(driverConfig.getAppName(), 0L, 0L, 1L));
-                signalValidation.foreachRDD(rdd -> {
-                    javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(), SignalValidation.TABLE_NAME,
-                            mapToRow(SignalValidation.class)).saveToCassandra();
-                });
+                signalValidation.foreachRDD(rdd -> javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(),
+                        SignalValidation.TABLE_NAME, mapToRow(SignalValidation.class)).saveToCassandra());
             }
 
             // 4) aggregate by key and aggregation time
@@ -116,11 +111,9 @@ public final class ComputeCumulativeMetrics {
                             timeout(Durations.seconds(60L)));
 
             // 6) save aggregations and offsets if needed
-            mapWithStateDStream.foreachRDD(rdd -> {
-                CassandraJavaUtil.javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(),
-                        SignalAggregation.TABLE_NAME, mapToRow(SignalAggregation.class)).
-                        saveToCassandra();
-            });
+            mapWithStateDStream.foreachRDD(rdd -> javaFunctions(rdd).writerBuilder(driverConfig.getKeySpace(),
+                    SignalAggregation.TABLE_NAME, mapToRow(SignalAggregation.class)).
+                    saveToCassandra());
         }
     }
 
@@ -153,11 +146,6 @@ public final class ComputeCumulativeMetrics {
             aggregateBy = Aggregation.valueOf(args[4]);
             pollTime = args[5];
         }
-
-        LOGGER.error(" ------------ " + manageOffsets());
-        LOGGER.info(" ------------ " + manageOffsets());
-
-        System.setProperty(KafkaStreamConfig.KAFKA_OFFSET_MANAGE_KEY, "true");
 
         // create the driver configuration and checkpoint dir
         final ComputeCumulativeMetricsDriverConfig driverConfig = configure(String.format("%s_%s", keySpace, APP_NAME),

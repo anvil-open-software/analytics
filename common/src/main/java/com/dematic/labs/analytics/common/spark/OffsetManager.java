@@ -29,9 +29,9 @@ import static com.dematic.labs.toolkit.helpers.bigdata.kafka.Connections.getKafk
 public final class OffsetManager implements Serializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(OffsetManager.class);
 
-    public static final String TABLE_NAME = "offsets";
+    private static final String TABLE_NAME = "offsets";
 
-    public static String createTableCql(final String keyspace) {
+    private static String createTableCql(final String keyspace) {
         return String.format("CREATE TABLE if not exists %s.%s (" +
                 " topic text," +
                 " partition int," +
@@ -55,8 +55,8 @@ public final class OffsetManager implements Serializable {
         return OFFSET_RANGES.get();
     }
 
-    public static OffsetRange[] loadOffsetRanges(final String keyspace, final String topic,
-                                                 final CassandraConnector connector) {
+    static OffsetRange[] loadOffsetRanges(final String keyspace, final String topic,
+                                          final CassandraConnector connector) {
         // create table if not exist
         Connections.createTable(createTableCql(keyspace), connector);
 
@@ -102,14 +102,14 @@ public final class OffsetManager implements Serializable {
     }
 
     public static boolean manageOffsets() {
-        return true;//!Strings.isNullOrEmpty(System.getProperty(KafkaStreamConfig.KAFKA_OFFSET_MANAGE_KEY));
+        return !Strings.isNullOrEmpty(System.getProperty(KafkaStreamConfig.KAFKA_OFFSET_MANAGE_KEY));
     }
 
-    public static boolean logOffsets() {
+    static boolean logOffsets() {
         return !Strings.isNullOrEmpty(System.getProperty(KafkaStreamConfig.KAFKA_OFFSET_LOG_KEY));
     }
 
-    public static List<TopicPartition> initialOffsets(final String serverIpAddress, final String topic) {
+    static List<TopicPartition> initialOffsets(final String serverIpAddress, final String topic) {
         final List<TopicPartition> topicPartitions = new ArrayList<>();
         try (final KafkaProducer<String, byte[]> kafkaProducer = getKafkaProducer(serverIpAddress)) {
             final List<PartitionInfo> partitionInfoList = kafkaProducer.partitionsFor(topic);

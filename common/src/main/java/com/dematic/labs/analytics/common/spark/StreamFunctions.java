@@ -2,6 +2,7 @@ package com.dematic.labs.analytics.common.spark;
 
 import com.datastax.spark.connector.cql.CassandraConnector;
 import com.google.common.base.Strings;
+import jersey.repackaged.com.google.common.collect.Lists;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.spark.SparkConf;
@@ -14,9 +15,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import static com.dematic.labs.analytics.common.spark.OffsetManager.initialOffsets;
+import static com.dematic.labs.analytics.common.spark.OffsetManager.manageOffsets;
 import static org.apache.spark.streaming.kafka010.KafkaUtils.createDirectStream;
 
 public final class StreamFunctions implements Serializable {
@@ -40,48 +45,47 @@ public final class StreamFunctions implements Serializable {
 
         @Override
         public JavaInputDStream<ConsumerRecord<String, byte[]>> call() throws Exception {
-            LOGGER.info("OFFSETS: manually manage >{}<",  OffsetManager.manageOffsets());
-            final Map<TopicPartition, Long> topicAndPartitions = OffsetManager.manageOffsets() ?
+            LOGGER.info("OFFSETS: manually manage >{}<", manageOffsets());
+
+            final Map<TopicPartition, Long> topicPartitionsOffsets = manageOffsets() ?
                     // manually manage and load the offsets
-                    readTopicOffsets(keyspace, streamConfig.getStreamEndpoint(), streamConfig.getTopics(),
+                    readTopicPartitionOffsets(keyspace, streamConfig.getStreamEndpoint(), streamConfig.getTopics(),
                             streamingContext.sparkContext().getConf()) :
-                    Collections.emptyMap();
+                    assignTopicPartitionOffsets(streamConfig.getStreamEndpoint(), streamConfig.getTopics());
+
             final JavaInputDStream<ConsumerRecord<String, byte[]>> inputDStream =
-                    create(streamingContext, streamConfig, topicAndPartitions);
+                    create(streamingContext, streamConfig, topicPartitionsOffsets);
+
             if (OffsetManager.logOffsets()) {
-                inputDStream.foreachRDD(rdd -> {
-                    logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges());
-                });
+                inputDStream.foreachRDD(rdd -> logOffsets(((HasOffsetRanges) rdd.rdd()).offsetRanges()));
             }
+
             return inputDStream;
         }
 
         private static JavaInputDStream<ConsumerRecord<String, byte[]>> create(final JavaStreamingContext streamingContext,
                                                                                final StreamConfig streamConfig,
-                                                                               final Map<TopicPartition, Long> topicAndPartitions) {
-
-            topicAndPartitions.forEach((topicPartition, aLong) -> LOGGER.info("OFF: tAndP {}", topicAndPartitions.toString()));
-
-            // create the consumer strategy for managing offsets, of no offset is given for a TopicPartition,
-            // the committed offset (if applicable) or kafka param auto.offset.reset will be used.
-            final ConsumerStrategy<String, byte[]> cs =
-                    ConsumerStrategies.<String, byte[]>Subscribe(streamConfig.getTopics(),
-                            streamConfig.getAdditionalConfiguration(), topicAndPartitions);
+                                                                               final Map<TopicPartition, Long> tpOffset) {
+            // manually assign a CS
+            final ConsumerStrategy<String, byte[]> assignCS =
+                    ConsumerStrategies.Assign(Lists.newArrayList(tpOffset.keySet()),
+                            streamConfig.getAdditionalConfiguration(), tpOffset);
             // create the stream
-            return createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), cs);
+            return createDirectStream(streamingContext, LocationStrategies.PreferConsistent(), assignCS);
         }
 
-        private static Map<TopicPartition, Long> readTopicOffsets(final String keyspace, final String streamEndpoint,
-                                                                  final Set<String> topics,
-                                                                  final SparkConf sparkConf) {
+        private static Map<TopicPartition, Long> readTopicPartitionOffsets(final String keyspace,
+                                                                           final String streamEndpoint,
+                                                                           final Set<String> topics,
+                                                                           final SparkConf sparkConf) {
             final CassandraConnector cassandraConnector = CassandraConnector.apply(sparkConf);
             final Map<TopicPartition, Long> topicMap = new HashMap<>();
             // map each topic to its partitions
-            topics.stream().forEach(topic -> {
+            topics.forEach(topic -> {
                 // 1) see if it exist in cassandra, if not, find out # of topics and partitions from kafka
                 final OffsetRange[] offsetRanges = OffsetManager.loadOffsetRanges(keyspace, topic, cassandraConnector);
                 if (offsetRanges.length == 0) {
-                    final List<TopicPartition> partitionList = OffsetManager.initialOffsets(streamEndpoint, topic);
+                    final List<TopicPartition> partitionList = initialOffsets(streamEndpoint, topic);
                     partitionList.forEach(tAndP -> topicMap.put(tAndP, 0L));
                 } else {
                     for (final OffsetRange offsetRange : offsetRanges) {
@@ -97,6 +101,17 @@ public final class StreamFunctions implements Serializable {
                 LOGGER.info("OFFSET: " + offset.topic() + ' ' + offset.partition() + ' ' + offset.fromOffset() + ' '
                         + offset.untilOffset());
             }
+        }
+
+        private static Map<TopicPartition, Long> assignTopicPartitionOffsets(final String streamEndpoint,
+                                                                             final Set<String> topics) {
+            final Map<TopicPartition, Long> topicMap = new HashMap<>();
+            topics.forEach(topic -> {
+                final List<TopicPartition> partitionList = initialOffsets(streamEndpoint, topic);
+                // for now assign to 0, will have to look into other strategies
+                partitionList.forEach(tAndP -> topicMap.put(tAndP, 0L));
+            });
+            return topicMap;
         }
     }
 
