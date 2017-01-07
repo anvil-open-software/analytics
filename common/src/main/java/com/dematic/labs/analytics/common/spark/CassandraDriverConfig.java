@@ -4,12 +4,12 @@ import com.google.common.base.Strings;
 
 import java.util.Objects;
 
+@SuppressWarnings("WeakerAccess")
 public class CassandraDriverConfig extends DefaultDriverConfig {
-    //todo: remove public
-    public static final String AUTH_USERNAME_PROP = "spark.cassandra.auth.username";
-    public static final String AUTH_PASSWORD_PROP = "spark.cassandra.auth.password";
-    public static final String CONNECTION_HOST_PROP = "spark.cassandra.connection.host";
-    public static final String KEEP_ALIVE_PROP = "spark.cassandra.connection.keep_alive_ms";
+    static final String AUTH_USERNAME_PROP = "spark.cassandra.auth.username";
+    static final String AUTH_PASSWORD_PROP = "spark.cassandra.auth.password";
+    static final String CONNECTION_HOST_PROP = "spark.cassandra.connection.host";
+    static final String KEEP_ALIVE_PROP = "spark.cassandra.connection.keep_alive_ms";
 
     private String keySpace;
     private String host;
