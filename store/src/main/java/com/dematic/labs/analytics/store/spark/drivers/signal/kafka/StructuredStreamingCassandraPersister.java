@@ -20,13 +20,17 @@ import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+
 import static com.dematic.labs.toolkit.helpers.bigdata.communication.Signal.TABLE_NAME;
 
 public final class StructuredStreamingCassandraPersister {
     private static final Logger LOGGER = LoggerFactory.getLogger(StructuredStreamingCassandraPersister.class);
     private static final String APP_NAME = "SS_CASSANDRA_PERSISTER";
 
-    public static void main(final String[] args) throws StreamingQueryException {
+    public static void main(final String[] args) throws StreamingQueryException, IOException {
         // master url is only set for testing or running locally
         if (args.length < 3) {
             throw new IllegalArgumentException("Driver requires Kafka Server Bootstrap, Kafka topics," +
@@ -61,7 +65,12 @@ public final class StructuredStreamingCassandraPersister {
         final SparkSession spark = SparkSession.builder()
                 .appName(driverConfig.getAppName())
                 .master(driverConfig.getMasterUrl())
+                .config(CassandraDriverConfig.CONNECTION_HOST_PROP, driverConfig.getHost())
                 .getOrCreate();
+
+        // creates the table in cassandra to store raw signals
+        Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
+                CassandraConnector.apply(spark.sparkContext().getConf()));
 
         // read from the kafka steam
         final Dataset<Row> kafka = spark.readStream()
@@ -108,6 +117,7 @@ public final class StructuredStreamingCassandraPersister {
                         try {
                             final Signal signal = SignalUtils.jsonByteArrayToSignal(signalInBytes);
                             final Insert stmt = QueryBuilder.insertInto(driverConfig.getKeySpace(), TABLE_NAME)
+                                    .value("day", Instant.parse(signal.getDay()).truncatedTo(ChronoUnit.DAYS).toString()) // todo: look into
                                     .value("unique_id", signal.getUniqueId())
                                     .value("id", signal.getId())
                                     .value("value", signal.getValue())
