@@ -88,15 +88,14 @@ public final class StructuredStreamingCassandraPersister {
                             CassandraConnector.apply(spark.sparkContext().getConf());
 
                     @Override
-                    public void process(final Row value) {
+                    public void process(final Row row) {
                         // kafka schema is the following: input columns: [value, timestamp, timestampType, partition,
                         // key, topic, offset]
-                        final byte[] signal = value.getAs("value");
+                        final byte[] signal = row.getAs("value");
                         if (signal.length > 0) {
                             saveToCassandra(signal);
                         } else {
-                            LOGGER.error("SSCP: Unexpected Error: Kafka does not contain a 'value' {}",
-                                    value.toString());
+                            LOGGER.error("SSCP: Unexpected Error: Kafka does not contain a 'value' {}", row.toString());
                         }
                     }
 
