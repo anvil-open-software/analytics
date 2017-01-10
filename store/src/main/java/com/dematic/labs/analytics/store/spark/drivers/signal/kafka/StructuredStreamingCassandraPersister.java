@@ -66,10 +66,8 @@ public final class StructuredStreamingCassandraPersister {
             builder.master(driverConfig.getMasterUrl());
         }
         builder.appName(driverConfig.getAppName());
-        builder.master(driverConfig.getMasterUrl());
         builder.config(CassandraDriverConfig.CONNECTION_HOST_PROP, driverConfig.getHost());
         final SparkSession spark = builder.getOrCreate();
-
 
         // creates the table in cassandra to store raw signals
         Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
