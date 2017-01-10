@@ -61,11 +61,15 @@ public final class StructuredStreamingCassandraPersister {
         driverConfig.setCheckPointDirectoryFromSystemProperties(true);
 
         // create the spark session
-        final SparkSession spark = SparkSession.builder()
-                .appName(driverConfig.getAppName())
-                .master(driverConfig.getMasterUrl())
-                .config(CassandraDriverConfig.CONNECTION_HOST_PROP, driverConfig.getHost())
-                .getOrCreate();
+        final SparkSession.Builder builder = SparkSession.builder();
+        if (!Strings.isNullOrEmpty(driverConfig.getMasterUrl())) {
+            builder.master(driverConfig.getMasterUrl());
+        }
+        builder.appName(driverConfig.getAppName());
+        builder.master(driverConfig.getMasterUrl());
+        builder.config(CassandraDriverConfig.CONNECTION_HOST_PROP, driverConfig.getHost());
+        final SparkSession spark = builder.getOrCreate();
+
 
         // creates the table in cassandra to store raw signals
         Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
