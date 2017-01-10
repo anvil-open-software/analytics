@@ -20,7 +20,6 @@ import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
@@ -30,7 +29,7 @@ public final class StructuredStreamingCassandraPersister {
     private static final Logger LOGGER = LoggerFactory.getLogger(StructuredStreamingCassandraPersister.class);
     private static final String APP_NAME = "SS_CASSANDRA_PERSISTER";
 
-    public static void main(final String[] args) throws StreamingQueryException, IOException {
+    public static void main(final String[] args) throws StreamingQueryException {
         // master url is only set for testing or running locally
         if (args.length < 3) {
             throw new IllegalArgumentException("Driver requires Kafka Server Bootstrap, Kafka topics," +
