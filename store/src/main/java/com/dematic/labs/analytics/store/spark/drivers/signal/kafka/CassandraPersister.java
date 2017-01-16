@@ -108,9 +108,15 @@ public final class CassandraPersister {
                 .with(CassandraDriverConfig::setAppName, appName)
                 .with(CassandraDriverConfig::setHost, host)
                 .with(CassandraDriverConfig::setKeySpace, keySpace)
+                .with(CassandraDriverConfig::setKeepAlive, keepAlive(pollTime))
                 .with(CassandraDriverConfig::setMasterUrl, masterUrl)
                 .with(CassandraDriverConfig::setPollTime, pollTime)
                 .with(CassandraDriverConfig::setStreamConfig, kafkaStreamConfig)
                 .build();
+    }
+
+    private static String keepAlive(final String pollTime) {
+        // keep alive is pollTime + 5
+        return String.valueOf(Integer.valueOf(pollTime) + 5 * 1000);
     }
 }
