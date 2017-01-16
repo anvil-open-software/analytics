@@ -15,7 +15,7 @@ import java.util.Set;
 public final class KafkaStreamConfig implements StreamConfig {
     public static final String KAFKA_OFFSET_LOG_KEY = "com.dlabs.kafka.offset.debug.log";
     public static final String KAFKA_OFFSET_MANAGE_KEY = "com.dlabs.kafka.offset.manage";
-
+    public static final String KAFKA_ADDITIONAL_CONFIG_PREFIX = "kafka.additionalconfig.";
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaStreamConfig.class);
 
     private String streamName; // kafka topics
@@ -32,24 +32,37 @@ public final class KafkaStreamConfig implements StreamConfig {
         //todo: see http://spark.apache.org/docs/latest/streaming-kafka-0-10-integration.html
         additionalConfiguration.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         // any jvm property starting with kafka.additionalconfig.
-        addPrefixedSystemProperties(additionalConfiguration, "kafka.additionalconfig.");
+        addPrefixedSystemProperties(additionalConfiguration, KAFKA_ADDITIONAL_CONFIG_PREFIX);
     }
 
 
     /**
      * @param prefix
      * @return map with any system properties starting with prefix
-     * todo could not find utility. but should be put in some generic utils class in toolkit
+     * todo could not find generic utility. but should be put in some generic utils class in toolkit
      */
-     public static void addPrefixedSystemProperties(final Map<String, Object> properties, final String prefix) {
+    public static void addPrefixedSystemProperties(final Map<String, Object> properties, final String prefix) {
+        Map<String, String> extraOptions = getPrefixedSystemProperties(prefix);
+        properties.putAll(extraOptions);
+    }
+
+    /**
+     * @param prefix
+     * @return map with any system properties starting with prefix
+     * todo cannot use above getPrefixedSystemProperties for structured streaming since old kafka connector wanted <String, Object>
+     * and the new connector wants <String,String>
+     */
+    public static Map<String, String> getPrefixedSystemProperties(final String prefix) {
+        Map<String, String> kafkaExtraOptions = new HashMap<>();
         for (String propName : System.getProperties().stringPropertyNames()) {
             if (propName.startsWith(prefix)) {
                 String key = propName.substring(prefix.length());
                 String value = System.getProperty(propName);
-                properties.put(key, value);
+                kafkaExtraOptions.put(key, value);
                 LOGGER.info("Adding property for " + key + '=' + value);
             }
         }
+        return kafkaExtraOptions;
     }
 
     @Override
