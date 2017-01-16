@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.dematic.labs.toolkit.helpers.bigdata.communication.Signal.TABLE_NAME;
 
@@ -73,12 +75,14 @@ public final class StructuredStreamingCassandraPersister {
         Connections.createTable(Signal.createTableCql(driverConfig.getKeySpace()),
                 CassandraConnector.apply(spark.sparkContext().getConf()));
 
+        // all additional options should be passed in as driver jvm parameters prefixed with kafka.additionalconfig.
         // read from the kafka steam
         final Dataset<Row> kafka = spark.readStream()
                 .format("kafka")
                 .option("kafka.bootstrap.servers", driverConfig.getStreamConfig().getStreamEndpoint())
                 .option("subscribe", Strings.join(driverConfig.getStreamConfig().getTopics(), ","))
                 .option("startingOffsets", "earliest")
+                .options(KafkaStreamConfig.getPrefixedSystemProperties(KafkaStreamConfig.KAFKA_ADDITIONAL_CONFIG_PREFIX))
                 .load();
 
         // sink the stream to cassandra
