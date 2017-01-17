@@ -10,7 +10,7 @@ import com.dematic.labs.analytics.ingestion.spark.drivers.signal.Aggregation;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.AggregationFunctions;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.ComputeCumulativeMetricsDriverConfig;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregation;
-import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalValidation;
+import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils;
 import com.dematic.labs.toolkit.helpers.common.GenericBuilder;
