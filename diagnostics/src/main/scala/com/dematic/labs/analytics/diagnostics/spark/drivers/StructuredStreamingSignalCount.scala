@@ -4,10 +4,11 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.dematic.labs.analytics.common.cassandra.Connections
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig._
 import com.dematic.labs.analytics.common.spark.DriverConsts._
-import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation
+import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils, SignalValidation}
 import org.apache.parquet.Strings
+import org.apache.spark.sql._
 import org.apache.spark.sql.streaming.OutputMode.Complete
-import org.apache.spark.sql.{Dataset, Row, SparkSession}
+
 
 object StructuredStreamingSignalCount {
   private val APP_NAME = "SS_Signal_Count"
@@ -42,17 +43,29 @@ object StructuredStreamingSignalCount {
       CassandraConnector.apply(spark.sparkContext.getConf))
 
     // read from the kafka steam
-    val kafka: Dataset[Row] = spark.readStream
+    val kafka: Dataset[String] = spark.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
       .option("subscribe", topics)
       .option("startingOffsets", "earliest")
       .load
+      .selectExpr("CAST(value AS STRING)")
+      .as(Encoders.STRING)
+
+    // explicitly define signal encoders
+    import org.apache.spark.sql.Encoders
+    implicit val encoder = Encoders.bean[Signal](classOf[Signal])
+
+    // convert to type signals
+    val signals = kafka.map(SignalUtils.jsonToSignal)
 
     // kafka schema is the following: input columns: [value, timestamp, timestampType, partition, key, topic, offset]
 
     // 1) query streaming data count by topic
-    val counts = kafka.groupBy("topic").count
+    val counts = signals
+      //  .withWatermark("timestamp", "10 minutes")
+      .groupBy("opcTagId")
+      .count
 
     // write the output
     val query = counts.writeStream
