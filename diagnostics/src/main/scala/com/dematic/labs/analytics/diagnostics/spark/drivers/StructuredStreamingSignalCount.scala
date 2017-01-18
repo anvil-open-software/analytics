@@ -43,26 +43,29 @@ object StructuredStreamingSignalCount {
       CassandraConnector.apply(spark.sparkContext.getConf))
 
     // read from the kafka steam
-    val kafka: Dataset[String] = spark.readStream
+    val kafka: Dataset[Row] = spark.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
       .option("subscribe", topics)
       .option("startingOffsets", "earliest")
       .load
-      .selectExpr("CAST(value AS STRING)")
-      .as(Encoders.STRING)
+
+    // kafka schema is the following: input columns: [value, timestamp, timestampType, partition, key, topic, offset]
+
+    // 1) query streaming data total counts per topic
+    val totalSignalCount = kafka.groupBy("topic").count
+
+    // 2) query streaming data group by opcTagId per hour
+    val signals: Dataset[String] = kafka.selectExpr("CAST(value AS STRING)").as(Encoders.STRING)
 
     // explicitly define signal encoders
     import org.apache.spark.sql.Encoders
     implicit val encoder = Encoders.bean[Signal](classOf[Signal])
 
-    // convert to type signals
-    val signals = kafka.map(SignalUtils.jsonToSignal)
-
-    // kafka schema is the following: input columns: [value, timestamp, timestampType, partition, key, topic, offset]
+    val signalsPerHour = signals.map(SignalUtils.jsonToSignal)
 
     // 1) query streaming data count by topic
-    val counts = signals
+    val counts = signalsPerHour
       //  .withWatermark("timestamp", "10 minutes")
       .groupBy("opcTagId")
       .count
