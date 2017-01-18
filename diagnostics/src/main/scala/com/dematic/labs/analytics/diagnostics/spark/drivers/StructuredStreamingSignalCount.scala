@@ -43,7 +43,7 @@ object StructuredStreamingSignalCount {
       CassandraConnector.apply(spark.sparkContext.getConf))
 
     // read from the kafka steam
-    val kafka: Dataset[Row] = spark.readStream
+    val kafka = spark.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", brokers)
       .option("subscribe", topics)
@@ -56,7 +56,7 @@ object StructuredStreamingSignalCount {
     val totalSignalCount = kafka.groupBy("topic").count
 
     // 2) query streaming data group by opcTagId per hour
-    val signals: Dataset[String] = kafka.selectExpr("CAST(value AS STRING)").as(Encoders.STRING)
+    val signals = kafka.selectExpr("CAST(value AS STRING)").as(Encoders.STRING)
 
     // explicitly define signal encoders
     import org.apache.spark.sql.Encoders
