@@ -32,7 +32,7 @@ object StructuredStreamingSignalCount {
   def main(args: Array[String]) {
     if (args.length < 4) {
       System.err.println("Usage: StructuredStreamingSignalCount <brokerBootstrapServers> <topic> <cassandraHost> " +
-        "<cassandraKeySpace> <optional masterUrl>")
+        "<cassandraKeyspace> <optional masterUrl>")
       System.exit(1)
     }
 
