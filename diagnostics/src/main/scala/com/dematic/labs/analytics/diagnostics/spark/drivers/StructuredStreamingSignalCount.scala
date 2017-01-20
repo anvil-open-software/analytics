@@ -1,17 +1,33 @@
 package com.dematic.labs.analytics.diagnostics.spark.drivers
 
+import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.dematic.labs.analytics.common.cassandra.Connections
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig._
 import com.dematic.labs.analytics.common.spark.DriverConsts._
-import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils, SignalValidation}
+import com.dematic.labs.analytics.common.spark.KafkaStreamConfig._
+import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation
+import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation.TABLE_NAME
 import org.apache.parquet.Strings
 import org.apache.spark.sql._
 import org.apache.spark.sql.streaming.OutputMode.Complete
 
-
+/**
+  * Need to have the following system properties.
+  *
+  * -Dspark.cassandra.auth.username=username
+  * -Dspark.cassandra.auth.password=password
+  * -Dspark.cassandra.connection.keep_alive_ms=5000
+  * -Dspark.checkpoint.dir=pathOfCheckpointDir
+  */
 object StructuredStreamingSignalCount {
   private val APP_NAME = "SS_Signal_Count"
+
+  private def getOrThrow(systemPropertyName: String) = {
+    val property = sys.props(systemPropertyName)
+    if (property == null) throw new IllegalStateException(String.format("'%s' needs to be set", systemPropertyName))
+    property
+  }
 
   def main(args: Array[String]) {
     if (args.length < 4) {
@@ -22,11 +38,13 @@ object StructuredStreamingSignalCount {
 
     // set parameters
     val Array(brokers, topics, cassandraHost, cassandraKeyspace, masterUrl) = args
-    // all have to be set or todo: will throw an exception
-    val cassandraUserName = sys.props(AUTH_USERNAME_PROP)
-    val cassandraPassword = sys.props(AUTH_PASSWORD_PROP)
-    val keepAliveInMs = sys.props(KEEP_ALIVE_PROP)
-    val checkpointDir = sys.props(SPARK_CHECKPOINT_DIR)
+    // all have to be set or throw exception
+    getOrThrow(AUTH_USERNAME_PROP)
+    getOrThrow(AUTH_PASSWORD_PROP)
+    val keepAliveInMs = getOrThrow(KEEP_ALIVE_PROP)
+    val checkpointDir = getOrThrow(SPARK_CHECKPOINT_DIR)
+    // additional kafka options
+    val kafkaOptions = getPrefixedSystemProperties(KAFKA_ADDITIONAL_CONFIG_PREFIX)
 
     // create the spark session
     val builder: SparkSession.Builder = SparkSession.builder
@@ -39,7 +57,7 @@ object StructuredStreamingSignalCount {
     val spark: SparkSession = builder.getOrCreate
 
     // create the cassandra table
-    Connections.createTable(SignalValidation.createTableCql(cassandraKeyspace),
+    Connections.createTable(SignalValidation.createSparkTableCql(cassandraKeyspace),
       CassandraConnector.apply(spark.sparkContext.getConf))
 
     // read from the kafka steam
@@ -48,6 +66,7 @@ object StructuredStreamingSignalCount {
       .option("kafka.bootstrap.servers", brokers)
       .option("subscribe", topics)
       .option("startingOffsets", "earliest")
+      .options(kafkaOptions)
       .load
 
     // kafka schema is the following: input columns: [value, timestamp, timestampType, partition, key, topic, offset]
@@ -55,29 +74,26 @@ object StructuredStreamingSignalCount {
     // 1) query streaming data total counts per topic
     val totalSignalCount = kafka.groupBy("topic").count
 
-    // 2) query streaming data group by opcTagId per hour
-    val signals = kafka.selectExpr("CAST(value AS STRING)").as(Encoders.STRING)
-
-    // explicitly define signal encoders
-    import org.apache.spark.sql.Encoders
-    implicit val encoder = Encoders.bean[Signal](classOf[Signal])
-
-    val signalsPerHour = signals.map(SignalUtils.jsonToSignal)
-
-    // 1) query streaming data count by topic
-    val counts = signalsPerHour
-      //  .withWatermark("timestamp", "10 minutes")
-      .groupBy("opcTagId")
-      .count
-
     // write the output
-    val query = counts.writeStream
+    val query = totalSignalCount.writeStream
       .option("checkpointLocation", checkpointDir)
-      .format("console")
+      .queryName("signal count")
       .outputMode(Complete)
-      .start
+      .foreach(new ForeachWriter[Row] {
+        private val cassandraConnector = CassandraConnector.apply(spark.sparkContext.getConf)
 
-    // 2) query streaming data group by opcTagId per hour
+        override def process(value: Row) {
+          val update = QueryBuilder.insertInto(cassandraKeyspace, TABLE_NAME)
+            .value("spark_count", value.getAs("count"))
+            .value("id", APP_NAME)
+          Connections.execute(update, cassandraConnector)
+        }
+
+        override def close(errorOrNull: Throwable) {}
+
+        override def open(partitionId: Long, version: Long) = true
+      })
+      .start
 
     query.awaitTermination
   }
