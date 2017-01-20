@@ -54,5 +54,4 @@ object SimpleKafkaLoggingDriver {
     streamingContext.awaitTermination()
 
   }
-
 }
