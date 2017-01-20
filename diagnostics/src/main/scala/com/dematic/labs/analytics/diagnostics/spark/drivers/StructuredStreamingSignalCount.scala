@@ -7,7 +7,7 @@ import com.dematic.labs.analytics.common.spark.CassandraDriverConfig._
 import com.dematic.labs.analytics.common.spark.DriverConsts._
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig._
 import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation
-import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation.TABLE_NAME
+import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation.SS_TABLE_NAME
 import org.apache.parquet.Strings
 import org.apache.spark.sql._
 import org.apache.spark.sql.streaming.OutputMode.Complete
@@ -57,7 +57,7 @@ object StructuredStreamingSignalCount {
     val spark: SparkSession = builder.getOrCreate
 
     // create the cassandra table
-    Connections.createTable(SignalValidation.createSparkTableCql(cassandraKeyspace),
+    Connections.createTable(SignalValidation.createSSTableCql(cassandraKeyspace),
       CassandraConnector.apply(spark.sparkContext.getConf))
 
     // read from the kafka steam
@@ -83,7 +83,7 @@ object StructuredStreamingSignalCount {
         private val cassandraConnector = CassandraConnector.apply(spark.sparkContext.getConf)
 
         override def process(value: Row) {
-          val update = QueryBuilder.insertInto(cassandraKeyspace, TABLE_NAME)
+          val update = QueryBuilder.insertInto(cassandraKeyspace, SS_TABLE_NAME)
             .value("spark_count", value.getAs("count"))
             .value("id", APP_NAME)
           Connections.execute(update, cassandraConnector)
