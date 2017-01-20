@@ -10,9 +10,9 @@ import com.dematic.labs.analytics.ingestion.spark.drivers.signal.Aggregation;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.AggregationFunctions;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.ComputeCumulativeMetricsDriverConfig;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregation;
-import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
 import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils;
+import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation;
 import com.dematic.labs.toolkit.helpers.common.GenericBuilder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.spark.api.java.function.Function;
@@ -165,7 +165,7 @@ public final class ComputeCumulativeMetrics {
 
         if (VALIDATE_COUNTS) {
             // create the count table
-            Connections.createTable(SignalValidation.createTableCql(driverConfig.getKeySpace()),
+            Connections.createTable(SignalValidation.createCounterTableCql(driverConfig.getKeySpace()),
                     CassandraConnector.apply(streamingContext.sparkContext().getConf()));
         }
 
