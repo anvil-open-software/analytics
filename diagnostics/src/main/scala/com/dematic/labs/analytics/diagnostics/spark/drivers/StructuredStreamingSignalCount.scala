@@ -19,6 +19,7 @@ import org.apache.spark.sql.streaming.OutputMode.Complete
   * -Dspark.cassandra.auth.password=password
   * -Dspark.cassandra.connection.keep_alive_ms=5000
   * -Dspark.checkpoint.dir=pathOfCheckpointDir
+  * -Dspark.streaming.receiver.writeAheadLog.enable=true
   */
 object StructuredStreamingSignalCount {
   private val APP_NAME = "SS_Signal_Count"
