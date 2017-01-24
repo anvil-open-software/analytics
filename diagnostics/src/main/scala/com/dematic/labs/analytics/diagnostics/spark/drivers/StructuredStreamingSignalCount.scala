@@ -56,6 +56,8 @@ object StructuredStreamingSignalCount {
     builder.config(CONNECTION_HOST_PROP, cassandraHost)
     builder.config(KEEP_ALIVE_PROP, keepAliveInMs)
     val spark: SparkSession = builder.getOrCreate
+    // set the checkpoint on the sc spark.checkpoint.dir
+    spark.sparkContext.setCheckpointDir(checkpointDir)
 
     // create the cassandra table
     Connections.createTable(SignalValidation.createSSTableCql(cassandraKeyspace),
