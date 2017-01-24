@@ -37,8 +37,12 @@ object StructuredStreamingSignalCount {
       System.exit(1)
     }
 
-    // set parameters
-    val Array(brokers, topics, cassandraHost, cassandraKeyspace, masterUrl) = args
+    val brokers = args(0)
+    var topics = args(1)
+    val cassandraHost = args(2)
+    val cassandraKeyspace = args(3)
+    val masterUrl = if (args.length == 5) args(4) else null
+
     // all have to be set or throw exception
     getOrThrow(AUTH_USERNAME_PROP)
     getOrThrow(AUTH_PASSWORD_PROP)
