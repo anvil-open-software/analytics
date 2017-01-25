@@ -5,5 +5,6 @@ package com.dematic.labs.analytics.common.spark;
  */
 public interface DriverConsts {
     String SPARK_CHECKPOINT_DIR = "spark.checkpoint.dir";
+    String SPARK_STREAMING_CHECKPOINT_DIR = "spark.sql.streaming.checkpointLocation";
     String SPARK_DRIVER_VALIDATE_COUNTS = "dematiclabs.driver.validate.counts";
 }

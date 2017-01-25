@@ -38,7 +38,7 @@ object StructuredStreamingSignalCount {
     }
 
     val brokers = args(0)
-    var topics = args(1)
+    val topics = args(1)
     val cassandraHost = args(2)
     val cassandraKeyspace = args(3)
     val masterUrl = if (args.length == 5) args(4) else null
@@ -59,9 +59,8 @@ object StructuredStreamingSignalCount {
     builder.appName(APP_NAME)
     builder.config(CONNECTION_HOST_PROP, cassandraHost)
     builder.config(KEEP_ALIVE_PROP, keepAliveInMs)
+    builder.config(SPARK_STREAMING_CHECKPOINT_DIR, checkpointDir)
     val spark: SparkSession = builder.getOrCreate
-    // set the checkpoint on the sc spark.checkpoint.dir
-    spark.sparkContext.setCheckpointDir(checkpointDir)
 
     // create the cassandra table
     Connections.createTable(SignalValidation.createSSTableCql(cassandraKeyspace),
