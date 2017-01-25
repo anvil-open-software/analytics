@@ -75,6 +75,7 @@ object StructuredStreamingSignalCount {
       .options(kafkaOptions)
       .load
 
+
     // kafka schema is the following: input columns: [value, timestamp, timestampType, partition, key, topic, offset]
 
     // 1) query streaming data total counts per topic
