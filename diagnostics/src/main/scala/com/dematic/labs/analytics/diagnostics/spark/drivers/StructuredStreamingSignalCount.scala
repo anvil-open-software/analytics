@@ -6,6 +6,7 @@ import com.dematic.labs.analytics.common.cassandra.Connections
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig._
 import com.dematic.labs.analytics.common.spark.DriverConsts._
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig._
+import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
 import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation
 import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation.SS_TABLE_NAME
 import org.apache.parquet.Strings
@@ -23,12 +24,6 @@ import org.apache.spark.sql.streaming.OutputMode.Complete
   */
 object StructuredStreamingSignalCount {
   private val APP_NAME = "SS_Signal_Count"
-
-  private def getOrThrow(systemPropertyName: String) = {
-    val property = sys.props(systemPropertyName)
-    if (property == null) throw new IllegalStateException(String.format("'%s' needs to be set", systemPropertyName))
-    property
-  }
 
   def main(args: Array[String]) {
     if (args.length < 4) {
