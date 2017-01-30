@@ -1,11 +1,11 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.signal;
 
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
 
-import static com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils.toInstantFromJavaUtilDate;
-import static com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils.toJavaUtilDateFromInstance;
+import static com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils.toInstantFromTimestamp;
+import static com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils.toTimestampFromInstance;
 
 public enum Aggregation {
     HOUR(ChronoUnit.HOURS),
@@ -17,12 +17,11 @@ public enum Aggregation {
         this.chronoUnit = chronoUnit;
     }
 
-    public Date time(final Date time) {
-        // todo: investigate conversions more
-        return toJavaUtilDateFromInstance(truncate(time, chronoUnit));
+    public Timestamp time(final Timestamp time) {
+        return toTimestampFromInstance(truncate(time, chronoUnit));
     }
 
-    private static Instant truncate(final Date time, final ChronoUnit chronoUnit) {
-        return toInstantFromJavaUtilDate(time).truncatedTo(chronoUnit);
+    private static Instant truncate(final Timestamp time, final ChronoUnit chronoUnit) {
+        return toInstantFromTimestamp(time).truncatedTo(chronoUnit);
     }
 }

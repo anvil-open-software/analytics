@@ -6,8 +6,9 @@ import com.dematic.labs.analytics.common.spark.KafkaStreamConfig.{KAFKA_ADDITION
 import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
 import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils}
 import org.apache.parquet.Strings
+import org.apache.spark.sql.functions.window
 import org.apache.spark.sql.streaming.OutputMode.Complete
-import org.apache.spark.sql.{Encoders, ForeachWriter, Row, SparkSession}
+import org.apache.spark.sql.{Encoders, _}
 
 object StructuredStreamingSignalAggregation {
   private val APP_NAME = "SS_Signal_Agg_Count"
@@ -45,7 +46,7 @@ object StructuredStreamingSignalAggregation {
     builder.config(SPARK_STREAMING_CHECKPOINT_DIR, checkpointDir)
     val spark: SparkSession = builder.getOrCreate
 
-    // create the cassandra table for storing agg
+    //todo: create the cassandra table for storing agg
 
 
     // read from the kafka steam
@@ -61,26 +62,31 @@ object StructuredStreamingSignalAggregation {
     val signals = kafka.selectExpr("CAST(value AS STRING)").as(Encoders.STRING)
 
     // explicitly define signal encoders
-    import org.apache.spark.sql.Encoders
     implicit val encoder = Encoders.bean[Signal](classOf[Signal])
-
+    // map json signal to signal object
     val signalsPerHour = signals.map(SignalUtils.jsonToSignal)
 
-    // aggregate by opcTagId and time
-    val aggregate = signalsPerHour.groupBy("topic").count
+    import spark.implicits._
 
+    // aggregate by opcTagId and time and watermark data for 24 hours
+    val aggregate = signalsPerHour
+      .withWatermark("timestamp", "24 hours")
+      .groupBy(window($"timestamp", "5 minutes") as 'aggregate_time, $"opcTagId")
+      .count
+      .orderBy($"aggregate_time")
+
+
+    /* val aggregate = signalsPerHour.groupBy(
+       window($"timestamp", "5 minutes"), $"opcTagId").agg(count("*") as 'count)
+       .orderBy($"window.start".asc).select($"window.start", $"window.end", $"count")
+ */
+
+    // todo: for now output to console
     val query = aggregate.writeStream
       .option("checkpointLocation", checkpointDir)
       .queryName("aggregate count by time")
+      .format("console")
       .outputMode(Complete)
-      .foreach(new ForeachWriter[Row] {
-        override def process(value: Row) {
-        }
-
-        override def close(errorOrNull: Throwable) {}
-
-        override def open(partitionId: Long, version: Long) = true
-      })
       .start
 
     query.awaitTermination
