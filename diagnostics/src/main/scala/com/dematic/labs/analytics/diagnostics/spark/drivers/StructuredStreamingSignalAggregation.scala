@@ -1,18 +1,35 @@
 package com.dematic.labs.analytics.diagnostics.spark.drivers
 
+import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.dematic.labs.analytics.common.cassandra.Connections
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig.{AUTH_PASSWORD_PROP, AUTH_USERNAME_PROP, CONNECTION_HOST_PROP, KEEP_ALIVE_PROP}
-import com.dematic.labs.analytics.common.spark.DriverConsts.SPARK_CHECKPOINT_DIR
-import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils, SignalValidation}
+import com.dematic.labs.analytics.common.spark.DriverConsts.{SPARK_CHECKPOINT_DIR, SPARK_STREAMING_CHECKPOINT_DIR}
+import com.dematic.labs.analytics.common.spark.KafkaStreamConfig.{KAFKA_ADDITIONAL_CONFIG_PREFIX, getPrefixedSystemProperties}
+import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
+import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils}
 import org.apache.parquet.Strings
-import org.apache.spark.sql.{Encoders, SparkSession}
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
+import org.apache.spark.sql.functions.{window, _}
 import org.apache.spark.sql.streaming.OutputMode.Complete
+import org.apache.spark.sql.{Encoders, _}
 
-
-//todo: still needs to be worked on
 object StructuredStreamingSignalAggregation {
-  private val APP_NAME = "SS_Signal_Count"
+  private val APP_NAME = "SS_Signal_Aggregation"
+  private val TABLE_NAME = "ss_signal_aggregation"
+
+  private def createTableCql(keyspace: String): String = {
+    String.format("CREATE TABLE if not exists %s.%s (" +
+      " opc_tag_id bigint," +
+      " aggregate timestamp," +
+      " count bigint," +
+      " sum bigint," +
+      " min bigint," +
+      " max bigint," +
+      " avg double," +
+      " PRIMARY KEY ((opc_tag_id), aggregate))" +
+      " WITH CLUSTERING ORDER BY (aggregate DESC);", keyspace, TABLE_NAME)
+  }
 
   def main(args: Array[String]) {
     if (args.length < 4) {
@@ -22,12 +39,19 @@ object StructuredStreamingSignalAggregation {
     }
 
     // set parameters
-    val Array(brokers, topics, cassandraHost, cassandraKeyspace, masterUrl) = args
-    // all have to be set or todo: will throw an exception
-    val cassandraUserName = sys.props(AUTH_USERNAME_PROP)
-    val cassandraPassword = sys.props(AUTH_PASSWORD_PROP)
-    val keepAliveInMs = sys.props(KEEP_ALIVE_PROP)
-    val checkpointDir = sys.props(SPARK_CHECKPOINT_DIR)
+    val brokers = args(0)
+    val topics = args(1)
+    val cassandraHost = args(2)
+    val cassandraKeyspace = args(3)
+    val masterUrl = if (args.length == 5) args(4) else null
+
+    // all have to be set or throw exception
+    getOrThrow(AUTH_USERNAME_PROP)
+    getOrThrow(AUTH_PASSWORD_PROP)
+    val keepAliveInMs = getOrThrow(KEEP_ALIVE_PROP)
+    val checkpointDir = getOrThrow(SPARK_CHECKPOINT_DIR)
+    // additional kafka options
+    val kafkaOptions = getPrefixedSystemProperties(KAFKA_ADDITIONAL_CONFIG_PREFIX)
 
     // create the spark session
     val builder: SparkSession.Builder = SparkSession.builder
@@ -37,10 +61,11 @@ object StructuredStreamingSignalAggregation {
     builder.appName(APP_NAME)
     builder.config(CONNECTION_HOST_PROP, cassandraHost)
     builder.config(KEEP_ALIVE_PROP, keepAliveInMs)
+    builder.config(SPARK_STREAMING_CHECKPOINT_DIR, checkpointDir)
     val spark: SparkSession = builder.getOrCreate
 
-    // create the cassandra table
-    Connections.createTable(SignalValidation.createSSTableCql(cassandraKeyspace),
+    // create the aggregation table
+    Connections.createTable(createTableCql(cassandraKeyspace),
       CassandraConnector.apply(spark.sparkContext.getConf))
 
     // read from the kafka steam
@@ -49,77 +74,51 @@ object StructuredStreamingSignalAggregation {
       .option("kafka.bootstrap.servers", brokers)
       .option("subscribe", topics)
       .option("startingOffsets", "earliest")
+      .options(kafkaOptions)
       .load
 
     // kafka schema is the following: input columns: [value, timestamp, timestampType, partition, key, topic, offset]
-
-    // 1) query streaming data total counts per topic
-    val totalSignalCount = kafka.groupBy("topic").count
-
-    //totalSignalCount.show()
-    /* // write the output
-     val q1 = totalSignalCount.writeStream
-       .option("checkpointLocation", checkpointDir)
-       .queryName("total count")
-       .format("console")
-       .outputMode(Complete)
-       .start
-     q1.awaitTermination()*/
-
-    // 2) query streaming data group by opcTagId per hour
     val signals = kafka.selectExpr("CAST(value AS STRING)").as(Encoders.STRING)
 
     // explicitly define signal encoders
-    import org.apache.spark.sql.Encoders
     implicit val encoder = Encoders.bean[Signal](classOf[Signal])
-
+    // map json signal to signal object
     val signalsPerHour = signals.map(SignalUtils.jsonToSignal)
 
-    // 1) query streaming data count by topic
-
-
     import spark.implicits._
-    var counts = signalsPerHour.groupBy(signalsPerHour.col("timestamp")).count
 
-    // import spark.implicits._
+    // aggregate by opcTagId and time and watermark data for 24 hours
+    val aggregate = signalsPerHour
+      .withWatermark("timestamp", "24 hours")
+      .groupBy(window($"timestamp", " 5 minutes") as 'aggregate_time, $"opcTagId")
+      .agg(count($"opcTagId"), avg($"value"), min($"value"), max($"value"), sum($"value"))
+      .orderBy($"aggregate_time")
 
-
-    /**
-      * val tumblingWindowDS = stocks2016
-      .groupBy(window(stocks2016.col("Date"),"1 week"))
-      .agg(avg("Close").as("weekly_average"))
-      */
-
-    /* todo: good val counts = signalsPerHour
-       .groupBy(window(signalsPerHour.col("timestamp"), "10 minutes", "5 minutes"), signalsPerHour.col("opcTagId"))
-       .count
-       .orderBy("window")*/
-
-
-
-    /*
-    val windowedCounts = words.groupBy(
-  window($"timestamp", "10 minutes", "5 minutes"),
-  $"word"
-).count()
-
-     */
-    /* val counts = signalsPerHour
-        // .withWatermark("timestamp", "10 min")
-       .groupBy("timestamp")
-       .count*/
-
-    // write the output
-    val query = counts.writeStream
+    val query = aggregate.writeStream
       .option("checkpointLocation", checkpointDir)
-      .queryName("agg count")
-      .format("console")
+      .queryName("aggregate over time")
       .outputMode(Complete)
+      .foreach(new ForeachWriter[Row] {
+        private val cassandraConnector = CassandraConnector.apply(spark.sparkContext.getConf)
+
+        override def open(partitionId: Long, version: Long) = true
+
+        override def process(row: Row) {
+          val aggregateTime = row.getAs(0).asInstanceOf[GenericRowWithSchema]
+          val update = QueryBuilder.update(cassandraKeyspace, TABLE_NAME)
+            .`with`(QueryBuilder.set("count", row.getAs(2)))
+            .and(QueryBuilder.set("avg", row.getAs(3)))
+            .and(QueryBuilder.set("min", row.getAs(4)))
+            .and(QueryBuilder.set("max", row.getAs(5)))
+            .and(QueryBuilder.set("sum", row.getAs(6)))
+            .where(QueryBuilder.eq("opc_tag_id", row.getAs(1)))
+            .and(QueryBuilder.eq("aggregate", aggregateTime.get(0)))
+          Connections.execute(update, cassandraConnector)
+        }
+
+        override def close(errorOrNull: Throwable) {}
+      })
       .start
-
-    // 2) query streaming data group by opcTagId per hour
-
     query.awaitTermination
   }
-
 }

@@ -76,7 +76,7 @@ public final class ProducerConsumerTest {
     private static Signal createSignal(final int number) {
         final Long longValue = (long) number;
         return new Signal(null, longValue, longValue, "2016-06-14T00:00:00Z",
-                SignalUtils.toJavaUtilDateFromInstance(Instant.now()), longValue, longValue, longValue, "test",
+                SignalUtils.toTimestampFromInstance(Instant.now()), longValue, longValue, longValue, "test",
                 Collections.emptyList());
     }
 
