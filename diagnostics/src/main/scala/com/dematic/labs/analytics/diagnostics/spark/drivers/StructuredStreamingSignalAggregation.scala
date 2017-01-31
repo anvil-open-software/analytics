@@ -6,7 +6,7 @@ import com.dematic.labs.analytics.common.spark.KafkaStreamConfig.{KAFKA_ADDITION
 import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
 import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils}
 import org.apache.parquet.Strings
-import org.apache.spark.sql.functions.window
+import org.apache.spark.sql.functions.{window, _}
 import org.apache.spark.sql.streaming.OutputMode.Complete
 import org.apache.spark.sql.{Encoders, _}
 
@@ -71,15 +71,9 @@ object StructuredStreamingSignalAggregation {
     // aggregate by opcTagId and time and watermark data for 24 hours
     val aggregate = signalsPerHour
       .withWatermark("timestamp", "24 hours")
-      .groupBy(window($"timestamp", "5 minutes") as 'aggregate_time, $"opcTagId")
-      .count
+      .groupBy(window($"timestamp", " 30 minutes", "5 minutes") as 'aggregate_time, $"opcTagId")
+      .agg(count($"opcTagId"), avg($"value"), min($"value"), max($"value"), sum($"value"))
       .orderBy($"aggregate_time")
-
-
-    /* val aggregate = signalsPerHour.groupBy(
-       window($"timestamp", "5 minutes"), $"opcTagId").agg(count("*") as 'count)
-       .orderBy($"window.start".asc).select($"window.start", $"window.end", $"count")
- */
 
     // todo: for now output to console
     val query = aggregate.writeStream
