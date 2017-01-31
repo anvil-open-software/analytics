@@ -21,15 +21,14 @@ object StructuredStreamingSignalAggregation {
   private def createTableCql(keyspace: String): String = {
     String.format("CREATE TABLE if not exists %s.%s (" +
       " opc_tag_id bigint," +
-      " start_time timestamp," +
-      " end_time timestamp," +
+      " aggregate timestamp," +
       " count bigint," +
       " sum bigint," +
       " min bigint," +
       " max bigint," +
       " avg double," +
-      " PRIMARY KEY ((opc_tag_id), start_time))" +
-      " WITH CLUSTERING ORDER BY (start_time DESC);", keyspace, TABLE_NAME)
+      " PRIMARY KEY ((opc_tag_id), aggregate))" +
+      " WITH CLUSTERING ORDER BY (aggregate DESC);", keyspace, TABLE_NAME)
   }
 
   def main(args: Array[String]) {
@@ -107,14 +106,13 @@ object StructuredStreamingSignalAggregation {
         override def process(row: Row) {
           val aggregateTime = row.getAs(0).asInstanceOf[GenericRowWithSchema]
           val update = QueryBuilder.update(cassandraKeyspace, TABLE_NAME)
-            .`with`(QueryBuilder.set("end_time", aggregateTime.get(1)))
-            .and(QueryBuilder.set("count", row.getAs(2)))
+            .`with`(QueryBuilder.set("count", row.getAs(2)))
             .and(QueryBuilder.set("avg", row.getAs(3)))
             .and(QueryBuilder.set("min", row.getAs(4)))
             .and(QueryBuilder.set("max", row.getAs(5)))
             .and(QueryBuilder.set("sum", row.getAs(6)))
             .where(QueryBuilder.eq("opc_tag_id", row.getAs(1)))
-            .and(QueryBuilder.eq("start_time", aggregateTime.get(0)))
+            .and(QueryBuilder.eq("aggregate", aggregateTime.get(0)))
           Connections.execute(update, cassandraConnector)
         }
 
