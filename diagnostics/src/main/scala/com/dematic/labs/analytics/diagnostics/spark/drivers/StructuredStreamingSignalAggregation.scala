@@ -1,5 +1,7 @@
 package com.dematic.labs.analytics.diagnostics.spark.drivers
 
+import com.datastax.spark.connector.cql.CassandraConnector
+import com.dematic.labs.analytics.common.cassandra.Connections
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig.{AUTH_PASSWORD_PROP, AUTH_USERNAME_PROP, CONNECTION_HOST_PROP, KEEP_ALIVE_PROP}
 import com.dematic.labs.analytics.common.spark.DriverConsts.{SPARK_CHECKPOINT_DIR, SPARK_STREAMING_CHECKPOINT_DIR}
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig.{KAFKA_ADDITIONAL_CONFIG_PREFIX, getPrefixedSystemProperties}
@@ -11,7 +13,22 @@ import org.apache.spark.sql.streaming.OutputMode.Complete
 import org.apache.spark.sql.{Encoders, _}
 
 object StructuredStreamingSignalAggregation {
-  private val APP_NAME = "SS_Signal_Agg_Count"
+  private val APP_NAME = "SS_Signal_Aggregation"
+  private val TABLE_NAME = "ss_signal_aggregation"
+
+  private def createTableCql(keyspace: String): String = {
+    String.format("CREATE TABLE if not exists %s.%s (" +
+      " opc_tag_id bigint," +
+      " start_time timestamp," +
+      " end_time timestamp," +
+      " count bigint," +
+      " sum bigint," +
+      " min bigint," +
+      " max bigint," +
+      " avg bigint," +
+      " PRIMARY KEY ((opc_tag_id), start_time))" +
+      " WITH CLUSTERING ORDER BY (start_time DESC);", keyspace, TABLE_NAME)
+  }
 
   def main(args: Array[String]) {
     if (args.length < 4) {
@@ -46,8 +63,9 @@ object StructuredStreamingSignalAggregation {
     builder.config(SPARK_STREAMING_CHECKPOINT_DIR, checkpointDir)
     val spark: SparkSession = builder.getOrCreate
 
-    //todo: create the cassandra table for storing agg
-
+    // create the aggregation table
+    Connections.createTable(createTableCql(cassandraKeyspace),
+      CassandraConnector.apply(spark.sparkContext.getConf))
 
     // read from the kafka steam
     val kafka = spark.readStream
@@ -77,11 +95,19 @@ object StructuredStreamingSignalAggregation {
 
     val query = aggregate.writeStream
       .option("checkpointLocation", checkpointDir)
-      .queryName("aggregate count by time")
-      .format("console")
+      .queryName("aggregate over time")
       .outputMode(Complete)
-      .start
+      .foreach(new ForeachWriter[Row] {
+        private val cassandraConnector = CassandraConnector.apply(spark.sparkContext.getConf)
 
+        override def open(partitionId: Long, version: Long) = true
+
+        override def process(value: Row) {
+        }
+
+        override def close(errorOrNull: Throwable) {}
+      })
+      .start
     query.awaitTermination
   }
 }
