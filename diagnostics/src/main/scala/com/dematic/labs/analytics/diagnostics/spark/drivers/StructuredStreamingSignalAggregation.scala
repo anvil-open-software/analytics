@@ -7,7 +7,6 @@ import com.dematic.labs.analytics.common.spark.CassandraDriverConfig.{AUTH_PASSW
 import com.dematic.labs.analytics.common.spark.DriverConsts.{SPARK_CHECKPOINT_DIR, SPARK_STREAMING_CHECKPOINT_DIR}
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig.{KAFKA_ADDITIONAL_CONFIG_PREFIX, getPrefixedSystemProperties}
 import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
-import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation.SS_TABLE_NAME
 import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils}
 import org.apache.parquet.Strings
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
@@ -107,15 +106,15 @@ object StructuredStreamingSignalAggregation {
 
         override def process(row: Row) {
           val aggregateTime = row.getAs(0).asInstanceOf[GenericRowWithSchema]
-          val update = QueryBuilder.update(cassandraKeyspace, SS_TABLE_NAME)
-            .`with`(QueryBuilder.set("start_time", aggregateTime.get(0)))
-            .and(QueryBuilder.set("end_time", aggregateTime.get(1)))
+          val update = QueryBuilder.update(cassandraKeyspace, TABLE_NAME)
+            .`with`(QueryBuilder.set("end_time", aggregateTime.get(1)))
             .and(QueryBuilder.set("count", row.getAs(2)))
             .and(QueryBuilder.set("avg", row.getAs(3)))
             .and(QueryBuilder.set("min", row.getAs(4)))
             .and(QueryBuilder.set("max", row.getAs(5)))
             .and(QueryBuilder.set("sum", row.getAs(6)))
             .where(QueryBuilder.eq("opc_tag_id", row.getAs(1)))
+            .and(QueryBuilder.eq("start_time", aggregateTime.get(0)))
           Connections.execute(update, cassandraConnector)
         }
 
