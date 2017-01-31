@@ -71,11 +71,10 @@ object StructuredStreamingSignalAggregation {
     // aggregate by opcTagId and time and watermark data for 24 hours
     val aggregate = signalsPerHour
       .withWatermark("timestamp", "24 hours")
-      .groupBy(window($"timestamp", " 30 minutes", "5 minutes") as 'aggregate_time, $"opcTagId")
+      .groupBy(window($"timestamp", " 5 minutes") as 'aggregate_time, $"opcTagId")
       .agg(count($"opcTagId"), avg($"value"), min($"value"), max($"value"), sum($"value"))
       .orderBy($"aggregate_time")
 
-    // todo: for now output to console
     val query = aggregate.writeStream
       .option("checkpointLocation", checkpointDir)
       .queryName("aggregate count by time")
