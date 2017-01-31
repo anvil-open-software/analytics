@@ -1,13 +1,16 @@
 package com.dematic.labs.analytics.diagnostics.spark.drivers
 
+import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.dematic.labs.analytics.common.cassandra.Connections
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig.{AUTH_PASSWORD_PROP, AUTH_USERNAME_PROP, CONNECTION_HOST_PROP, KEEP_ALIVE_PROP}
 import com.dematic.labs.analytics.common.spark.DriverConsts.{SPARK_CHECKPOINT_DIR, SPARK_STREAMING_CHECKPOINT_DIR}
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig.{KAFKA_ADDITIONAL_CONFIG_PREFIX, getPrefixedSystemProperties}
 import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
+import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation.SS_TABLE_NAME
 import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils}
 import org.apache.parquet.Strings
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.functions.{window, _}
 import org.apache.spark.sql.streaming.OutputMode.Complete
 import org.apache.spark.sql.{Encoders, _}
@@ -25,7 +28,7 @@ object StructuredStreamingSignalAggregation {
       " sum bigint," +
       " min bigint," +
       " max bigint," +
-      " avg bigint," +
+      " avg double," +
       " PRIMARY KEY ((opc_tag_id), start_time))" +
       " WITH CLUSTERING ORDER BY (start_time DESC);", keyspace, TABLE_NAME)
   }
@@ -102,7 +105,18 @@ object StructuredStreamingSignalAggregation {
 
         override def open(partitionId: Long, version: Long) = true
 
-        override def process(value: Row) {
+        override def process(row: Row) {
+          val aggregateTime = row.getAs(0).asInstanceOf[GenericRowWithSchema]
+          val update = QueryBuilder.update(cassandraKeyspace, SS_TABLE_NAME)
+            .`with`(QueryBuilder.set("start_time", aggregateTime.get(0)))
+            .and(QueryBuilder.set("end_time", aggregateTime.get(1)))
+            .and(QueryBuilder.set("count", row.getAs(2)))
+            .and(QueryBuilder.set("avg", row.getAs(3)))
+            .and(QueryBuilder.set("min", row.getAs(4)))
+            .and(QueryBuilder.set("max", row.getAs(5)))
+            .and(QueryBuilder.set("sum", row.getAs(6)))
+            .where(QueryBuilder.eq("opc_tag_id", row.getAs(1)))
+          Connections.execute(update, cassandraConnector)
         }
 
         override def close(errorOrNull: Throwable) {}
