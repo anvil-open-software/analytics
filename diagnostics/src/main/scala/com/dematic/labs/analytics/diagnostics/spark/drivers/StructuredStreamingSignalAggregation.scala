@@ -64,6 +64,8 @@ object StructuredStreamingSignalAggregation {
     builder.config(SPARK_STREAMING_CHECKPOINT_DIR, checkpointDir)
     val spark: SparkSession = builder.getOrCreate
 
+    spark.sparkContext.setLogLevel("DEBUG")
+
     // create the aggregation table
     Connections.createTable(createTableCql(cassandraKeyspace),
       CassandraConnector.apply(spark.sparkContext.getConf))
