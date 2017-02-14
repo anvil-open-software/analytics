@@ -4,6 +4,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.dematic.labs.analytics.common.cassandra.Connections
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig._
+import com.dematic.labs.analytics.common.spark.DriverConsts
 import com.dematic.labs.analytics.common.spark.DriverConsts._
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig._
 import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
@@ -60,6 +61,12 @@ object StructuredStreamingSignalCount {
     // create the cassandra table
     Connections.createTable(SignalValidation.createSSTableCql(cassandraKeyspace),
       CassandraConnector.apply(spark.sparkContext.getConf))
+
+    // add query statistic listener to enable monitoring of queries
+    if (sys.props.contains(DriverConsts.SPARK_QUERY_STATISTICS)) {
+      spark.streams.addListener(new CassandraStreamingQueryListener(APP_NAME, cassandraKeyspace,
+        spark.sparkContext.getConf))
+    }
 
     // read from the kafka steam
     val kafka = spark.readStream

@@ -4,6 +4,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.dematic.labs.analytics.common.cassandra.Connections
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig.{AUTH_PASSWORD_PROP, AUTH_USERNAME_PROP, CONNECTION_HOST_PROP, KEEP_ALIVE_PROP}
+import com.dematic.labs.analytics.common.spark.DriverConsts
 import com.dematic.labs.analytics.common.spark.DriverConsts.{SPARK_CHECKPOINT_DIR, SPARK_STREAMING_CHECKPOINT_DIR}
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig.{KAFKA_ADDITIONAL_CONFIG_PREFIX, getPrefixedSystemProperties}
 import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
@@ -64,11 +65,17 @@ object StructuredStreamingSignalAggregation {
     builder.config(SPARK_STREAMING_CHECKPOINT_DIR, checkpointDir)
     val spark: SparkSession = builder.getOrCreate
 
-    spark.sparkContext.setLogLevel("DEBUG")
+    // spark.sparkContext.setLogLevel("DEBUG")
 
     // create the aggregation table
     Connections.createTable(createTableCql(cassandraKeyspace),
       CassandraConnector.apply(spark.sparkContext.getConf))
+
+    // add query statistic listener to enable monitoring of queries
+    if (sys.props.contains(DriverConsts.SPARK_QUERY_STATISTICS)) {
+      spark.streams.addListener(new CassandraStreamingQueryListener(APP_NAME, cassandraKeyspace,
+        spark.sparkContext.getConf))
+    }
 
     // read from the kafka steam
     val kafka = spark.readStream
@@ -96,6 +103,7 @@ object StructuredStreamingSignalAggregation {
       .agg(count($"opcTagId"), avg($"value"), min($"value"), max($"value"), sum($"value"))
       .orderBy($"aggregate_time")
 
+    // write aggregate sinks to cassandra
     val query = aggregate.writeStream
       .option("checkpointLocation", checkpointDir)
       .queryName("aggregate over time")
