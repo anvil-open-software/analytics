@@ -14,7 +14,7 @@ class CassandraStreamingQueryListener(val appName: String, val keySpace: String,
   private def createTableCql(keyspace: String): String = {
     String.format("CREATE TABLE if not exists %s.%s (" +
       " id text," +
-      " time timestamp," +
+      " time text," +
       " json text," +
       " PRIMARY KEY ((id), time))" +
       " WITH CLUSTERING ORDER BY (time DESC);", keyspace, TABLE_NAME)
@@ -26,7 +26,6 @@ class CassandraStreamingQueryListener(val appName: String, val keySpace: String,
   Connections.createTable(createTableCql(keySpace), cassandraConnector)
 
   override def onQueryStarted(event: StreamingQueryListener.QueryStartedEvent): Unit = {
-    println(event.toString)
   }
 
   override def onQueryProgress(event: StreamingQueryListener.QueryProgressEvent): Unit = {
@@ -38,6 +37,5 @@ class CassandraStreamingQueryListener(val appName: String, val keySpace: String,
   }
 
   override def onQueryTerminated(event: StreamingQueryListener.QueryTerminatedEvent): Unit = {
-    println(event.toString)
   }
 }
