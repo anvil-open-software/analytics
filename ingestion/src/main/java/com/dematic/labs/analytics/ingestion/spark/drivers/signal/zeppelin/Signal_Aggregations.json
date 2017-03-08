@@ -1,0 +1,245 @@
+﻿{
+  "paragraphs": [
+    {
+      "title": "Inputs Streams",
+      "text": "import org.apache.spark.sql.{Encoders, _}\nimport com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils}\n\nval kafka = spark.readStream\n      .format(\"kafka\")\n      .option(\"kafka.bootstrap.servers\", \"localhost:9092\")\n      .option(\"subscribe\", \"mm_test20\")\n      .option(\"startingOffsets\", \"earliest\")\n      .load\n      \n\n// kafka schema is the following: input columns: [value, timestamp, timestampType, partition, key, topic, offset]\nval signals = kafka.selectExpr(\"CAST(value AS STRING)\").as(Encoders.STRING)\n\n// explicitly define signal encoders\nimplicit val encoder = Encoders.bean[Signal](classOf[Signal])\n// map json signal to signal object stream\nval signalsPerHour = signals.map(SignalUtils.jsonToSignal)",
+      "user": "anonymous",
+      "dateUpdated": "2017-02-28T09:19:24-0800",
+      "config": {
+        "colWidth": 6,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala"
+        },
+        "editorMode": "ace/mode/scala",
+        "tableHide": true,
+        "title": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1487970691202_-592249385",
+      "id": "20170224-131131_1130290008",
+      "dateCreated": "2017-02-24T13:11:31-0800",
+      "dateStarted": "2017-02-28T09:18:29-0800",
+      "dateFinished": "2017-02-28T09:18:42-0800",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "focus": true,
+      "$$hashKey": "object:6084"
+    },
+    {
+      "title": "Query and Output Streams",
+      "text": "import org.apache.spark.sql.functions.{window, _}\nimport org.apache.spark.sql.streaming.OutputMode.Complete\nimport spark.implicits._\n\n// aggregate by opcTagId and time and watermark data for 24 hours\nval aggregate = signalsPerHour\n    .withWatermark(\"timestamp\", \"24 hours\")\n    .groupBy(window($\"timestamp\", \" 5 minutes\") as 'aggregate_time, $\"opcTagId\")\n    .agg(count($\"opcTagId\"), avg($\"value\"), min($\"value\"), max($\"value\"), sum($\"value\"))\n    .orderBy($\"aggregate_time\")\n\nval query = aggregate.writeStream\n    .queryName(\"aggregates\")\n    .format(\"memory\")\n    .outputMode(Complete)\n    .start\n   ",
+      "user": "anonymous",
+      "dateUpdated": "2017-02-28T10:26:53-0800",
+      "config": {
+        "colWidth": 6,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala"
+        },
+        "editorMode": "ace/mode/scala",
+        "tableHide": true,
+        "title": true,
+        "editorHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1488301972675_-29946850",
+      "id": "20170228-091252_179605374",
+      "dateCreated": "2017-02-28T09:12:52-0800",
+      "dateStarted": "2017-02-28T09:18:40-0800",
+      "dateFinished": "2017-02-28T09:18:44-0800",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:6085"
+    },
+    {
+      "title": "Signal Dashboard",
+      "text": "%sql\nselect * from aggregates order by aggregate_time desc\n",
+      "user": "anonymous",
+      "dateUpdated": "2017-02-28T09:54:12-0800",
+      "config": {
+        "colWidth": 12,
+        "enabled": true,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 354,
+              "optionOpen": true,
+              "setting": {
+                "stackedAreaChart": {
+                  "style": "expand"
+                },
+                "multiBarChart": {
+                  "stacked": true
+                }
+              },
+              "commonSetting": {},
+              "keys": [],
+              "groups": [],
+              "values": []
+            },
+            "helium": {}
+          }
+        },
+        "editorSetting": {
+          "language": "sql"
+        },
+        "editorMode": "ace/mode/sql",
+        "title": true,
+        "editorHide": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1487970945206_476550766",
+      "id": "20170224-131545_1380175401",
+      "dateCreated": "2017-02-24T13:15:45-0800",
+      "dateStarted": "2017-02-28T09:54:12-0800",
+      "dateFinished": "2017-02-28T09:54:14-0800",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:6086"
+    },
+    {
+      "title": "Opc Tag ID = 105",
+      "text": "%sql\nselect * from aggregates where opcTagId = 105 order by aggregate_time asc\n",
+      "user": "anonymous",
+      "dateUpdated": "2017-02-28T09:54:27-0800",
+      "config": {
+        "colWidth": 12,
+        "enabled": true,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "multiBarChart",
+              "height": 300,
+              "optionOpen": false,
+              "setting": {
+                "multiBarChart": {
+                  "stacked": true
+                },
+                "scatterChart": {
+                  "xAxis": {
+                    "name": "count(opcTagId)",
+                    "index": 2,
+                    "aggr": "sum"
+                  }
+                }
+              },
+              "keys": [
+                {
+                  "name": "aggregate_time",
+                  "index": 0,
+                  "aggr": "sum"
+                }
+              ],
+              "groups": [],
+              "values": [
+                {
+                  "name": "count(opcTagId)",
+                  "index": 2,
+                  "aggr": "sum"
+                }
+              ],
+              "commonSetting": {}
+            },
+            "helium": {}
+          }
+        },
+        "editorSetting": {
+          "language": "sql",
+          "editOnDblClick": false
+        },
+        "editorMode": "ace/mode/sql",
+        "editorHide": true,
+        "tableHide": false,
+        "title": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1487970999338_-1239551922",
+      "id": "20170224-131639_1213136530",
+      "dateCreated": "2017-02-24T13:16:39-0800",
+      "dateStarted": "2017-02-28T09:54:27-0800",
+      "dateFinished": "2017-02-28T09:54:27-0800",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:6087"
+    },
+    {
+      "text": "%sql\n",
+      "user": "anonymous",
+      "dateUpdated": "2017-02-28T09:24:11-0800",
+      "config": {
+        "colWidth": 12,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "sql"
+        },
+        "editorMode": "ace/mode/sql"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1488302651095_1064815891",
+      "id": "20170228-092411_952877954",
+      "dateCreated": "2017-02-28T09:24:11-0800",
+      "status": "READY",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:6088"
+    }
+  ],
+  "name": "Signal_Aggregations",
+  "id": "2CCF1CD4E",
+  "angularObjects": {
+    "2C9A1VHMR:shared_process": [],
+    "2CC2YR3BT:shared_process": [],
+    "2CBR234QV:shared_process": [],
+    "2CBAGNJ6P:shared_process": [],
+    "2C9DKW3SC:shared_process": [],
+    "2C9HBK2N5:shared_process": [],
+    "2C9GZFYSM:shared_process": [],
+    "2CAPNEKMF:shared_process": [],
+    "2CAAEA7MK:shared_process": [],
+    "2CB8XRJ61:shared_process": [],
+    "2C8DVRN3K:shared_process": [],
+    "2CAAMXY3K:shared_process": [],
+    "2CAA2FTBY:shared_process": [],
+    "2CACWH7NH:shared_process": [],
+    "2CBNC8DBT:shared_process": [],
+    "2CAQ16TGR:shared_process": [],
+    "2C9DUQ2AX:shared_process": [],
+    "2CBA6T435:shared_process": [],
+    "2C8T22CJ2:shared_process": []
+  },
+  "config": {
+    "looknfeel": "default",
+    "personalizedMode": "false",
+    "cronExecutingUser": ""
+  },
+  "info": {}
+}
