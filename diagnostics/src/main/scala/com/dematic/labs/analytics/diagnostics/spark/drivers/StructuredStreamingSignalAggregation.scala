@@ -72,10 +72,10 @@ object StructuredStreamingSignalAggregation {
       CassandraConnector.apply(spark.sparkContext.getConf))
 
     // add query statistic listener to enable monitoring of queries
-    if (sys.props.contains(DriverConsts.SPARK_QUERY_STATISTICS)) {
+   // if (sys.props.contains(DriverConsts.SPARK_QUERY_STATISTICS)) {
       spark.streams.addListener(new CassandraStreamingQueryListener(APP_NAME, cassandraKeyspace,
         spark.sparkContext.getConf))
-    }
+    //}
 
     // read from the kafka steam
     val kafka = spark.readStream
