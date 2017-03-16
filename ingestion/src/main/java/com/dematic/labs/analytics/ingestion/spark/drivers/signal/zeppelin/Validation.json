@@ -1,0 +1,196 @@
+﻿{
+  "paragraphs": [
+    {
+      "title": "Keyspace (Run Once)",
+      "text": "use mm_test20;",
+      "user": "anonymous",
+      "dateUpdated": "2017-03-14T11:23:43-0700",
+      "config": {
+        "colWidth": 12,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "editOnDblClick": false
+        },
+        "editorMode": "ace/mode/undefined",
+        "title": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1489513509934_-549877142",
+      "id": "20170314-104509_703453027",
+      "dateCreated": "2017-03-14T10:45:09-0700",
+      "dateStarted": "2017-03-14T11:22:45-0700",
+      "dateFinished": "2017-03-14T11:22:45-0700",
+      "status": "FINISHED",
+      "errorMessage": "",
+      "progressUpdateIntervalMs": 500,
+      "focus": true,
+      "$$hashKey": "object:335"
+    },
+    {
+      "title": "Total Producer Signals",
+      "text": "select producer_count as total_count, producer_error_count as total_error_count from signal_validation;",
+      "user": "anonymous",
+      "dateUpdated": "2017-03-14T11:22:45-0700",
+      "config": {
+        "colWidth": 4,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "editOnDblClick": false
+        },
+        "editorMode": "ace/mode/undefined",
+        "title": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1489514430549_84151295",
+      "id": "20170314-110030_1056919922",
+      "dateCreated": "2017-03-14T11:00:30-0700",
+      "dateStarted": "2017-03-14T11:22:45-0700",
+      "dateFinished": "2017-03-14T11:22:45-0700",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:336",
+      "errorMessage": ""
+    },
+    {
+      "title": "Total Signals",
+      "text": "select sum(count) as total_count from ss_signal_aggregation;",
+      "user": "anonymous",
+      "dateUpdated": "2017-03-14T11:22:45-0700",
+      "config": {
+        "colWidth": 4,
+        "enabled": true,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 300,
+              "optionOpen": false
+            },
+            "helium": {}
+          }
+        },
+        "editorSetting": {
+          "editOnDblClick": false
+        },
+        "editorMode": "ace/mode/undefined",
+        "title": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1487626646330_1231838304",
+      "id": "20170220-133726_396042011",
+      "dateCreated": "2017-02-20T13:37:26-0800",
+      "dateStarted": "2017-03-14T11:22:45-0700",
+      "dateFinished": "2017-03-14T11:22:45-0700",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:337",
+      "errorMessage": ""
+    },
+    {
+      "title": "Signals Per Second",
+      "text": "select json as rate from ss_cassandra_query_statistics;\n",
+      "user": "anonymous",
+      "dateUpdated": "2017-03-14T11:24:37-0700",
+      "config": {
+        "colWidth": 4,
+        "enabled": true,
+        "results": {
+          "0": {
+            "graph": {
+              "mode": "table",
+              "height": 300,
+              "optionOpen": false
+            },
+            "helium": {}
+          }
+        },
+        "editorSetting": {
+          "editOnDblClick": false,
+          "language": "text"
+        },
+        "editorMode": "ace/mode/undefined",
+        "title": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1487619013689_-1106402759",
+      "id": "20170220-113013_1675595896",
+      "dateCreated": "2017-02-20T11:30:13-0800",
+      "dateStarted": "2017-03-14T11:24:37-0700",
+      "dateFinished": "2017-03-14T11:24:40-0700",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:338",
+      "errorMessage": ""
+    },
+    {
+      "user": "anonymous",
+      "dateUpdated": "2017-03-14T11:22:45-0700",
+      "config": {
+        "colWidth": 12,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "editOnDblClick": false
+        },
+        "editorMode": "ace/mode/undefined"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1489515646781_97230222",
+      "id": "20170314-112046_67735779",
+      "dateCreated": "2017-03-14T11:20:46-0700",
+      "status": "READY",
+      "progressUpdateIntervalMs": 500,
+      "$$hashKey": "object:339"
+    }
+  ],
+  "name": "cassandra",
+  "id": "2C8GE9G4S",
+  "angularObjects": {
+    "2C9A1VHMR:shared_process": [],
+    "2CC2YR3BT:shared_process": [],
+    "2CBR234QV:shared_process": [],
+    "2CBAGNJ6P:shared_process": [],
+    "2C9DKW3SC:shared_process": [],
+    "2C9HBK2N5:shared_process": [],
+    "2CAPNEKMF:shared_process": [],
+    "2C9GZFYSM:shared_process": [],
+    "2CAAEA7MK:shared_process": [],
+    "2CB8XRJ61:shared_process": [],
+    "2C8DVRN3K:shared_process": [],
+    "2CAAMXY3K:shared_process": [],
+    "2CAA2FTBY:shared_process": [],
+    "2CACWH7NH:shared_process": [],
+    "2CBNC8DBT:shared_process": [],
+    "2CAQ16TGR:shared_process": [],
+    "2C9DUQ2AX:shared_process": [],
+    "2CBA6T435:shared_process": [],
+    "2C8T22CJ2:shared_process": []
+  },
+  "config": {
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {}
+}
