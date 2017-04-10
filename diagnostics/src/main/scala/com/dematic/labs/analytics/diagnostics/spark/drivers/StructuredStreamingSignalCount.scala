@@ -48,7 +48,7 @@ object StructuredStreamingSignalCount {
     // spark system properties
     val queryTriggerProp = sys.props(SPARK_QUERY_TRIGGER)
     // '0' indicates the query will run as fast as possible
-    val queryTrigger = if (!Strings.isNullOrEmpty(queryTriggerProp)) queryTriggerProp else "0"
+    val queryTrigger = if (!Strings.isNullOrEmpty(queryTriggerProp)) queryTriggerProp else 0
     val checkpointDir = getOrThrow(SPARK_CHECKPOINT_DIR)
 
     // kafka options
@@ -92,7 +92,7 @@ object StructuredStreamingSignalCount {
 
     // write the output
     val query = totalSignalCount.writeStream
-      .trigger(ProcessingTime(queryTrigger))
+      .trigger(ProcessingTime(queryTrigger + " seconds"))
       .option("checkpointLocation", checkpointDir)
       .queryName("signal count")
       .outputMode(Complete)
