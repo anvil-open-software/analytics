@@ -5,7 +5,7 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.dematic.labs.analytics.common.cassandra.Connections
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig.{AUTH_PASSWORD_PROP, AUTH_USERNAME_PROP, CONNECTION_HOST_PROP, KEEP_ALIVE_PROP}
 import com.dematic.labs.analytics.common.spark.DriverConsts
-import com.dematic.labs.analytics.common.spark.DriverConsts.{SPARK_CHECKPOINT_DIR, SPARK_QUERY_TRIGGER, SPARK_STREAMING_CHECKPOINT_DIR}
+import com.dematic.labs.analytics.common.spark.DriverConsts.{SPARK_CHECKPOINT_DIR, SPARK_QUERY_TRIGGER, SPARK_STREAMING_CHECKPOINT_DIR, SPARK_WATERMARK_TIME}
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig.{KAFKA_ADDITIONAL_CONFIG_PREFIX, getPrefixedSystemProperties}
 import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
 import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils}
@@ -54,7 +54,8 @@ object StructuredStreamingSignalAggregation {
     // spark system properties
     val queryTriggerProp = sys.props(SPARK_QUERY_TRIGGER)
     // '0' indicates the query will run as fast as possible
-    val queryTrigger = if (!Strings.isNullOrEmpty(queryTriggerProp)) queryTriggerProp else 0
+    val queryTrigger = if (!Strings.isNullOrEmpty(queryTriggerProp)) queryTriggerProp else "0 seconds"
+    val watermarkTime = getOrThrow(SPARK_WATERMARK_TIME)
     val checkpointDir = getOrThrow(SPARK_CHECKPOINT_DIR)
     // kafka options
     val kafkaOptions = getPrefixedSystemProperties(KAFKA_ADDITIONAL_CONFIG_PREFIX)
@@ -103,14 +104,14 @@ object StructuredStreamingSignalAggregation {
 
     // aggregate by opcTagId and time and watermark data for 24 hours
     val aggregate = signalsPerHour
-      .withWatermark("timestamp", "24 hours")
+      .withWatermark("timestamp", watermarkTime)
       .groupBy(window($"timestamp", " 5 minutes") as 'aggregate_time, $"opcTagId")
       .agg(count($"opcTagId"), avg($"value"), min($"value"), max($"value"), sum($"value"))
       .orderBy($"aggregate_time")
 
     // write aggregate sinks to cassandra
     val query = aggregate.writeStream
-      .trigger(ProcessingTime(queryTrigger + " seconds"))
+      .trigger(ProcessingTime(queryTrigger))
       .option("checkpointLocation", checkpointDir)
       .queryName("aggregate over time")
       .outputMode(Complete)
