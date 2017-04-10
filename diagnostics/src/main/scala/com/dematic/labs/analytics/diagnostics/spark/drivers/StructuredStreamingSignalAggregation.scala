@@ -5,7 +5,7 @@ import com.datastax.spark.connector.cql.CassandraConnector
 import com.dematic.labs.analytics.common.cassandra.Connections
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig.{AUTH_PASSWORD_PROP, AUTH_USERNAME_PROP, CONNECTION_HOST_PROP, KEEP_ALIVE_PROP}
 import com.dematic.labs.analytics.common.spark.DriverConsts
-import com.dematic.labs.analytics.common.spark.DriverConsts.{SPARK_CHECKPOINT_DIR, SPARK_STREAMING_CHECKPOINT_DIR}
+import com.dematic.labs.analytics.common.spark.DriverConsts.{SPARK_CHECKPOINT_DIR, SPARK_QUERY_TRIGGER, SPARK_STREAMING_CHECKPOINT_DIR}
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig.{KAFKA_ADDITIONAL_CONFIG_PREFIX, getPrefixedSystemProperties}
 import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
 import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils}
@@ -13,6 +13,7 @@ import org.apache.parquet.Strings
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.functions.{window, _}
 import org.apache.spark.sql.streaming.OutputMode.Complete
+import org.apache.spark.sql.streaming.ProcessingTime
 import org.apache.spark.sql.{Encoders, _}
 
 object StructuredStreamingSignalAggregation {
@@ -46,12 +47,16 @@ object StructuredStreamingSignalAggregation {
     val cassandraKeyspace = args(3)
     val masterUrl = if (args.length == 5) args(4) else null
 
-    // all have to be set or throw exception
+    // cassandra system properties
     getOrThrow(AUTH_USERNAME_PROP)
     getOrThrow(AUTH_PASSWORD_PROP)
     val keepAliveInMs = getOrThrow(KEEP_ALIVE_PROP)
+    // spark system properties
+    val queryTriggerProp = sys.props(SPARK_QUERY_TRIGGER)
+    // '0' indicates the query will run as fast as possible
+    val queryTrigger = if (!Strings.isNullOrEmpty(queryTriggerProp)) queryTriggerProp else 0
     val checkpointDir = getOrThrow(SPARK_CHECKPOINT_DIR)
-    // additional kafka options
+    // kafka options
     val kafkaOptions = getPrefixedSystemProperties(KAFKA_ADDITIONAL_CONFIG_PREFIX)
 
     // create the spark session
@@ -105,6 +110,7 @@ object StructuredStreamingSignalAggregation {
 
     // write aggregate sinks to cassandra
     val query = aggregate.writeStream
+      .trigger(ProcessingTime(queryTrigger + " seconds"))
       .option("checkpointLocation", checkpointDir)
       .queryName("aggregate over time")
       .outputMode(Complete)
