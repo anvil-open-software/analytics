@@ -21,7 +21,7 @@ import org.apache.spark.sql.streaming.ProcessingTime
   * -Dspark.cassandra.auth.username=username
   * -Dspark.cassandra.auth.password=password
   * -Dspark.cassandra.connection.keep_alive_ms=5000
-  * -Dspark.query.trigger=0
+  * -Dspark.query.trigger="10 seconds"
   * -Dspark.checkpoint.dir=pathOfCheckpointDir
   * -Dspark.streaming.receiver.writeAheadLog.enable=true
   */
@@ -48,7 +48,7 @@ object StructuredStreamingSignalCount {
     // spark system properties
     val queryTriggerProp = sys.props(SPARK_QUERY_TRIGGER)
     // '0' indicates the query will run as fast as possible
-    val queryTrigger = if (!Strings.isNullOrEmpty(queryTriggerProp)) queryTriggerProp else 0
+    val queryTrigger = if (!Strings.isNullOrEmpty(queryTriggerProp)) queryTriggerProp else "0 seconds"
     val checkpointDir = getOrThrow(SPARK_CHECKPOINT_DIR)
 
     // kafka options
@@ -92,7 +92,7 @@ object StructuredStreamingSignalCount {
 
     // write the output
     val query = totalSignalCount.writeStream
-      .trigger(ProcessingTime(queryTrigger + " seconds"))
+      .trigger(ProcessingTime(queryTrigger))
       .option("checkpointLocation", checkpointDir)
       .queryName("signal count")
       .outputMode(Complete)
