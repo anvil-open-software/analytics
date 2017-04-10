@@ -13,6 +13,7 @@ import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation.S
 import org.apache.parquet.Strings
 import org.apache.spark.sql._
 import org.apache.spark.sql.streaming.OutputMode.Complete
+import org.apache.spark.sql.streaming.ProcessingTime
 
 /**
   * Need to have the following system properties.
@@ -20,6 +21,7 @@ import org.apache.spark.sql.streaming.OutputMode.Complete
   * -Dspark.cassandra.auth.username=username
   * -Dspark.cassandra.auth.password=password
   * -Dspark.cassandra.connection.keep_alive_ms=5000
+  * -Dspark.query.trigger=0
   * -Dspark.checkpoint.dir=pathOfCheckpointDir
   * -Dspark.streaming.receiver.writeAheadLog.enable=true
   */
@@ -39,12 +41,17 @@ object StructuredStreamingSignalCount {
     val cassandraKeyspace = args(3)
     val masterUrl = if (args.length == 5) args(4) else null
 
-    // all have to be set or throw exception
+    // cassandra system properties
     getOrThrow(AUTH_USERNAME_PROP)
     getOrThrow(AUTH_PASSWORD_PROP)
     val keepAliveInMs = getOrThrow(KEEP_ALIVE_PROP)
+    // spark system properties
+    val queryTriggerProp = sys.props(SPARK_QUERY_TRIGGER)
+    // '0' indicates the query will run as fast as possible
+    val queryTrigger = if (!Strings.isNullOrEmpty(queryTriggerProp)) queryTriggerProp else "0"
     val checkpointDir = getOrThrow(SPARK_CHECKPOINT_DIR)
-    // additional kafka options
+
+    // kafka options
     val kafkaOptions = getPrefixedSystemProperties(KAFKA_ADDITIONAL_CONFIG_PREFIX)
 
     // create the spark session
@@ -85,6 +92,7 @@ object StructuredStreamingSignalCount {
 
     // write the output
     val query = totalSignalCount.writeStream
+      .trigger(ProcessingTime(queryTrigger))
       .option("checkpointLocation", checkpointDir)
       .queryName("signal count")
       .outputMode(Complete)
