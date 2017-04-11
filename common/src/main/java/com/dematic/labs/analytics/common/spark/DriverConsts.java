@@ -4,6 +4,7 @@ package com.dematic.labs.analytics.common.spark;
  * Keep track of all parameters here
  */
 public interface DriverConsts {
+    String SPARK_OUTPUT_MODE = "spark.output.mode";
     String SPARK_WATERMARK_TIME = "spark.watermark.time"; // keeps track of how long to keep data
     String SPARK_QUERY_TRIGGER = "spark.query.trigger";
     String SPARK_CHECKPOINT_DIR = "spark.checkpoint.dir";
