@@ -12,7 +12,7 @@ import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUti
 import org.apache.parquet.Strings
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.functions.{window, _}
-import org.apache.spark.sql.streaming.OutputMode.Complete
+import org.apache.spark.sql.streaming.OutputMode.Append
 import org.apache.spark.sql.streaming.ProcessingTime
 import org.apache.spark.sql.{Encoders, _}
 
@@ -107,14 +107,13 @@ object StructuredStreamingSignalAggregation {
       .withWatermark("timestamp", watermarkTime)
       .groupBy(window($"timestamp", " 5 minutes") as 'aggregate_time, $"opcTagId")
       .agg(count($"opcTagId"), avg($"value"), min($"value"), max($"value"), sum($"value"))
-      .orderBy($"aggregate_time")
 
     // write aggregate sinks to cassandra
     val query = aggregate.writeStream
       .trigger(ProcessingTime(queryTrigger))
       .option("checkpointLocation", checkpointDir)
       .queryName("aggregate over time")
-      .outputMode(Complete)
+      .outputMode(Append)
       .foreach(new ForeachWriter[Row] {
         private val cassandraConnector = CassandraConnector.apply(spark.sparkContext.getConf)
 
