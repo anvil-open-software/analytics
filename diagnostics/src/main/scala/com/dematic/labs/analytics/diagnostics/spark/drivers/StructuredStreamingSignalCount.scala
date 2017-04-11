@@ -12,6 +12,7 @@ import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation
 import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation.SS_TABLE_NAME
 import org.apache.parquet.Strings
 import org.apache.spark.sql._
+import org.apache.spark.sql.streaming.OutputMode.Complete
 import org.apache.spark.sql.streaming.ProcessingTime
 
 /**
@@ -21,7 +22,6 @@ import org.apache.spark.sql.streaming.ProcessingTime
   * -Dspark.cassandra.auth.password=password
   * -Dspark.cassandra.connection.keep_alive_ms=5000
   * -Dspark.query.trigger="10 seconds"
-  * -Dspark.output.mode=Append
   * -Dspark.checkpoint.dir=pathOfCheckpointDir
   * -Dspark.streaming.receiver.writeAheadLog.enable=true
   */
@@ -49,8 +49,6 @@ object StructuredStreamingSignalCount {
     val queryTriggerProp = sys.props(SPARK_QUERY_TRIGGER)
     // '0' indicates the query will run as fast as possible
     val queryTrigger = if (!Strings.isNullOrEmpty(queryTriggerProp)) queryTriggerProp else "0 seconds"
-    val outputModeProp = sys.props(SPARK_OUTPUT_MODE)
-    val outputMode = if (!Strings.isNullOrEmpty(outputModeProp)) outputModeProp else "Append"
     val checkpointDir = getOrThrow(SPARK_CHECKPOINT_DIR)
 
     // kafka options
@@ -97,7 +95,7 @@ object StructuredStreamingSignalCount {
       .trigger(ProcessingTime(queryTrigger))
       .option("checkpointLocation", checkpointDir)
       .queryName("signal count")
-      .outputMode(outputMode)
+      .outputMode(Complete)
       .foreach(new ForeachWriter[Row] {
         private val cassandraConnector = CassandraConnector.apply(spark.sparkContext.getConf)
 
