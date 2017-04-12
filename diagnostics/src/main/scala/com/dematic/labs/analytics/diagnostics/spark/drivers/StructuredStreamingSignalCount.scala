@@ -46,6 +46,7 @@ object StructuredStreamingSignalCount {
     getOrThrow(AUTH_PASSWORD_PROP)
     val keepAliveInMs = getOrThrow(KEEP_ALIVE_PROP)
     // spark system properties
+    val sqlPartitions = sys.props(SPARK_SQL_SHUFFLE_PARTITIONS)
     val queryTriggerProp = sys.props(SPARK_QUERY_TRIGGER)
     // '0' indicates the query will run as fast as possible
     val queryTrigger = if (!Strings.isNullOrEmpty(queryTriggerProp)) queryTriggerProp else "0 seconds"
@@ -64,6 +65,8 @@ object StructuredStreamingSignalCount {
     builder.config(KEEP_ALIVE_PROP, keepAliveInMs)
     builder.config(SPARK_STREAMING_CHECKPOINT_DIR, checkpointDir)
     val spark: SparkSession = builder.getOrCreate
+    // set sql partitions if set
+    if(!Strings.isNullOrEmpty(sqlPartitions)) spark.sql("SET spark.sql.shuffle.partitions=" + sqlPartitions)
 
     // create the cassandra table
     Connections.createTable(SignalValidation.createSSTableCql(cassandraKeyspace),
