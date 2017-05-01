@@ -12,4 +12,7 @@ public interface DriverConsts {
     String SPARK_STREAMING_CHECKPOINT_DIR = "spark.sql.streaming.checkpointLocation";
     String SPARK_DRIVER_VALIDATE_COUNTS = "dematiclabs.driver.validate.counts";
     String SPARK_QUERY_STATISTICS = "dematiclabs.driver.query.statistics";
+
+    String SPARK_QUERY_MONITOR_PUSH_GATEWAY = "dematiclabs.monitor.pushGateway.address";
+    String SPARK_QUERY_MONITOR_COLLECTOR_JOB_NAME = "dematiclabs.monitor.collector.job.name";
 }
