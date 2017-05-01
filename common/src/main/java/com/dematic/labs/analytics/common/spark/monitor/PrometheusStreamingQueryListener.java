@@ -19,7 +19,7 @@ import java.io.IOException;
 public class PrometheusStreamingQueryListener extends StreamingQueryListener {
     private static String SPARK_METRIC_PREFIX="spark_structured_streaming_";
     private String push_gateway_host;
-    private String job_name="push_gateway_test";
+    private String job_name="spark-push-gateway";
 
     private String app_name;
     CollectorRegistry collectorRegistry;
