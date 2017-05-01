@@ -25,7 +25,6 @@ object StructuredStreamingParquetPersister {
     val masterUrl = if (args.length == 3) args(2) else null
 
     // spark system properties
-    val sqlPartitions = sys.props(SPARK_SQL_SHUFFLE_PARTITIONS)
     val checkpointDir = getOrThrow(SPARK_CHECKPOINT_DIR)
     val parquetDir = getOrThrow(SPARK_PARQUET_DIR)
     // kafka options
@@ -40,10 +39,6 @@ object StructuredStreamingParquetPersister {
 
     builder.config(SPARK_STREAMING_CHECKPOINT_DIR, checkpointDir)
     val spark: SparkSession = builder.getOrCreate
-    // set sql partitions if set
-    if (!Strings.isNullOrEmpty(sqlPartitions)) spark.sql("SET spark.sql.shuffle.partitions=" + sqlPartitions)
-
-    // spark.sparkContext.setLogLevel("DEBUG")
 
     // read from the kafka steam
     val kafka = spark.readStream
