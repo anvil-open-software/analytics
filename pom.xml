@@ -168,6 +168,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.apache.parquet</groupId>
+            <artifactId>parquet-avro</artifactId>
+            <version>1.9.0</version>
+        </dependency>
         <!-- kafka support -->
         <dependency>
             <groupId>org.apache.spark</groupId>
