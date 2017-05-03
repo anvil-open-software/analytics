@@ -1,5 +1,6 @@
 package com.dematic.labs.analytics.common.spark.monitor;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -11,6 +12,7 @@ import org.junit.Test;
 
 public final class PrometheusSparkStructuredStreamingQueryStatsIntegrationTest {
 
+    @Ignore
     @Test
     public void pushTestStreamingStats() {
         // just test out machinery
