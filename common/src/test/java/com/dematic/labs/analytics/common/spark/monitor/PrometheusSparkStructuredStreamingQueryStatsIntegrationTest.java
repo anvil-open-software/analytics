@@ -12,17 +12,17 @@ import org.junit.Test;
 
 public final class PrometheusSparkStructuredStreamingQueryStatsIntegrationTest {
 
-    @Ignore
+   // @Ignore
     @Test
     public void pushTestStreamingStats() {
         // just test out machinery
         PrometheusStreamingQueryListener queryListener=
-                new PrometheusStreamingQueryListener("PROMETHEUS_STATS_TEST", "10.207.220.65:9091");
+                new PrometheusStreamingQueryListener("PROMETHEUS_STATS_TEST", "10.207.220.65:9091", "test-cluster");
         // need either to write a structured streaming query to run or create mock data
         // was not trivial to create a mock results due to complex structures needed for progress stats
 
         queryListener.setAddSparkQueryStats(false);
-        for (int i=0; i<7; i++) {
+        for (int i=0; i<6; i++) {
             queryListener.onQueryProgress(null);
         }
 

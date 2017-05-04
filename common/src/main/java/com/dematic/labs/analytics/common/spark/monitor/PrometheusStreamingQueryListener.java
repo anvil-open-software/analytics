@@ -20,12 +20,14 @@ public class PrometheusStreamingQueryListener extends StreamingQueryListener {
 
     public static final String SPARK_METRIC_PREFIX = "spark_structured_streaming_";
     public static final String LABEL_NAME = "driver";
+    public static final String LABEL_CLUSTER_ID="cluster_id";
     // might have to parameterize this
     public static final String job_name = "spark-push-gateway";
     private String push_gateway_host;
 
 
     private String app_name;
+    private String cluster_id;
     CollectorRegistry collectorRegistry;
 
     // collectors for spark streaming interactive query stats
@@ -38,9 +40,10 @@ public class PrometheusStreamingQueryListener extends StreamingQueryListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusStreamingQueryListener.class);
 
-    public PrometheusStreamingQueryListener(String spark_app_name, String push_gateway_host) {
+    public PrometheusStreamingQueryListener(String spark_app_name, String push_gateway_host, String cluster_id) {
         LOGGER.info("Push gateway statistics posted to: " + push_gateway_host);
         this.push_gateway_host = push_gateway_host;
+        this.cluster_id=cluster_id;
         app_name = spark_app_name;
         collectorRegistry = CollectorRegistry.defaultRegistry;
         collectorRegistry.clear();
@@ -48,14 +51,15 @@ public class PrometheusStreamingQueryListener extends StreamingQueryListener {
         // add all standard jvm collectors - memory, gc, machine, etc..
         DefaultExports.initialize();
 
-        total_batches = Counter.build().labelNames(LABEL_NAME).name(SPARK_METRIC_PREFIX + "batches_total")
-                .labelNames(LABEL_NAME).help("Total number of batches.").register();
+        total_batches = Counter.build().labelNames(LABEL_NAME,LABEL_CLUSTER_ID).name(SPARK_METRIC_PREFIX + "batches_total")
+                .labelNames(LABEL_NAME,LABEL_CLUSTER_ID).help("Total number of batches.").register();
+
         total_input_rows = Counter.build().name(SPARK_METRIC_PREFIX + "input_rows_total")
-                .labelNames(LABEL_NAME).help("Total number of input events.").register();
+                .labelNames(LABEL_NAME,LABEL_CLUSTER_ID).help("Total number of input events.").register();
         inputRowsPerSecond = Gauge.build().name(SPARK_METRIC_PREFIX + "input_rows_per_second")
-                .labelNames(LABEL_NAME).help("Total number of input events.").register();
+                .labelNames(LABEL_NAME,LABEL_CLUSTER_ID).help("Total number of input events.").register();
         processedRowsPerSecond = Gauge.build().name(SPARK_METRIC_PREFIX + "processed_rows_per_second")
-                .labelNames(LABEL_NAME).help("Total number of input events.").register();
+                .labelNames(LABEL_NAME,LABEL_CLUSTER_ID).help("Total number of input events.").register();
 
     }
 
@@ -78,11 +82,11 @@ public class PrometheusStreamingQueryListener extends StreamingQueryListener {
     public void onQueryProgress(QueryProgressEvent event) {
         PushGateway pg = new PushGateway(push_gateway_host);
         try {
-            total_batches.labels(app_name).inc();
+            total_batches.labels(app_name,cluster_id).inc();
             if (addSparkQueryStats) {
-                total_input_rows.labels(app_name).inc(event.progress().numInputRows());
-                processedRowsPerSecond.labels(app_name).set(event.progress().processedRowsPerSecond());
-                inputRowsPerSecond.labels(app_name).set(event.progress().inputRowsPerSecond());
+                total_input_rows.labels(app_name,cluster_id).inc(event.progress().numInputRows());
+                processedRowsPerSecond.labels(app_name,cluster_id).set(event.progress().processedRowsPerSecond());
+                inputRowsPerSecond.labels(app_name,cluster_id).set(event.progress().inputRowsPerSecond());
             }
 
             pg.pushAdd(collectorRegistry, job_name);
