@@ -90,7 +90,9 @@ object StructuredStreamingSignalAggregation {
 
     if (sys.props.contains(DriverConsts.SPARK_QUERY_MONITOR_PUSH_GATEWAY)) {
       spark.streams.addListener(new PrometheusStreamingQueryListener(APP_NAME,
-              sys.props.get(DriverConsts.SPARK_QUERY_MONITOR_PUSH_GATEWAY).get))
+              sys.props.get(DriverConsts.SPARK_QUERY_MONITOR_PUSH_GATEWAY).get,
+              sys.props.get(DriverConsts.SPARK_CLUSTER_ID).get
+      ))
     }
 
     // read from the kafka steam
