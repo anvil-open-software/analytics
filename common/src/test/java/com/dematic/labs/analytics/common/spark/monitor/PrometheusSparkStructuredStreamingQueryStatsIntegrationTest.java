@@ -12,7 +12,7 @@ import org.junit.Test;
 
 public final class PrometheusSparkStructuredStreamingQueryStatsIntegrationTest {
 
-   // @Ignore
+    @Ignore
     @Test
     public void pushTestStreamingStats() {
         // just test out machinery
