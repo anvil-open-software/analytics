@@ -41,6 +41,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -70,6 +71,13 @@
             <artifactId>common</artifactId>
             <version>1.0.8-SNAPSHOT</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.dematic.labs.analytics.monitor</groupId>
+            <artifactId>analytics-monitor</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
         <dependency>
             <groupId>com.dematic.labs.toolkit.helpers</groupId>
             <artifactId>test_util</artifactId>
@@ -201,6 +209,8 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.11</artifactId>
         </dependency>
+
+
         <!-- declare tests dependencies -->
         <!-- cassandra unit test -->
         <dependency>
