@@ -15,6 +15,4 @@ public interface DriverConsts {
     String SPARK_QUERY_STATISTICS = "dematiclabs.driver.query.statistics";
 
     String SPARK_CLUSTER_ID="dematiclabs.spark.cluster_id";
-    String SPARK_QUERY_MONITOR_PUSH_GATEWAY = "dematiclabs.monitor.pushGateway.address";
-    String SPARK_QUERY_MONITOR_COLLECTOR_JOB_NAME = "dematiclabs.monitor.collector.job.name";
 }

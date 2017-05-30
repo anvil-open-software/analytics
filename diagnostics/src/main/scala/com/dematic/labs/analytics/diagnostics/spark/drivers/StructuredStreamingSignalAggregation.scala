@@ -7,7 +7,7 @@ import com.dematic.labs.analytics.common.spark.CassandraDriverConfig.{AUTH_PASSW
 import com.dematic.labs.analytics.common.spark.DriverConsts
 import com.dematic.labs.analytics.common.spark.DriverConsts._
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig.{KAFKA_ADDITIONAL_CONFIG_PREFIX, getPrefixedSystemProperties}
-import com.dematic.labs.analytics.common.spark.monitor.PrometheusStreamingQueryListener
+import com.dematic.labs.analytics.monitor.spark.{MonitorConsts, PrometheusStreamingQueryListener}
 import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
 import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils}
 import org.apache.parquet.Strings
@@ -88,11 +88,8 @@ object StructuredStreamingSignalAggregation {
         spark.sparkContext.getConf))
     }
 
-    if (sys.props.contains(DriverConsts.SPARK_QUERY_MONITOR_PUSH_GATEWAY)) {
-      spark.streams.addListener(new PrometheusStreamingQueryListener(APP_NAME,
-              sys.props.get(DriverConsts.SPARK_QUERY_MONITOR_PUSH_GATEWAY).get,
-              sys.props.get(DriverConsts.SPARK_CLUSTER_ID).get
-      ))
+    if (sys.props.contains(MonitorConsts.SPARK_QUERY_MONITOR_PUSH_GATEWAY)) {
+      spark.streams.addListener(new PrometheusStreamingQueryListener(spark.sparkContext.getConf,APP_NAME))
     }
 
     // read from the kafka steam
