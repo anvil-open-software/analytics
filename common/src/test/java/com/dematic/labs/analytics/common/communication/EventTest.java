@@ -1,15 +1,15 @@
 package com.dematic.labs.analytics.common.communication;
 
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.junit.MatcherAssert;
 import org.joda.time.DateTime;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
 
 public final class EventTest {
     @Test
