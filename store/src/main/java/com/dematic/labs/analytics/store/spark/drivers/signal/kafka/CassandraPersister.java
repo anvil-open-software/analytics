@@ -1,14 +1,14 @@
 package com.dematic.labs.analytics.store.spark.drivers.signal.kafka;
 
 import com.datastax.spark.connector.cql.CassandraConnector;
+import com.dematic.labs.analytics.common.GenericBuilder;
 import com.dematic.labs.analytics.common.cassandra.Connections;
+import com.dematic.labs.analytics.common.communication.Signal;
+import com.dematic.labs.analytics.common.communication.SignalUtils;
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamFunctions;
-import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
-import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils;
-import com.dematic.labs.toolkit.helpers.common.GenericBuilder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.VoidFunction;

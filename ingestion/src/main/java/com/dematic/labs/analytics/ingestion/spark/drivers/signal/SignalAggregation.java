@@ -2,7 +2,7 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.signal;
 
 //{"OPCTagID":1549,"OPCMetricID":25,"Sum":7.875713721263E12,"Count":7316,"Average":1.0765054293689175E9,"Minimum":"1000954613","Maximum":"999917866"}
 
-import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
+import com.dematic.labs.analytics.common.communication.Signal;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -43,15 +43,15 @@ public class SignalAggregation implements Serializable {
         sum = 0L;
     }
 
-    public SignalAggregation(final Long opcTagId, final Date aggregate) {
+    SignalAggregation(final Long opcTagId, final Date aggregate) {
         this.opcTagId = opcTagId;
         this.aggregate = aggregate;
         count = 0L;
         sum = 0L;
     }
 
-    public void computeAggregations(final List<Signal> values) {
-        values.stream().forEach(signal -> computeAggregations(signal.getValue()));
+    void computeAggregations(final List<Signal> values) {
+        values.forEach(signal -> computeAggregations(signal.getValue()));
     }
 
     private void computeAggregations(final Long value) {

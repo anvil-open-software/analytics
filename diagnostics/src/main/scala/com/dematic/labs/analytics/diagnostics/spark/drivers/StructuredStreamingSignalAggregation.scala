@@ -3,13 +3,13 @@ package com.dematic.labs.analytics.diagnostics.spark.drivers
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.dematic.labs.analytics.common.cassandra.Connections
+import com.dematic.labs.analytics.common.communication.{Signal, SignalUtils}
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig.{AUTH_PASSWORD_PROP, AUTH_USERNAME_PROP, CONNECTION_HOST_PROP, KEEP_ALIVE_PROP}
 import com.dematic.labs.analytics.common.spark.DriverConsts
 import com.dematic.labs.analytics.common.spark.DriverConsts._
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig.{KAFKA_ADDITIONAL_CONFIG_PREFIX, getPrefixedSystemProperties}
-import com.dematic.labs.analytics.monitor.spark.{MonitorConsts, PrometheusStreamingQueryListener}
 import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
-import com.dematic.labs.toolkit.helpers.bigdata.communication.{Signal, SignalUtils}
+import com.dematic.labs.analytics.monitor.spark.{MonitorConsts, PrometheusStreamingQueryListener}
 import org.apache.parquet.Strings
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.functions.{window, _}
@@ -74,7 +74,7 @@ object StructuredStreamingSignalAggregation {
     builder.config(SPARK_STREAMING_CHECKPOINT_DIR, checkpointDir)
     val spark: SparkSession = builder.getOrCreate
     // set sql partitions if set
-    if(!Strings.isNullOrEmpty(sqlPartitions)) spark.sql("SET spark.sql.shuffle.partitions=" + sqlPartitions)
+    if (!Strings.isNullOrEmpty(sqlPartitions)) spark.sql("SET spark.sql.shuffle.partitions=" + sqlPartitions)
 
     // spark.sparkContext.setLogLevel("DEBUG")
 
@@ -89,7 +89,7 @@ object StructuredStreamingSignalAggregation {
     }
 
     if (sys.props.contains(MonitorConsts.SPARK_QUERY_MONITOR_PUSH_GATEWAY)) {
-      spark.streams.addListener(new PrometheusStreamingQueryListener(spark.sparkContext.getConf,APP_NAME))
+      spark.streams.addListener(new PrometheusStreamingQueryListener(spark.sparkContext.getConf, APP_NAME))
     }
 
     // read from the kafka steam

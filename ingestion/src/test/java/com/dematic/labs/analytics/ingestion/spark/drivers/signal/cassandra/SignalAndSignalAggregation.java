@@ -2,10 +2,10 @@ package com.dematic.labs.analytics.ingestion.spark.drivers.signal.cassandra;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
+import com.dematic.labs.analytics.common.cassandra.EmbeddedCassandraRule;
+import com.dematic.labs.analytics.common.communication.Signal;
 import com.dematic.labs.analytics.ingestion.spark.drivers.signal.SignalAggregation;
 import com.dematic.labs.toolkit.helpers.test_util.SystemPropertyRule;
-import com.dematic.labs.toolkit.helpers.bigdata.cassandra.EmbeddedCassandraRule;
-import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -41,6 +41,7 @@ public final class SignalAndSignalAggregation {
         }
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static void insertSignals(final Session session, final String keyspace, final int numOfSignals) {
         final int[] ints = {1};
         IntStream.range(0, numOfSignals).forEach(signal -> {
@@ -83,6 +84,7 @@ public final class SignalAndSignalAggregation {
         }
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static void insertSignalAggregation(final Session session, final String keyspace, final int numOfSignals) {
         final int[] ints = {1};
         IntStream.range(0, numOfSignals).forEach(signal -> {

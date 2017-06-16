@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.dematic.labs</groupId>
         <artifactId>toolkit</artifactId>
-        <version>1.0.8-SNAPSHOT</version>
+        <version>1.0.9-SNAPSHOT</version>
     </parent>
 
     <artifactId>analytics</artifactId>
@@ -27,56 +27,31 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.dematic.labs.toolkit.bom</groupId>
-                <artifactId>bigdata-dep</artifactId>
-                <version>1.0.8-SNAPSHOT</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+            <!-- common dependencies -->
             <dependency>
                 <groupId>com.dematic.labs.toolkit.bom</groupId>
                 <artifactId>common-dep</artifactId>
-                <version>1.0.8-SNAPSHOT</version>
+                <version>1.0.9-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
+            <!-- big data common dependencies -->
+            <dependency>
+                <groupId>com.dematic.labs.toolkit_bigdata.bom</groupId>
+                <artifactId>bigdata-dep</artifactId>
+                <version>1.0.9-SNAPSHOT</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dematic.labs.toolkit.helpers</groupId>
-            <artifactId>bigdata</artifactId>
-            <version>1.0.8-SNAPSHOT</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.dematic.labs.toolkit.helpers</groupId>
-            <artifactId>bigdata</artifactId>
-            <version>1.0.8-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.dematic.labs.toolkit.helpers</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0.8-SNAPSHOT</version>
-        </dependency>
-
+        <!-- dlabs dependencies -->
         <dependency>
             <groupId>com.dematic.labs.analytics.monitor</groupId>
             <artifactId>analytics-monitor</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-
             <exclusions>
                 <exclusion>
                     <groupId>io.prometheus</groupId>
@@ -88,28 +63,14 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
+        <!-- json dependencies -->
         <dependency>
-            <groupId>com.dematic.labs.toolkit.helpers</groupId>
-            <artifactId>test_util</artifactId>
-            <version>1.0.8-SNAPSHOT</version>
-            <scope>test</scope>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
-            <version>2.7.3</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.5</version>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
         </dependency>
         <!-- spark sql/data frames/data sets -->
         <dependency>
@@ -132,10 +93,6 @@
                 <exclusion>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-client</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -220,9 +177,45 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka_2.11</artifactId>
         </dependency>
-
+        <!-- cassandra dependencies -->
+        <dependency>
+            <groupId>com.datastax.spark</groupId>
+            <artifactId>spark-cassandra-connector_2.11</artifactId>
+        </dependency>
+        <!-- cassandra client utils -->
+        <dependency>
+            <groupId>org.apache.cassandra</groupId>
+            <artifactId>cassandra-clientutil</artifactId>
+        </dependency>
+        <!-- cassandra client driver for java apps -->
+        <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+        </dependency>
+        <!-- utilities -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
 
         <!-- declare tests dependencies -->
+
+        <!-- dlabs dependencies -->
+        <dependency>
+            <groupId>com.dematic.labs.toolkit.helpers</groupId>
+            <artifactId>test_util</artifactId>
+            <version>1.0.9-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
         <!-- cassandra unit test -->
         <dependency>
             <groupId>org.cassandraunit</groupId>
