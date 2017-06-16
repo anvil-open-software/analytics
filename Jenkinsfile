@@ -58,7 +58,7 @@ timestamps {
         try {
             timeout(time: 1, unit: 'DAYS') {
                 releaseVersion = input(
-                        message: 'Publish ?',
+                        message: 'Publish? Please convert any snapshot dependencies before publishing.',
                         parameters: [
                                 [name        : 'version',
                                  defaultValue: currentPomVersion.minus('-SNAPSHOT'),
