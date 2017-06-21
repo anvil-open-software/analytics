@@ -3,13 +3,13 @@ package com.dematic.labs.analytics.store.spark.drivers.signal.kafka;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.spark.connector.cql.CassandraConnector;
+import com.dematic.labs.analytics.common.GenericBuilder;
 import com.dematic.labs.analytics.common.cassandra.Connections;
+import com.dematic.labs.analytics.common.communication.Signal;
+import com.dematic.labs.analytics.common.communication.SignalUtils;
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig;
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig;
 import com.dematic.labs.analytics.common.spark.StreamConfig;
-import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
-import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils;
-import com.dematic.labs.toolkit.helpers.common.GenericBuilder;
 import org.apache.parquet.Strings;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.ForeachWriter;
@@ -22,10 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.Map;
 
-import static com.dematic.labs.toolkit.helpers.bigdata.communication.Signal.TABLE_NAME;
+import static com.dematic.labs.analytics.common.communication.Signal.TABLE_NAME;
 
 public final class StructuredStreamingCassandraPersister {
     private static final Logger LOGGER = LoggerFactory.getLogger(StructuredStreamingCassandraPersister.class);

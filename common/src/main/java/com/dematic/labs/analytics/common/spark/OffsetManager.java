@@ -1,14 +1,10 @@
 package com.dematic.labs.analytics.common.spark;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.RegularStatement;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Statement;
+import com.datastax.driver.core.*;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.spark.connector.cql.CassandraConnector;
-import com.dematic.labs.analytics.common.cassandra.Connections;
+import com.dematic.labs.analytics.common.kafka.Connections;
 import com.google.common.base.Strings;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.PartitionInfo;
@@ -23,7 +19,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.datastax.driver.core.querybuilder.QueryBuilder.*;
-import static com.dematic.labs.toolkit.helpers.bigdata.kafka.Connections.getKafkaProducer;
+import static com.dematic.labs.analytics.common.cassandra.Connections.createTable;
+import static com.dematic.labs.analytics.common.cassandra.Connections.execute;
 
 @SuppressWarnings("unused")
 public final class OffsetManager implements Serializable {
@@ -58,16 +55,16 @@ public final class OffsetManager implements Serializable {
     static OffsetRange[] loadOffsetRanges(final String keyspace, final String topic,
                                           final CassandraConnector connector) {
         // create table if not exist
-        Connections.createTable(createTableCql(keyspace), connector);
+        createTable(createTableCql(keyspace), connector);
 
-        // get from datastore
+        // get from data store
         final Statement stmt = QueryBuilder
                 .select()
                 .all()
                 .from(keyspace, TABLE_NAME)
                 .where(eq("topic", topic))
                 .orderBy(desc("partition")).setConsistencyLevel(ConsistencyLevel.ALL);
-        final ResultSet rs = Connections.execute(stmt, connector);
+        final ResultSet rs = execute(stmt, connector);
         final List<OffsetRange> offsetRanges = new ArrayList<>();
         while (!rs.isExhausted()) {
             // todo: may be more efficient ways to do this,
@@ -83,9 +80,9 @@ public final class OffsetManager implements Serializable {
     public static void saveOffsetRanges(final String keyspace, final OffsetRange[] offsetRanges,
                                         final CassandraConnector connector) {
         // create table if not exist
-        Connections.createTable(createTableCql(keyspace), connector);
+        createTable(createTableCql(keyspace), connector);
 
-        // save to datastore
+        // save to data store
         final List<RegularStatement> stmtList = new ArrayList<>();
 
         for (final OffsetRange offsetRange : offsetRanges) {
@@ -97,7 +94,7 @@ public final class OffsetManager implements Serializable {
             stmtList.add(stmt);
         }
         // execute
-        Connections.execute(batch(stmtList.toArray(new RegularStatement[stmtList.size()]))
+        execute(batch(stmtList.toArray(new RegularStatement[stmtList.size()]))
                 .setConsistencyLevel(ConsistencyLevel.ALL), connector);
     }
 
@@ -111,7 +108,7 @@ public final class OffsetManager implements Serializable {
 
     static List<TopicPartition> initialOffsets(final String serverIpAddress, final String topic) {
         final List<TopicPartition> topicPartitions = new ArrayList<>();
-        try (final KafkaProducer<String, byte[]> kafkaProducer = getKafkaProducer(serverIpAddress)) {
+        try (final KafkaProducer<String, byte[]> kafkaProducer = Connections.getKafkaProducer(serverIpAddress)) {
             final List<PartitionInfo> partitionInfoList = kafkaProducer.partitionsFor(topic);
             partitionInfoList.forEach(partitionInfo -> {
                 topicPartitions.add(new TopicPartition(topic, partitionInfo.partition()));

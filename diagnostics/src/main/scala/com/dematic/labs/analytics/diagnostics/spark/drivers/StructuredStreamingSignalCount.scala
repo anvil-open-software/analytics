@@ -3,13 +3,13 @@ package com.dematic.labs.analytics.diagnostics.spark.drivers
 import com.datastax.driver.core.querybuilder.QueryBuilder
 import com.datastax.spark.connector.cql.CassandraConnector
 import com.dematic.labs.analytics.common.cassandra.Connections
+import com.dematic.labs.analytics.common.communication.SignalValidation
+import com.dematic.labs.analytics.common.communication.SignalValidation.SS_TABLE_NAME
 import com.dematic.labs.analytics.common.spark.CassandraDriverConfig._
 import com.dematic.labs.analytics.common.spark.DriverConsts
 import com.dematic.labs.analytics.common.spark.DriverConsts._
 import com.dematic.labs.analytics.common.spark.KafkaStreamConfig._
 import com.dematic.labs.analytics.diagnostics.spark.drivers.PropertiesUtils.getOrThrow
-import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation
-import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalValidation.SS_TABLE_NAME
 import org.apache.parquet.Strings
 import org.apache.spark.sql._
 import org.apache.spark.sql.streaming.OutputMode.Complete
@@ -66,7 +66,7 @@ object StructuredStreamingSignalCount {
     builder.config(SPARK_STREAMING_CHECKPOINT_DIR, checkpointDir)
     val spark: SparkSession = builder.getOrCreate
     // set sql partitions if set
-    if(!Strings.isNullOrEmpty(sqlPartitions)) spark.sql("SET spark.sql.shuffle.partitions=" + sqlPartitions)
+    if (!Strings.isNullOrEmpty(sqlPartitions)) spark.sql("SET spark.sql.shuffle.partitions=" + sqlPartitions)
 
     // create the cassandra table
     Connections.createTable(SignalValidation.createSSTableCql(cassandraKeyspace),

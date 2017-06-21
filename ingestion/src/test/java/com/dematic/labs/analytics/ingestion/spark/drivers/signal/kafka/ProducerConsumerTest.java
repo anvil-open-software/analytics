@@ -1,7 +1,7 @@
 package com.dematic.labs.analytics.ingestion.spark.drivers.signal.kafka;
 
-import com.dematic.labs.toolkit.helpers.bigdata.communication.Signal;
-import com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils;
+import com.dematic.labs.analytics.common.communication.Signal;
+import com.dematic.labs.analytics.common.communication.SignalUtils;
 import com.google.common.base.Strings;
 import info.batey.kafka.unit.KafkaUnitRule;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -43,6 +43,7 @@ public final class ProducerConsumerTest {
         Assert.assertEquals(5, messages.size());
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static void sendSignals(final int num, final String topic, final int port) {
         final Properties props = new Properties();
         props.put("bootstrap.servers", "localhost:" + port);

@@ -4,9 +4,10 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-import static com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils.toInstantFromTimestamp;
-import static com.dematic.labs.toolkit.helpers.bigdata.communication.SignalUtils.toTimestampFromInstance;
+import static com.dematic.labs.analytics.common.communication.SignalUtils.toTimestampFromInstance;
+import static com.dematic.labs.analytics.common.communication.SignalUtils.toInstantFromTimestamp;
 
+@SuppressWarnings("unused")
 public enum Aggregation {
     HOUR(ChronoUnit.HOURS),
     MINUTE(ChronoUnit.MINUTES);

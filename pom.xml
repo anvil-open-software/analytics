@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.dematic.labs</groupId>
         <artifactId>toolkit</artifactId>
-        <version>1.0.8-SNAPSHOT</version>
+        <version>1.0.9-SNAPSHOT</version>
     </parent>
 
     <artifactId>analytics</artifactId>
@@ -27,25 +27,76 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>com.dematic.labs.toolkit.bom</groupId>
-                <artifactId>bigdata-dep</artifactId>
-                <version>1.0.8-SNAPSHOT</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+            <!-- common dependencies -->
             <dependency>
                 <groupId>com.dematic.labs.toolkit.bom</groupId>
                 <artifactId>common-dep</artifactId>
-                <version>1.0.8-SNAPSHOT</version>
+                <version>1.0.9-SNAPSHOT</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
+            <!-- big data common dependencies -->
+            <dependency>
+                <groupId>com.dematic.labs.toolkit_bigdata.bom</groupId>
+                <artifactId>bigdata-dep</artifactId>
+                <version>1.0.9-SNAPSHOT</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
+        <!-- dlabs dependencies -->
+        <dependency>
+            <groupId>com.dematic.labs.analytics.monitor</groupId>
+            <artifactId>analytics-monitor</artifactId>
+        </dependency>
+        <!-- spark sql/data frames/data sets -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql-kafka-0-10_2.11</artifactId>
+        </dependency>
+        <!-- spark streaming dependencies -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming-kafka-0-10_2.11</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.parquet</groupId>
+            <artifactId>parquet-avro</artifactId>
+        </dependency>
+        <!-- kafka support -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.11</artifactId>
+        </dependency>
+        <!-- cassandra dependencies -->
+        <dependency>
+            <groupId>com.datastax.spark</groupId>
+            <artifactId>spark-cassandra-connector_2.11</artifactId>
+        </dependency>
+        <!-- cassandra client utils -->
+        <dependency>
+            <groupId>org.apache.cassandra</groupId>
+            <artifactId>cassandra-clientutil</artifactId>
+        </dependency>
+        <!-- cassandra client driver for java apps -->
+        <dependency>
+            <groupId>com.datastax.cassandra</groupId>
+            <artifactId>cassandra-driver-core</artifactId>
+        </dependency>
+        <!-- utilities -->
+
+        <!-- json dependencies -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -55,174 +106,23 @@
             <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.dematic.labs.toolkit.helpers</groupId>
-            <artifactId>bigdata</artifactId>
-            <version>1.0.8-SNAPSHOT</version>
-            <type>test-jar</type>
-            <scope>test</scope>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.dematic.labs.toolkit.helpers</groupId>
-            <artifactId>bigdata</artifactId>
-            <version>1.0.8-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>com.dematic.labs.toolkit.helpers</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0.8-SNAPSHOT</version>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.dematic.labs.analytics.monitor</groupId>
-            <artifactId>analytics-monitor</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+        <!-- declare tests dependencies -->
 
-            <exclusions>
-                <exclusion>
-                    <groupId>io.prometheus</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.dropwizard.metrics</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
+        <!-- dlabs dependencies -->
         <dependency>
             <groupId>com.dematic.labs.toolkit.helpers</groupId>
             <artifactId>test_util</artifactId>
-            <version>1.0.8-SNAPSHOT</version>
+            <version>1.0.9-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client</artifactId>
-            <version>2.7.3</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.5</version>
-        </dependency>
-        <!-- spark sql/data frames/data sets -->
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.11</artifactId>
-            <version>2.1.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>net.java.dev.jets3t</groupId>
-                    <artifactId>jets3t</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-httpclient</groupId>
-                    <artifactId>commons-httpclient</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-client</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql-kafka-0-10_2.11</artifactId>
-            <version>2.1.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>net.java.dev.jets3t</groupId>
-                    <artifactId>jets3t</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-httpclient</groupId>
-                    <artifactId>commons-httpclient</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- spark streaming dependencies -->
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming_2.11</artifactId>
-            <version>2.1.0</version>
-            <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>net.java.dev.jets3t</groupId>
-                    <artifactId>jets3t</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-httpclient</groupId>
-                    <artifactId>commons-httpclient</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.parquet</groupId>
-            <artifactId>parquet-avro</artifactId>
-            <version>1.9.0</version>
-        </dependency>
-        <!-- kafka support -->
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming-kafka-0-10_2.11</artifactId>
-            <version>2.1.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_2.11</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>net.java.dev.jets3t</groupId>
-                    <artifactId>jets3t</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-httpclient</groupId>
-                    <artifactId>commons-httpclient</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.11</artifactId>
-        </dependency>
-
-
-        <!-- declare tests dependencies -->
         <!-- cassandra unit test -->
         <dependency>
             <groupId>org.cassandraunit</groupId>
@@ -232,11 +132,6 @@
         <dependency>
             <groupId>info.batey.kafka</groupId>
             <artifactId>kafka-unit</artifactId>
-        </dependency>
-        <!-- used in testing kafka -->
-        <dependency>
-            <groupId>net.sf.jopt-simple</groupId>
-            <artifactId>jopt-simple</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
