@@ -11,9 +11,6 @@
     <artifactId>diagnostics</artifactId>
     <name>big data deployment diagnostics </name>
     <description>spark drivers for diagnostics</description>
-    <properties>
-        <scala.major.minor.version>2.11</scala.major.minor.version>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -42,7 +39,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.3</version>
                 <executions>
                     <execution>
                         <goals>
