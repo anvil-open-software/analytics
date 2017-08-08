@@ -50,10 +50,22 @@
 
     <dependencies>
         <!-- dlabs dependencies -->
+        <!-- prometheus monitoring -->
         <dependency>
-            <groupId>com.dematic.labs.analytics.monitor</groupId>
-            <artifactId>analytics-monitor</artifactId>
-            <version>0.0.1</version>
+            <groupId>com.dematic.labs.dsp.monitor</groupId>
+            <artifactId>dsp-monitor</artifactId>
+            <version>0.0.2</version>
+
+            <exclusions>
+                <exclusion>
+                    <groupId>io.prometheus</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.dropwizard.metrics</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- spark sql/data frames/data sets -->
         <dependency>

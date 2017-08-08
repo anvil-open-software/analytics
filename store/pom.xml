@@ -51,7 +51,7 @@
                             <artifactSet>
                                 <excludes>
                                     <exclude>commons-httpclient:commons-httpclient</exclude>
-                                    <exclude>com.dematic.labs.analytics.monitor:analytics-monitor</exclude>
+                                    <exclude>com.dematic.labs.dsp.monitor:dsp-monitor</exclude>
                                     <exclude>junit:junit</exclude>
                                     <exclude>jmock:*</exclude>
                                     <exclude>*:xml-apis</exclude>
