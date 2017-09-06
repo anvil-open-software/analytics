@@ -13,7 +13,7 @@ import com.dematic.labs.analytics.monitor.spark.{MonitorConsts, PrometheusStream
 import org.apache.parquet.Strings
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.functions.{window, _}
-import org.apache.spark.sql.streaming.ProcessingTime
+import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.{Encoders, _}
 
 object StructuredStreamingSignalAggregation {
@@ -105,7 +105,7 @@ object StructuredStreamingSignalAggregation {
     val signals = kafka.selectExpr("CAST(value AS STRING)").as(Encoders.STRING)
 
     // explicitly define signal encoders
-    implicit val encoder = Encoders.bean[Signal](classOf[Signal])
+    implicit val encoder: Encoder[Signal] = Encoders.bean[Signal](classOf[Signal])
     // map json signal to signal object
     val signalsPerHour = signals.map(SignalUtils.jsonToSignal)
 
@@ -119,7 +119,7 @@ object StructuredStreamingSignalAggregation {
 
     // write aggregate sinks to cassandra
     val query = aggregate.writeStream
-      .trigger(ProcessingTime(queryTrigger))
+      .trigger(Trigger.ProcessingTime(queryTrigger))
       .option("checkpointLocation", checkpointDir)
       .queryName("aggregate over time")
       .outputMode(outputMode)
