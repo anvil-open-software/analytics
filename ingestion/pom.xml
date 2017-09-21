@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.dematic.labs</groupId>
         <artifactId>analytics</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
 
     <groupId>com.dematic.labs.analytics</groupId>
@@ -14,12 +14,12 @@
         <dependency>
             <groupId>com.dematic.labs.analytics</groupId>
             <artifactId>common</artifactId>
-            <version>1.2.1-SNAPSHOT</version>
+            <version>1.2.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.dematic.labs.analytics</groupId>
             <artifactId>common</artifactId>
-            <version>1.2.1-SNAPSHOT</version>
+            <version>1.2.2-SNAPSHOT</version>
             <type>test-jar</type>
         </dependency>
     </dependencies>
