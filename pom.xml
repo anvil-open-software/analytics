@@ -22,7 +22,7 @@
     </modules>
 
     <scm>
-        <developerConnection>scm:git:git@gitlab.ops.cld:Dematiclabs/analytics.git</developerConnection>
+        <developerConnection>scm:git:https://gitlab.dematic.com/Dematiclabs/analytics.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
