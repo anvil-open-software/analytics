@@ -21,12 +21,6 @@
         <module>diagnostics</module>
     </modules>
 
-    <scm>
-        <connection>scm:git:https://gitlab.dematic.com/Dematiclabs/analytics.git</connection>
-        <developerConnection>${project.scm.connection}</developerConnection>
-        <tag>HEAD</tag>
-    </scm>
-
     <dependencyManagement>
         <dependencies>
             <!-- common dependencies -->
