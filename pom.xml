@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>com.dematic.labs.toolkit.buildProcess</groupId>
         <artifactId>parentPom</artifactId>
-        <version>2.0.2</version>
+        <version>2.0.6</version>
     </parent>
 
     <groupId>com.dematic.labs</groupId>
@@ -32,7 +33,7 @@
             <dependency>
                 <groupId>com.dematic.labs.toolkit.bom</groupId>
                 <artifactId>common-dep</artifactId>
-                <version>2.0.2</version>
+                <version>2.0.6</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -44,6 +45,16 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>com.dematic.labs.toolkit.helpers</groupId>
+                <artifactId>test_util</artifactId>
+                <version>2.0.6</version>
+            </dependency>
+            <dependency>
+                <groupId>com.dematic.labs.dsp.monitor</groupId>
+                <artifactId>dsp-monitor</artifactId>
+                <version>0.0.3</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -53,7 +64,6 @@
         <dependency>
             <groupId>com.dematic.labs.dsp.monitor</groupId>
             <artifactId>dsp-monitor</artifactId>
-            <version>0.0.3</version>
 
             <exclusions>
                 <exclusion>
@@ -140,7 +150,6 @@
         <dependency>
             <groupId>com.dematic.labs.toolkit.helpers</groupId>
             <artifactId>test_util</artifactId>
-            <version>2.0.2</version>
             <scope>test</scope>
         </dependency>
         <!-- cassandra unit test -->
