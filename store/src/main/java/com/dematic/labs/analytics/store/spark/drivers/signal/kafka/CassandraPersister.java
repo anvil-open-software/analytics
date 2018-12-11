@@ -1,3 +1,8 @@
+/*
+ * Copyright 2018 Dematic, Corp.
+ * Licensed under the MIT Open Source License: https://opensource.org/licenses/MIT
+ */
+
 package com.dematic.labs.analytics.store.spark.drivers.signal.kafka;
 
 import com.datastax.spark.connector.cql.CassandraConnector;

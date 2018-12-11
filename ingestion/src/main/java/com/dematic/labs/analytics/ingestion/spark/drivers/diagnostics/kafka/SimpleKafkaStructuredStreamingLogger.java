@@ -1,3 +1,8 @@
+/*
+ * Copyright 2018 Dematic, Corp.
+ * Licensed under the MIT Open Source License: https://opensource.org/licenses/MIT
+ */
+
 package com.dematic.labs.analytics.ingestion.spark.drivers.diagnostics.kafka;
 
 import com.dematic.labs.analytics.common.spark.DriverConsts;
